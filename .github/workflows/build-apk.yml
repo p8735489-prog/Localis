@@ -1,0 +1,162 @@
+name: Build and Release Localis APK
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmake;3.22.1" "ndk;27.0.12077973"
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Write signing keystore from GitHub Secret
+        env:
+          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > /tmp/signing.keystore
+            echo "SIGNING_KEYSTORE_PATH=/tmp/signing.keystore" >> "$GITHUB_ENV"
+            echo "Keystore written from secret"
+          else
+            echo "No SIGNING_KEYSTORE_B64 secret found — APK will be unsigned"
+          fi
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          SIGNING_KEYSTORE_PATH: ${{ env.SIGNING_KEYSTORE_PATH }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+
+      - name: Remove temporary keystore
+        run: rm -f /tmp/signing.keystore
+
+      - name: Verify APK signature
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          echo "APK info:"
+          ls -lh $APK_PATH
+          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/aapt dump badging $APK_PATH | head -3
+          echo "---"
+          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/apksigner verify --verbose $APK_PATH || true
+
+      - name: Rename APK with version
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          VERSION=$(cat app/build.gradle.kts | grep versionName | head -1 | sed 's/.*versionName.*=.*"\([^"]*\)".*/\1/')
+          BUILD_NUM=${{ github.run_number }}
+          OUTPUT="app/build/outputs/apk/release/Localis-v${VERSION}-build${BUILD_NUM}.apk"
+          cp "$APK_PATH" "$OUTPUT"
+          echo "OUTPUT_APK=$OUTPUT" >> $GITHUB_ENV
+          echo "VERSION=v${VERSION}-build${BUILD_NUM}" >> $GITHUB_ENV
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Localis-release-apk
+          path: app/build/outputs/apk/release/Localis-*.apk
+          if-no-files-found: error
+
+      # ── Release: push to main → auto-update "latest" release ──
+      - name: Release to GitHub (latest)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Build"
+          body: |
+            ## Localis - Latest Build
+
+            **自动构建** - 每次 push 到 main 分支时触发
+            **构建编号**: ${{ github.run_number }}
+            **构建时间**: ${{ github.event.head_commit.timestamp }}
+
+            ### 功能特性
+            - Local GGUF AI 推理（llama.cpp）
+            - Agentic Search：AI 自动判断是否联网搜索
+            - 多轮搜索（最多3轮）+ 来源引用
+            - 模型中心：从 Hugging Face / 清华镜像下载 GGUF
+            - Material 3 + Monet 动态取色 + 弹性动画
+            - 隐私优先：默认本地运行
+
+            ### 安装说明
+            1. 下载下方 `Localis-*.apk`
+            2. 在手机设置中允许"安装未知来源应用"
+            3. 安装 APK
+            4. 打开应用，从模型中心下载 GGUF 模型
+            5. 开始搜索！
+
+            > 注意：首次安装后需下载约 2-5GB 的 GGUF 模型才能使用 AI 功能
+          files: |
+            app/build/outputs/apk/release/Localis-*.apk
+          draft: false
+          prerelease: false
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Release: tag push → create versioned release ──
+      - name: Release to GitHub (tagged)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Localis ${{ github.ref_name }}"
+          body: |
+            ## Localis ${{ github.ref_name }}
+
+            **正式版本**
+
+            ### 安装说明
+            1. 下载下方 APK 文件
+            2. 在手机设置中允许"安装未知来源应用"
+            3. 安装 APK
+          files: |
+            app/build/outputs/apk/release/Localis-*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

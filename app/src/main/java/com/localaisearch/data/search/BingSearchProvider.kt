@@ -87,8 +87,10 @@ class BingSearchProvider : SearchProvider {
             val results = mutableListOf<SearchResult>()
             for (i in 0 until valueArray.length()) {
                 val item = valueArray.getJSONObject(i)
-                val title = item.optString("name", "").ifBlank { continue }
-                val url = item.optString("url", "").ifBlank { continue }
+                val title = item.optString("name", "")
+                if (title.isBlank()) continue
+                val url = item.optString("url", "")
+                if (url.isBlank()) continue
                 val snippet = item.optString("snippet", "")
                 val datePublished = item.optString("datePublished", null)
 

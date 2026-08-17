@@ -78,24 +78,22 @@ object LlamaBridge {
             false
         }
 
-    companion object {
-        private const val LIBRARY_NAME = "llama_bridge"
+    private const val LIBRARY_NAME = "llama_bridge"
 
-        private var initialized = false
+    private var initialized = false
 
-        /**
-         * Load the native library. Called once at app startup.
-         * Returns true if the library was loaded successfully.
-         */
-        fun initialize(): Boolean {
-            if (initialized) return true
-            return try {
-                System.loadLibrary(LIBRARY_NAME)
-                initialized = true
-                true
-            } catch (_: UnsatisfiedLinkError) {
-                false
-            }
+    /**
+     * Load the native library. Called once at app startup.
+     * Returns true if the library was loaded successfully.
+     */
+    fun initialize(): Boolean {
+        if (initialized) return true
+        return try {
+            System.loadLibrary(LIBRARY_NAME)
+            initialized = true
+            true
+        } catch (_: UnsatisfiedLinkError) {
+            false
         }
     }
 }

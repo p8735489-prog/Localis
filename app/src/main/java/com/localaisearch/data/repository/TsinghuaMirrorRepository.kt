@@ -92,6 +92,57 @@ class TsinghuaMirrorRepository {
     }
 
     /**
+     * Get trending/popular GGUF models from the mirror.
+     */
+    suspend fun getTrendingModels(limit: Int = 20): Result<List<HFModelInfo>> = withContext(Dispatchers.IO) {
+        try {
+            val url = "$MIRROR_API/models?filter=gguf&limit=$limit&sort=downloads&direction=-1"
+            val request = Request.Builder()
+                .url(url)
+                .header("Accept", "application/json")
+                .header("User-Agent", "Localis/1.0")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                return@withContext Result.failure(
+                    IllegalStateException("Mirror API error: ${response.code}")
+                )
+            }
+
+            val body = response.body?.string()
+                ?: return@withContext Result.failure(IllegalStateException("Empty response"))
+
+            val jsonArray = JSONArray(body)
+            val models = mutableListOf<HFModelInfo>()
+
+            for (i in 0 until jsonArray.length().coerceAtMost(limit)) {
+                val item = jsonArray.getJSONObject(i)
+                val modelId = item.optString("id", "")
+                if (modelId.isBlank()) continue
+
+                models.add(
+                    HFModelInfo(
+                        id = modelId,
+                        name = modelId.substringAfterLast('/'),
+                        author = modelId.substringBefore('/'),
+                        description = item.optString("description", ""),
+                        downloads = item.optInt("downloads", 0),
+                        likes = item.optInt("likes", 0),
+                        tags = parseTags(item.optJSONArray("tags")),
+                        isGguf = true
+                    )
+                )
+            }
+
+            Result.success(models)
+        } catch (e: Exception) {
+            Log.e(TAG, "Trending models failed", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * List GGUF files in a repository via the mirror.
      */
     suspend fun listGgufFiles(repoId: String): Result<List<HFModelFile>> = withContext(Dispatchers.IO) {

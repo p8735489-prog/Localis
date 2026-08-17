@@ -3,12 +3,15 @@ package com.localaisearch.data.agent
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.AgentState
 import com.localaisearch.data.model.AgentStatus
+import com.localaisearch.data.model.AgentStatusIdle
 import com.localaisearch.data.model.Citation
 import com.localaisearch.data.model.InferenceConfig
 import com.localaisearch.data.model.SearchResult
 import com.localaisearch.data.model.SearchRound
 import com.localaisearch.data.model.SearchSession
+import com.localaisearch.data.model.toCitation
 import com.localaisearch.data.search.SearchConfig
+import com.localaisearch.data.search.SearchConfigDefault
 import com.localaisearch.data.search.SearchProvider
 import com.localaisearch.data.search.SearchProviderFactory
 import com.localaisearch.data.search.SearchResultProcessor
@@ -59,10 +62,10 @@ interface AgentCallback {
  */
 class AgentEngine(
     private val llmEngine: LLMEngine,
-    private val searchConfig: SearchConfig = SearchConfig.Default
+    private val searchConfig: SearchConfig = SearchConfigDefault
 ) {
 
-    private val _status = MutableStateFlow(AgentStatus.Idle)
+    private val _status = MutableStateFlow(AgentStatusIdle)
     val status: StateFlow<AgentStatus> = _status.asStateFlow()
 
     private var callback: AgentCallback? = null
@@ -234,7 +237,7 @@ class AgentEngine(
 
             // Build citations from real search results
             val citations = finalResults.mapIndexed { index, result ->
-                Citation.fromSearchResult(result, index + 1)
+                result.toCitation(index + 1)
             }
 
             updateState(AgentState.DONE, "Complete")
@@ -251,7 +254,7 @@ class AgentEngine(
      */
     fun cancel() {
         isCancelled = true
-        llmEngine.stopGeneration()
+        kotlinx.coroutines.runBlocking { llmEngine.stopGeneration() }
         updateState(AgentState.IDLE, "Cancelled")
     }
 
@@ -260,7 +263,7 @@ class AgentEngine(
      */
     fun reset() {
         isCancelled = false
-        _status.value = AgentStatus.Idle
+        _status.value = AgentStatusIdle
     }
 
     // -- Private helper methods --

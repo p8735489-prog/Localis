@@ -87,8 +87,10 @@ class SearXNGProvider : SearchProvider {
             for (i in 0 until resultsArray.length()) {
                 if (i >= config.maxResults) break
                 val item = resultsArray.getJSONObject(i)
-                val title = item.optString("title", "").ifBlank { continue }
-                val url = item.optString("url", "").ifBlank { continue }
+                val title = item.optString("title", "")
+                if (title.isBlank()) continue
+                val url = item.optString("url", "")
+                if (url.isBlank()) continue
                 val snippet = item.optString("content", "")
                 val publishedDate = item.optString("publishedDate", null)
 
@@ -128,7 +130,7 @@ class SearXNGProvider : SearchProvider {
                 )
             }
 
-            val contentType = response.header("Content-Type", "")
+            val contentType = response.header("Content-Type") ?: ""
             val body = response.body?.string() ?: ""
 
             // Basic HTML to text conversion

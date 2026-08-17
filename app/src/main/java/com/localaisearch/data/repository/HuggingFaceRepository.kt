@@ -1,7 +1,7 @@
 package com.localaisearch.data.repository
 
 import android.util.Log
-import com.localaisearch.data.model.GGUFModel
+import com.localaisearch.data.model.formatFileSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -238,7 +238,7 @@ class HuggingFaceRepository {
         if (cardData == null) return "unknown"
         // Try to extract from model name or tags
         val modelName = cardData.optString("base_model", "")
-        val regex = Regex("(\d+\.?\d*)[Bb]")
+        val regex = Regex("(\\d+\\.?\\d*)[Bb]")
         val match = regex.find(modelName)
         return match?.groupValues?.get(1)?.let { "${it}B" } ?: "unknown"
     }
@@ -268,7 +268,7 @@ data class HFModelFile(
     val downloadUrl: String,
     val isLfs: Boolean
 ) {
-    val displaySize: String get() = GGUFModel.formatFileSize(size)
+    val displaySize: String get() = formatFileSize(size)
 }
 
 /**

@@ -89,11 +89,10 @@ class ModelCenterViewModel(
         _error.value = null
         viewModelScope.launch {
             try {
-                val repo = when (_selectedSource.value) {
-                    ModelRepositoryFactory.Source.HUGGING_FACE -> hfRepository
-                    ModelRepositoryFactory.Source.TSINGHUA_MIRROR -> mirrorRepository
+                val result = when (_selectedSource.value) {
+                    ModelRepositoryFactory.Source.HUGGING_FACE -> hfRepository.searchModels(query, limit = 30)
+                    ModelRepositoryFactory.Source.TSINGHUA_MIRROR -> mirrorRepository.searchModels(query, limit = 30)
                 }
-                val result = repo.searchModels(query, limit = 30)
                 result.onSuccess { models ->
                     _searchResults.value = models
                 }.onFailure { e ->
@@ -113,11 +112,10 @@ class ModelCenterViewModel(
     private fun loadTrending() {
         viewModelScope.launch {
             try {
-                val repo = when (_selectedSource.value) {
-                    ModelRepositoryFactory.Source.HUGGING_FACE -> hfRepository
-                    ModelRepositoryFactory.Source.TSINGHUA_MIRROR -> mirrorRepository
+                val result = when (_selectedSource.value) {
+                    ModelRepositoryFactory.Source.HUGGING_FACE -> hfRepository.getTrendingModels(limit = 20)
+                    ModelRepositoryFactory.Source.TSINGHUA_MIRROR -> mirrorRepository.getTrendingModels(limit = 20)
                 }
-                val result = repo.getTrendingModels(limit = 20)
                 result.onSuccess { models ->
                     _trendingModels.value = models
                 }.onFailure { e ->
@@ -133,11 +131,10 @@ class ModelCenterViewModel(
      * List GGUF files in a specific model repository.
      */
     suspend fun listModelFiles(repoId: String): Result<List<HFModelFile>> {
-        val repo = when (_selectedSource.value) {
-            ModelRepositoryFactory.Source.HUGGING_FACE -> hfRepository
-            ModelRepositoryFactory.Source.TSINGHUA_MIRROR -> mirrorRepository
+        return when (_selectedSource.value) {
+            ModelRepositoryFactory.Source.HUGGING_FACE -> hfRepository.listGgufFiles(repoId)
+            ModelRepositoryFactory.Source.TSINGHUA_MIRROR -> mirrorRepository.listGgufFiles(repoId)
         }
-        return repo.listGgufFiles(repoId)
     }
 
     /**

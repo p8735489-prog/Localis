@@ -20,34 +20,14 @@ data class GGUFModel(
 ) {
     val displaySize: String
         get() = formatFileSize(fileSizeBytes)
-
-    companion object {
-        fun formatFileSize(bytes: Long): String = when {
-            bytes >= 1_000_000_000 -> "%.1f GB".format(bytes / 1_000_000_000.0)
-            bytes >= 1_000_000 -> "%.1f MB".format(bytes / 1_000_000.0)
-            bytes >= 1_000 -> "%.1f KB".format(bytes / 1_000.0)
-            else -> "$bytes B"
-        }
-    }
 }
 
 /**
- * Inference parameters for GGUF model execution.
+ * Formats a byte count into a human-readable string (e.g. "1.5 GB").
  */
-@Serializable
-data class InferenceConfig(
-    val temperature: Float = 0.7f,
-    val topP: Float = 0.9f,
-    val topK: Int = 40,
-    val contextLength: Int = 4096,
-    val maxTokens: Int = 2048,
-    val repeatPenalty: Float = 1.1f,
-    val useGpu: Boolean = true,
-    val gpuLayers: Int = 0,
-    val threads: Int = 4,
-    val seed: Int = -1
-) {
-    companion object {
-        val Default = InferenceConfig()
-    }
+fun formatFileSize(bytes: Long): String = when {
+    bytes >= 1_000_000_000 -> "%.1f GB".format(bytes / 1_000_000_000.0)
+    bytes >= 1_000_000 -> "%.1f MB".format(bytes / 1_000_000.0)
+    bytes >= 1_000 -> "%.1f KB".format(bytes / 1_000.0)
+    else -> "$bytes B"
 }

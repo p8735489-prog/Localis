@@ -25,7 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.localaisearch.data.model.Citation
@@ -76,11 +77,8 @@ fun SourceCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scaleAnim.value * pressedScale.value
-                scaleY = scaleAnim.value * pressedScale.value
-                alpha = alphaAnim.value
-            },
+            .scale(scaleX = scaleAnim.value * pressedScale.value, scaleY = scaleAnim.value * pressedScale.value)
+            .alpha(alphaAnim.value),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainer

@@ -71,9 +71,10 @@ data class AgentStatus(
     val resultsFound: Int = 0,
     val tokensGenerated: Int = 0,
     val errorMessage: String? = null
-) {
-    companion object {
-        val Idle = AgentStatus()
-        fun error(message: String) = AgentStatus(state = AgentState.ERROR, errorMessage = message)
-    }
-}
+)
+
+/** Default idle [AgentStatus] instance. */
+val AgentStatusIdle = AgentStatus()
+
+/** Creates an [AgentStatus] in the [AgentState.ERROR] state with the given message. */
+fun agentStatusError(message: String) = AgentStatus(state = AgentState.ERROR, errorMessage = message)

@@ -335,7 +335,7 @@ class MemoryRepository(private val context: Context) {
             Regex("i work at "),
             Regex("i live in "),
             Regex("i'm from "),
-            Regex("\b\d{1,2} years old\b"),
+            Regex("\\b\\d{1,2} years old\\b"),
             Regex("我叫"),
             Regex("我是"),
             Regex("我住在"),

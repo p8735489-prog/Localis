@@ -100,8 +100,10 @@ class CustomSearchProvider : SearchProvider {
             for (i in 0 until resultsArray.length()) {
                 if (i >= maxResults) break
                 val item = resultsArray.getJSONObject(i)
-                val title = item.optString("title", item.optString("name", "")).ifBlank { continue }
-                val url = item.optString("url", item.optString("link", "")).ifBlank { continue }
+                val title = item.optString("title", item.optString("name", ""))
+                if (title.isBlank()) continue
+                val url = item.optString("url", item.optString("link", ""))
+                if (url.isBlank()) continue
                 val snippet = item.optString("content", item.optString("snippet", item.optString("description", "")))
                 val publishedDate = item.optString("publishedDate", item.optString("datePublished", null))
 
@@ -123,8 +125,10 @@ class CustomSearchProvider : SearchProvider {
                 for (i in 0 until array.length()) {
                     if (i >= maxResults) break
                     val item = array.getJSONObject(i)
-                    val title = item.optString("title", "").ifBlank { continue }
-                    val url = item.optString("url", "").ifBlank { continue }
+                    val title = item.optString("title", "")
+                    if (title.isBlank()) continue
+                    val url = item.optString("url", "")
+                    if (url.isBlank()) continue
                     results.add(
                         SearchResult(
                             title = title,

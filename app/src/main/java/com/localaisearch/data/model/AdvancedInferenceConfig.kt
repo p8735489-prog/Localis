@@ -22,13 +22,16 @@ data class InferenceConfig(
     val topP: Float = 0.9f,
     val topK: Int = 40,
     val contextLength: Int = 4096,
-    val maxTokens: Int = 1024,
+    val maxTokens: Int = 2048,
     val repeatPenalty: Float = 1.1f,
-    val useGpu: Boolean = false,
+    val useGpu: Boolean = true,
     val gpuLayers: Int = 0,
     val threads: Int = 4,
     val seed: Int = -1
 )
+
+/** Default [InferenceConfig] instance with sensible defaults. */
+val InferenceConfigDefault = InferenceConfig()
 
 /**
  * Advanced inference configuration extending the basic [InferenceConfig] pattern
@@ -53,9 +56,9 @@ data class AdvancedInferenceConfig(
     val topP: Float = 0.9f,
     val topK: Int = 40,
     val contextLength: Int = 4096,
-    val maxTokens: Int = 1024,
+    val maxTokens: Int = 2048,
     val repeatPenalty: Float = 1.1f,
-    val useGpu: Boolean = false,
+    val useGpu: Boolean = true,
     val gpuLayers: Int = 0,
     val threads: Int = 4,
     val seed: Int = -1,
@@ -121,43 +124,39 @@ data class AdvancedInferenceConfig(
             idleUnloadMinutes = idleUnloadMinutes
         )
     }
+}
 
-    companion object {
-        /**
-         * Default advanced inference configuration with sensible defaults.
-         */
-        val Default = AdvancedInferenceConfig()
+/** Default [AdvancedInferenceConfig] instance with sensible defaults. */
+val AdvancedInferenceConfigDefault = AdvancedInferenceConfig()
 
-        /**
-         * Creates an [AdvancedInferenceConfig] from a [PerformanceProfile].
-         *
-         * @param profile The performance profile to convert.
-         * @return An [AdvancedInferenceConfig] matching the profile settings.
-         */
-        fun fromPerformanceProfile(profile: PerformanceProfile): AdvancedInferenceConfig {
-            return AdvancedInferenceConfig(
-                temperature = profile.temperature,
-                topP = profile.topP,
-                topK = profile.topK,
-                contextLength = profile.contextLength,
-                maxTokens = profile.maxTokens,
-                repeatPenalty = profile.repeatPenalty,
-                useGpu = profile.backend == HardwareBackend.GPU || profile.backend == HardwareBackend.AUTO,
-                gpuLayers = profile.gpuLayers,
-                threads = profile.cpuThreads,
-                seed = -1,
-                batchSize = profile.batchSize,
-                useMmap = profile.useMmap,
-                useMemoryLock = profile.useMemoryLock,
-                kvCacheType = profile.kvCacheType,
-                flashAttention = profile.flashAttention,
-                enableModelCache = profile.enableModelCache,
-                maxCachedModels = profile.maxCachedModels,
-                autoUnloadIdle = profile.autoUnloadIdle,
-                idleUnloadMinutes = profile.idleUnloadMinutes,
-                backend = profile.backend,
-                modelWarmup = false
-            )
-        }
-    }
+/**
+ * Creates an [AdvancedInferenceConfig] from a [PerformanceProfile].
+ *
+ * @param profile The performance profile to convert.
+ * @return An [AdvancedInferenceConfig] matching the profile settings.
+ */
+fun PerformanceProfile.toAdvancedInferenceConfig(): AdvancedInferenceConfig {
+    return AdvancedInferenceConfig(
+        temperature = temperature,
+        topP = topP,
+        topK = topK,
+        contextLength = contextLength,
+        maxTokens = maxTokens,
+        repeatPenalty = repeatPenalty,
+        useGpu = backend == HardwareBackend.GPU || backend == HardwareBackend.AUTO,
+        gpuLayers = gpuLayers,
+        threads = cpuThreads,
+        seed = -1,
+        batchSize = batchSize,
+        useMmap = useMmap,
+        useMemoryLock = useMemoryLock,
+        kvCacheType = kvCacheType,
+        flashAttention = flashAttention,
+        enableModelCache = enableModelCache,
+        maxCachedModels = maxCachedModels,
+        autoUnloadIdle = autoUnloadIdle,
+        idleUnloadMinutes = idleUnloadMinutes,
+        backend = backend,
+        modelWarmup = false
+    )
 }

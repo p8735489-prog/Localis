@@ -2,6 +2,7 @@ package com.localaisearch.data.repository
 
 import com.localaisearch.data.model.SearchResult
 import com.localaisearch.data.search.SearchConfig
+import com.localaisearch.data.search.SearchConfigDefault
 import com.localaisearch.data.search.SearchProvider
 import com.localaisearch.data.search.SearchProviderFactory
 import com.localaisearch.data.search.SearchResultProcessor
@@ -15,7 +16,7 @@ import kotlinx.coroutines.withContext
 class SearchRepository {
 
     private var currentProvider: SearchProvider? = null
-    private var currentConfig: SearchConfig = SearchConfig.Default
+    private var currentConfig: SearchConfig = SearchConfigDefault
 
     /**
      * Update the search configuration and recreate the provider if needed.

@@ -28,11 +28,10 @@ data class SearchConfig(
     val maxSearchRounds: Int = 3,
     val enableSafeSearch: Boolean = true,
     val timeoutSeconds: Int = 15
-) {
-    companion object {
-        val Default = SearchConfig()
-    }
-}
+)
+
+/** Default [SearchConfig] instance. */
+val SearchConfigDefault = SearchConfig()
 
 /**
  * Unified search provider interface.

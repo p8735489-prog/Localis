@@ -22,7 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.localaisearch.ui.animation.SpringSpecs
@@ -82,10 +82,7 @@ fun AutoModeToggle(
                     tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
-                        .graphicsLayer {
-                            scaleX = iconScale
-                            scaleY = iconScale
-                        }
+                        .scale(scaleX = iconScale, scaleY = iconScale)
                 )
                 Text(
                     text = "Localis Auto",

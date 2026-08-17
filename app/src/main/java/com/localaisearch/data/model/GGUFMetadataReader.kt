@@ -45,19 +45,19 @@ object GGUFMetadataReader {
     // GGUF value type constants (uint32 enum values from the spec)
     // ------------------------------------------------------------------
 
-    private const val TYPE_UINT8 = 0
-    private const val TYPE_INT8 = 1
-    private const val TYPE_UINT16 = 2
-    private const val TYPE_INT16 = 3
-    private const val TYPE_UINT32 = 4
-    private const val TYPE_INT32 = 5
-    private const val TYPE_FLOAT32 = 6
-    private const val TYPE_BOOL = 7
-    private const val TYPE_STRING = 8
-    private const val TYPE_ARRAY = 9
-    private const val TYPE_UINT64 = 10
-    private const val TYPE_INT64 = 11
-    private const val TYPE_FLOAT64 = 12
+    private const val TYPE_UINT8: UInt = 0u
+    private const val TYPE_INT8: UInt = 1u
+    private const val TYPE_UINT16: UInt = 2u
+    private const val TYPE_INT16: UInt = 3u
+    private const val TYPE_UINT32: UInt = 4u
+    private const val TYPE_INT32: UInt = 5u
+    private const val TYPE_FLOAT32: UInt = 6u
+    private const val TYPE_BOOL: UInt = 7u
+    private const val TYPE_STRING: UInt = 8u
+    private const val TYPE_ARRAY: UInt = 9u
+    private const val TYPE_UINT64: UInt = 10u
+    private const val TYPE_INT64: UInt = 11u
+    private const val TYPE_FLOAT64: UInt = 12u
 
     /**
      * Reads metadata from a GGUF file without loading the full model.

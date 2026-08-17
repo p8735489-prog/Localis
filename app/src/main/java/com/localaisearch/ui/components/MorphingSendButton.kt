@@ -32,7 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
@@ -120,10 +120,7 @@ fun MorphingSendButton(
     Surface(
         modifier = modifier
             .size(48.dp)
-            .graphicsLayer {
-                scaleX = scaleAnim.value * pulseScale
-                scaleY = scaleAnim.value * pulseScale
-            },
+            .scale(scaleX = scaleAnim.value * pulseScale, scaleY = scaleAnim.value * pulseScale),
         shape = RoundedCornerShape(percent = (cornerRadius.value * 50).toInt()),
         color = backgroundColor,
         contentColor = contentColor,

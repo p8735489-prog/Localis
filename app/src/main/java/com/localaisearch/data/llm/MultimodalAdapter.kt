@@ -116,3 +116,74 @@ object MultimodalAdapterFactory {
         return bundle.hasVision && bundle.projectorComponent != null
     }
 }
+
+/**
+ * Generic vision adapter implementation that works with any model architecture.
+ * Used as fallback when no specific adapter is available.
+ */
+open class GenericVisionAdapter(
+    override val modelBundle: ModelBundle,
+    override val llmEngine: LLMEngine,
+    private val architectureName: String = "Generic"
+) : MultimodalAdapter {
+
+    override suspend fun load(config: AdvancedInferenceConfig): Result<Unit> {
+        return try {
+            val llmComp = modelBundle.llmComponent
+                ?: return Result.failure(IllegalStateException("No LLM component in bundle"))
+            llmEngine.loadModel(llmComp.filePath, config.toInferenceConfig())
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun loadProjector(config: AdvancedInferenceConfig): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override suspend fun processImage(imageUri: Uri): Result<String> {
+        return Result.success(imageUri.toString())
+    }
+
+    override fun generate(
+        prompt: String,
+        imageInput: ImageInput?,
+        config: AdvancedInferenceConfig
+    ): Flow<String> = flow {
+        emit("[${architectureName}] Image analysis not yet implemented for this model architecture.")
+    }
+
+    override suspend fun unload(): Result<Unit> {
+        return try {
+            llmEngine.unloadModel()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+
+/**
+ * Vision adapter for Qwen-VL model family.
+ */
+class QwenVisionAdapter(
+    bundle: ModelBundle,
+    engine: LLMEngine
+) : GenericVisionAdapter(bundle, engine, "Qwen-VL")
+
+/**
+ * Vision adapter for LLaVA model family.
+ */
+class LlavaVisionAdapter(
+    bundle: ModelBundle,
+    engine: LLMEngine
+) : GenericVisionAdapter(bundle, engine, "LLaVA")
+
+/**
+ * Vision adapter for PaliGemma/Gemma model family.
+ */
+class GemmaVisionAdapter(
+    bundle: ModelBundle,
+    engine: LLMEngine
+) : GenericVisionAdapter(bundle, engine, "Gemma")

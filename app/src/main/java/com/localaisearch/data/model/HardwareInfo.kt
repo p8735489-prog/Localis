@@ -107,7 +107,7 @@ fun formatBytes(bytes: Long): String {
     if (bytes < 1024L) return "$bytes B"
     val units = arrayOf("B", "KB", "MB", "GB", "TB")
     val exp = (kotlin.math.log2(bytes.toDouble()) / 10).toInt().coerceAtMost(units.size - 1)
-    val value = bytes / kotlin.math.pow(1024.0, exp.toDouble())
+    val value = bytes / Math.pow(1024.0, exp.toDouble())
     return String.format("%.1f %s", value, units[exp])
 }
 

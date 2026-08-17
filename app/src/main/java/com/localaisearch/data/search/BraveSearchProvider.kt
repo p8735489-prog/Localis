@@ -83,8 +83,10 @@ class BraveSearchProvider : SearchProvider {
             val results = mutableListOf<SearchResult>()
             for (i in 0 until resultsArray.length()) {
                 val item = resultsArray.getJSONObject(i)
-                val title = item.optString("title", "").ifBlank { continue }
-                val url = item.optString("url", "").ifBlank { continue }
+                val title = item.optString("title", "")
+                if (title.isBlank()) continue
+                val url = item.optString("url", "")
+                if (url.isBlank()) continue
                 val snippet = item.optString("description", "")
                 val age = item.optString("age", null)
 

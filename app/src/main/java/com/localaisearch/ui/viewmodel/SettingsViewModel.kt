@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.model.InferenceConfig
+import com.localaisearch.data.model.InferenceConfigDefault
 import com.localaisearch.data.search.SearchConfig
+import com.localaisearch.data.search.SearchConfigDefault
 import com.localaisearch.data.search.SearchProviderType
 import com.localaisearch.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,10 +24,10 @@ class SettingsViewModel(
 
     private val settingsRepo = SettingsRepository(application)
 
-    private val _searchConfig = MutableStateFlow(SearchConfig.Default)
+    private val _searchConfig = MutableStateFlow(SearchConfigDefault)
     val searchConfig: StateFlow<SearchConfig> = _searchConfig.asStateFlow()
 
-    private val _inferenceConfig = MutableStateFlow(InferenceConfig.Default)
+    private val _inferenceConfig = MutableStateFlow(InferenceConfigDefault)
     val inferenceConfig: StateFlow<InferenceConfig> = _inferenceConfig.asStateFlow()
 
     private val _darkMode = MutableStateFlow("system")

@@ -14,16 +14,17 @@ data class SearchResult(
     val publishedDate: String? = null,
     val score: Float = 0f,
     val searchRound: Int = 0
-) {
-    companion object {
-        fun extractDomain(url: String): String {
-            return try {
-                val uri = java.net.URI(url)
-                uri.host?.removePrefix("www.") ?: url
-            } catch (_: Exception) {
-                url
-            }
-        }
+)
+
+/**
+ * Extracts the domain name from a URL, stripping the "www." prefix.
+ */
+fun extractDomain(url: String): String {
+    return try {
+        val uri = java.net.URI(url)
+        uri.host?.removePrefix("www.") ?: url
+    } catch (_: Exception) {
+        url
     }
 }
 
@@ -51,17 +52,18 @@ data class SearchSession(
 
     fun addRound(round: SearchRound): SearchSession {
         val newRounds = rounds + round
-        val deduped = deduplicate(newRounds.flatMap { it.results })
+        val deduped = deduplicateSearchResults(newRounds.flatMap { it.results })
         return copy(rounds = newRounds, allResults = deduped)
     }
+}
 
-    companion object {
-        fun deduplicate(results: List<SearchResult>): List<SearchResult> {
-            val seen = mutableSetOf<String>()
-            return results.filter { result ->
-                val key = result.url.lowercase().trimEnd('/')
-                seen.add(key)
-            }
-        }
+/**
+ * Removes duplicate [SearchResult]s based on URL (case-insensitive, trailing slash normalized).
+ */
+fun deduplicateSearchResults(results: List<SearchResult>): List<SearchResult> {
+    val seen = mutableSetOf<String>()
+    return results.filter { result ->
+        val key = result.url.lowercase().trimEnd('/')
+        seen.add(key)
     }
 }

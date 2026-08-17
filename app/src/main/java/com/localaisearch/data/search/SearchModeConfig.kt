@@ -60,23 +60,21 @@ data class SearchModeConfig(
     val searchLanguage: String = "zh-CN",
     val enableSourceFiltering: Boolean = true,
     val minSourceQuality: Float = 0.3f
-) {
-    companion object {
-        /**
-         * The default configuration instance used when the user has not
-         * explicitly customized search settings.
-         */
-        val Default = SearchModeConfig()
-    }
-}
+)
+
+/**
+ * The default [SearchModeConfig] instance used when the user has not
+ * explicitly customized search settings.
+ */
+val SearchModeConfigDefault = SearchModeConfig()
 
 /**
  * Returns the recommended maximum number of search rounds for a given [SearchMode].
  *
- * - [SearchMode.OFF] → `0` (no searching)
- * - [SearchMode.SMART] → `3` (moderate depth with AI gate-keeping)
- * - [SearchMode.ALWAYS] → `2` (single-pass because every query already searches)
- * - [SearchMode.DEEP] → `5` (multi-round iterative search)
+ * - [SearchMode.OFF] -> `0` (no searching)
+ * - [SearchMode.SMART] -> `3` (moderate depth with AI gate-keeping)
+ * - [SearchMode.ALWAYS] -> `2` (single-pass because every query already searches)
+ * - [SearchMode.DEEP] -> `5` (multi-round iterative search)
  */
 fun getEffectiveMaxRounds(mode: SearchMode): Int = when (mode) {
     SearchMode.OFF -> 0
@@ -88,10 +86,10 @@ fun getEffectiveMaxRounds(mode: SearchMode): Int = when (mode) {
 /**
  * Returns the recommended maximum number of results per round for a given [SearchMode].
  *
- * - [SearchMode.OFF] → `0`
- * - [SearchMode.SMART] → `10`
- * - [SearchMode.ALWAYS] → `15`
- * - [SearchMode.DEEP] → `20` (broader result set for synthesis)
+ * - [SearchMode.OFF] -> `0`
+ * - [SearchMode.SMART] -> `10`
+ * - [SearchMode.ALWAYS] -> `15`
+ * - [SearchMode.DEEP] -> `20` (broader result set for synthesis)
  */
 fun getEffectiveMaxResults(mode: SearchMode): Int = when (mode) {
     SearchMode.OFF -> 0

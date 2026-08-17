@@ -14,19 +14,20 @@ data class Citation(
     val source: String,
     val snippet: String = "",
     val searchRound: Int = 0
-) {
-    companion object {
-        fun fromSearchResult(result: SearchResult, index: Int): Citation {
-            return Citation(
-                index = index,
-                title = result.title,
-                url = result.url,
-                source = result.source,
-                snippet = result.snippet,
-                searchRound = result.searchRound
-            )
-        }
-    }
+)
+
+/**
+ * Creates a [Citation] from a [SearchResult].
+ */
+fun SearchResult.toCitation(index: Int): Citation {
+    return Citation(
+        index = index,
+        title = title,
+        url = url,
+        source = source,
+        snippet = snippet,
+        searchRound = searchRound
+    )
 }
 
 /**

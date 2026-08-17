@@ -19,12 +19,10 @@ import kotlinx.serialization.Serializable
 data class AutoModeConfig(
     val enabled: Boolean = false,
     val autoUnloadMinutes: Int = 5
-) {
-    companion object {
-        /** Default configuration with auto-mode disabled. */
-        val Default = AutoModeConfig()
-    }
-}
+)
+
+/** Default configuration with auto-mode disabled. */
+val AutoModeConfigDefault = AutoModeConfig()
 
 /**
  * Engine that automatically classifies user input, selects the most

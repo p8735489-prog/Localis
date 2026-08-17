@@ -27,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.localaisearch.data.model.AgentState
@@ -102,10 +102,7 @@ fun AgentProgressBar(
                 Box(
                     modifier = Modifier
                         .size(8.dp)
-                        .graphicsLayer {
-                            scaleX = dotScale
-                            scaleY = dotScale
-                        },
+                        .scale(scaleX = dotScale, scaleY = dotScale),
                     contentAlignment = Alignment.Center
                 ) {
                     // Glow

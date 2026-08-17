@@ -25,5 +25,5 @@ data class ModelComponent(
     val isRequired: Boolean = false,
     val metadata: Map<String, String> = emptyMap()
 ) {
-    val displaySize: String get() = GGUFModel.formatFileSize(fileSizeBytes)
+    val displaySize: String get() = formatFileSize(fileSizeBytes)
 }

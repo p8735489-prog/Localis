@@ -8,6 +8,7 @@ import com.localaisearch.data.agent.AgentEngine
 import com.localaisearch.data.llm.GGUFEngine
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.AgentStatus
+import com.localaisearch.data.model.AgentStatusIdle
 import com.localaisearch.data.model.ChatMessage
 import com.localaisearch.data.model.Conversation
 import com.localaisearch.data.model.Citation
@@ -17,6 +18,7 @@ import com.localaisearch.data.model.SearchRound
 import com.localaisearch.data.model.SearchResult
 import com.localaisearch.data.model.SearchSession
 import com.localaisearch.data.performance.AutoModeConfig
+import com.localaisearch.data.performance.AutoModeConfigDefault
 import com.localaisearch.data.performance.AutoModeEngine
 import com.localaisearch.data.performance.ContextSummarizer
 import com.localaisearch.data.repository.ConversationRepository
@@ -71,7 +73,7 @@ class ChatViewModel(
     private val _conversation = MutableStateFlow(Conversation())
     val conversation: StateFlow<Conversation> = _conversation.asStateFlow()
 
-    private val _agentStatus = MutableStateFlow(AgentStatus.Idle)
+    private val _agentStatus = MutableStateFlow(AgentStatusIdle)
     val agentStatus: StateFlow<AgentStatus> = _agentStatus.asStateFlow()
 
     private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
@@ -258,7 +260,7 @@ class ChatViewModel(
                 }
             } finally {
                 _isProcessing.value = false
-                _agentStatus.value = AgentStatus.Idle
+                _agentStatus.value = AgentStatusIdle
             }
         }
     }
@@ -357,7 +359,7 @@ class ChatViewModel(
         currentJob?.cancel()
         agentEngine?.cancel()
         _isProcessing.value = false
-        _agentStatus.value = AgentStatus.Idle
+        _agentStatus.value = AgentStatusIdle
         updateLastMessage { it.copy(isStreaming = false) }
     }
 
@@ -424,7 +426,7 @@ class ChatViewModel(
         _currentAnswer.value = ""
         _citations.value = emptyList()
         _searchResults.value = emptyList()
-        _agentStatus.value = AgentStatus.Idle
+        _agentStatus.value = AgentStatusIdle
         _isProcessing.value = false
         _error.value = null
         _contextSummary.value = null
@@ -446,7 +448,7 @@ class ChatViewModel(
                 _currentAnswer.value = ""
                 _citations.value = emptyList()
                 _searchResults.value = emptyList()
-                _agentStatus.value = AgentStatus.Idle
+                _agentStatus.value = AgentStatusIdle
                 _isProcessing.value = false
                 _error.value = null
                 _contextSummary.value = null
@@ -462,7 +464,7 @@ class ChatViewModel(
         if (!_isAutoModeEnabled.value) return
         if (!llmEngine.isLoaded) return
 
-        val config = AutoModeConfig.Default
+        val config = AutoModeConfigDefault
         if (autoModeEngine.shouldUnloadAfterIdle(lastModelActivityTime, config.autoUnloadMinutes)) {
             viewModelScope.launch {
                 llmEngine.unloadModel()

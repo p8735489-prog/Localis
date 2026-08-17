@@ -31,7 +31,7 @@ data class ModelBundle(
 ) {
     val llmComponent: ModelComponent? get() = components.find { it.type == ModelComponentType.LLM }
     val projectorComponent: ModelComponent? get() = components.find { it.type == ModelComponentType.VISION_PROJECTOR }
-    val displaySize: String get() = GGUFModel.formatFileSize(totalSizeBytes)
+    val displaySize: String get() = formatFileSize(totalSizeBytes)
     val hasVision: Boolean get() = capabilities.contains(ModelCapability.VISION)
     val hasText: Boolean get() = capabilities.contains(ModelCapability.TEXT)
     val hasEmbedding: Boolean get() = capabilities.contains(ModelCapability.EMBEDDING)

@@ -3,7 +3,6 @@ package com.localaisearch.data.repository
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
-import com.localaisearch.data.llm.GGUFEngine
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.GGUFModel
 import com.localaisearch.data.model.InferenceConfig

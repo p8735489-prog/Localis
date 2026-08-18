@@ -1,5 +1,6 @@
 package com.localaisearch.data.llm
 
+import android.content.Context
 import android.util.Log
 import com.localaisearch.data.model.InferenceConfig
 import kotlinx.coroutines.Dispatchers
@@ -24,11 +25,15 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * Thread-safety: All operations are synchronized to prevent concurrent native access.
  */
-class GGUFEngine : LLMEngine {
+class GGUFEngine(context: Context? = null) : LLMEngine {
 
     companion object {
         private const val TAG = "GGUFEngine"
     }
+
+    override val providerName: String = "Local GGUF"
+    override val providerType: LLMProviderType = LLMProviderType.LOCAL_GGUF
+    override val isAvailable: Boolean = LlamaBridge.initialize()
 
     private val lock = Any()
 

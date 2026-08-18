@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.agent.AgentCallback
 import com.localaisearch.data.agent.AgentEngine
-import com.localaisearch.data.llm.GGUFEngine
+import com.localaisearch.data.llm.LLMProviderFactory
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.AgentStatus
 import com.localaisearch.data.model.AgentStatusIdle
@@ -53,7 +53,7 @@ class ChatViewModel(
 ) : AndroidViewModel(application) {
 
     private val settingsRepo = SettingsRepository(application)
-    private val llmEngine: LLMEngine = GGUFEngine()
+    private val llmEngine: LLMEngine = LLMProviderFactory.createEngine(application)
     private val searchRepo = SearchRepository()
     val modelRepo = ModelRepository(application, llmEngine)
 

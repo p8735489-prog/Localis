@@ -54,7 +54,10 @@ class ModelCenterViewModel(
     private val _modelRepo: ModelRepository
 
     init {
-        val llmEngine = com.localaisearch.data.llm.GGUFEngine()
+        val llmEngine = com.localaisearch.data.llm.LLMProviderFactory.createProvider(
+            com.localaisearch.data.llm.LLMProviderType.LOCAL_GGUF,
+            application
+        )
         _modelRepo = ModelRepository(application, llmEngine)
 
         _downloadManager = DownloadManager(

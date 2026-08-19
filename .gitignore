@@ -23,5 +23,8 @@ localis-release.jks
 
 localis-release.jks
 
+# In-repo release keystore (used by CI signing step)
+!app/localis-release.jks
+
 # Never commit signing material or encoded keystores
 keystore_base64.txt

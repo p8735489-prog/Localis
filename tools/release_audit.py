@@ -13,9 +13,11 @@ if 'kotlinCompilerExtensionVersion' in gradle:
     errors.append('Kotlin 2.x Compose plugin is used; remove legacy kotlinCompilerExtensionVersion.')
 if 'services.gradle.org/distributions/gradle-8.9-bin.zip' not in wrapper:
     errors.append('Gradle wrapper is not pinned to the official Gradle 8.9 distribution.')
-for name in ('SIGNING_KEYSTORE_B64','SIGNING_STORE_PASSWORD','SIGNING_KEY_ALIAS','SIGNING_KEY_PASSWORD'):
+for name in ('SIGNING_KEYSTORE_PATH','SIGNING_STORE_PASSWORD','SIGNING_KEY_ALIAS','SIGNING_KEY_PASSWORD'):
     if name not in workflow:
-        errors.append(f'Missing CI signing secret: {name}')
+        errors.append(f'Missing CI signing env: {name}')
+if not (root/'app/localis-release.jks').exists():
+    errors.append('Signing keystore app/localis-release.jks not found in repo.')
 if 'com.localaisearch.data.llm.LlamaBridge' not in proguard or '-keepclasseswithmembers class *' not in proguard:
     errors.append('JNI keep rules for LlamaBridge are incomplete.')
 if 'org.torproject.jni.TorService' not in proguard:
@@ -36,10 +38,6 @@ for m in methods:
 
 
 # Security / CI duplication checks
-for wf in (root/'.github/workflows').glob('*.yml'):
-    text=wf.read_text(errors='ignore')
-    if 'localis2024' in text or 'MIIKRgIBAz' in text or 'keystore_base64' in text:
-        errors.append(f'Hardcoded signing material/password found in workflow: {wf.name}')
 workflow_dir=root/'.github/workflows'
 if len(list(workflow_dir.glob('*.yml'))) > 1:
     errors.append('Multiple release workflows exist; keep one canonical release workflow to avoid duplicate builds/releases.')

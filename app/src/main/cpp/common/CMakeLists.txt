@@ -120,11 +120,13 @@ add_library(${TARGET}
     jinja/caps.h
     )
 
-set_target_properties(${TARGET} PROPERTIES
-    VERSION ${LLAMA_INSTALL_VERSION}
-    SOVERSION 0
-    MACHO_CURRENT_VERSION 0 # keep macOS linker from seeing oversized version number
-)
+if (BUILD_SHARED_LIBS AND LLAMA_INSTALL_VERSION)
+    set_target_properties(${TARGET} PROPERTIES
+        VERSION ${LLAMA_INSTALL_VERSION}
+        SOVERSION 0
+        MACHO_CURRENT_VERSION 0 # keep macOS linker from seeing oversized version number
+    )
+endif()
 
 target_include_directories(${TARGET} PUBLIC . ../vendor)
 target_compile_features   (${TARGET} PUBLIC cxx_std_17)

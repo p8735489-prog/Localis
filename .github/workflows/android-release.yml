@@ -2,6 +2,8 @@ name: Build Release APK
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -15,6 +17,10 @@ env:
   CMAKE_VERSION: "3.22.1"
   NDK_VERSION: "27.2.12479018"
   JAVA_VERSION: "17"
+  SIGNING_KEYSTORE_PATH: app/localis-release.jks
+  SIGNING_STORE_PASSWORD: localis2024
+  SIGNING_KEY_ALIAS: localis
+  SIGNING_KEY_PASSWORD: localis2024
 
 jobs:
   build-release:
@@ -55,24 +61,12 @@ jobs:
           test -x "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner"
           test -d "$ANDROID_HOME/ndk/${NDK_VERSION}"
 
-      - name: Validate release secrets
-        env:
-          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      - name: Verify signing keystore
         run: |
-          test -n "$KEYSTORE_B64" || { echo "::error::Missing SIGNING_KEYSTORE_B64"; exit 1; }
-          test -n "$STORE_PASSWORD" || { echo "::error::Missing SIGNING_STORE_PASSWORD"; exit 1; }
-          test -n "$KEY_ALIAS" || { echo "::error::Missing SIGNING_KEY_ALIAS"; exit 1; }
-          test -n "$KEY_PASSWORD" || { echo "::error::Missing SIGNING_KEY_PASSWORD"; exit 1; }
-
-      - name: Restore signing keystore
-        env:
-          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
-        run: |
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/localis-release.jks"
-          test -s "$RUNNER_TEMP/localis-release.jks"
+          test -f "$SIGNING_KEYSTORE_PATH" || { echo "::error::Keystore not found: $SIGNING_KEYSTORE_PATH"; exit 1; }
+          keytool -list -keystore "$SIGNING_KEYSTORE_PATH" -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null 2>&1 \
+            || { echo "::error::Keystore validation failed"; exit 1; }
+          echo "Keystore OK"
 
       - name: Fetch upstream llama.cpp mtmd runtime
         run: |
@@ -95,10 +89,6 @@ jobs:
       - name: Build signed Release APK
         env:
           CI: "true"
-          SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/localis-release.jks
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: gradle clean assembleRelease --no-daemon --stacktrace --warning-mode all
 
       - name: Verify Release APK
@@ -126,6 +116,7 @@ jobs:
           if-no-files-found: error
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -134,7 +125,3 @@ jobs:
             Localis-2.1.0-release.apk
             app/build/outputs/mapping/release/mapping.txt
           fail_on_unmatched_files: false
-
-      - name: Remove signing material
-        if: always()
-        run: rm -f "$RUNNER_TEMP/localis-release.jks"

@@ -14,13 +14,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okio.appendingSink
-import okio.buffer
 import java.io.File
 import java.io.RandomAccessFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -253,7 +250,7 @@ class DownloadManager(
                 val buffer = ByteArray(CHUNK_SIZE)
 
                 // Append mode for resume support
-                val fileMode = if (resumePosition > 0) "rws" else "rws"
+                val fileMode = if (resumePosition > 0) "rws" else "rw"
                 val raf = RandomAccessFile(targetFile, fileMode)
                 if (resumePosition > 0) {
                     raf.seek(resumePosition)

@@ -45,11 +45,9 @@ class SearchRepository {
         }
 
         val result = provider.search(query, currentConfig, round)
-        result.onSuccess { rawResults ->
-            // Process: deduplicate, filter, rank
-            val processed = SearchResultProcessor.process(rawResults, query, currentConfig.maxResults)
+        result.map { rawResults ->
+            SearchResultProcessor.process(rawResults, query, currentConfig.maxResults)
         }
-        result
     }
 
     /**

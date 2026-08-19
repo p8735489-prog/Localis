@@ -115,7 +115,7 @@ object ModelRouter {
             return RouteResult(
                 selectedModelId = selected?.id,
                 taskType = TaskType.TEXT_CHAT,
-                requiresFallback = activeModel == null || !activeIsVision,
+                requiresFallback = activeModel == null,
                 fallbackReason = if (selected == null) {
                     "No models available. Image input cannot be processed."
                 } else {

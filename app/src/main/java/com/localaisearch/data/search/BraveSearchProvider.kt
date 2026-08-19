@@ -88,7 +88,7 @@ class BraveSearchProvider : SearchProvider {
                 val url = item.optString("url", "")
                 if (url.isBlank()) continue
                 val snippet = item.optString("description", "")
-                val age = item.optString("age", null)
+                val age = item.optString("age").takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

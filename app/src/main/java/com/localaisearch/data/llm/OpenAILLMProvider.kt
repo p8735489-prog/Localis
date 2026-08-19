@@ -167,6 +167,7 @@ class OpenAILLMProvider(
         return response.body?.byteStream()?.bufferedReader()
     }
 
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     private fun buildRequestBody(
         messages: List<Pair<String, String>>,
         config: InferenceConfig,

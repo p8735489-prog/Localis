@@ -90,9 +90,7 @@ object ModelRouter {
 
         // --- Image path -------------------------------------------------------
         if (imageInput != null) {
-            val activeIsVision = activeModel?.let { isVisionCapable(it) } == true
-
-            if (activeIsVision && activeModel != null) {
+            if (activeModel != null && isVisionCapable(activeModel)) {
                 return RouteResult(
                     selectedModelId = activeModel.id,
                     taskType = TaskType.MULTIMODAL,

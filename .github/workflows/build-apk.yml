@@ -78,17 +78,28 @@ jobs:
 
       - name: Verify APK signature
         run: |
-          APK_PATH="app/build/outputs/apk/release/app-release.apk"
-          echo "APK info:"
-          ls -lh $APK_PATH
-          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/aapt dump badging $APK_PATH | head -3
+          APK_DIR="app/build/outputs/apk/release"
+          APK_PATH=$(find "$APK_DIR" -name "*.apk" -type f | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "##[error]No APK found in $APK_DIR"
+            ls -lhR "$APK_DIR" || true
+            exit 1
+          fi
+          echo "APK found: $APK_PATH"
+          ls -lh "$APK_PATH"
+          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/aapt dump badging "$APK_PATH" | head -3
           echo "---"
-          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/apksigner verify --verbose $APK_PATH || true
+          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/apksigner verify --verbose "$APK_PATH" || echo "APK is unsigned (expected when no signing keystore is configured)"
 
       - name: Rename APK with version
         run: |
-          APK_PATH="app/build/outputs/apk/release/app-release.apk"
-          VERSION=$(cat app/build.gradle.kts | grep versionName | head -1 | sed 's/.*versionName.*=.*"\([^"]*\)".*/\1/')
+          APK_DIR="app/build/outputs/apk/release"
+          APK_PATH=$(find "$APK_DIR" -name "*.apk" ! -name "Localis-*.apk" -type f | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "##[error]No APK found in $APK_DIR"
+            exit 1
+          fi
+          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\([^"]*\)" *$/\1/')
           BUILD_NUM=${{ github.run_number }}
           OUTPUT="app/build/outputs/apk/release/Localis-v${VERSION}-build${BUILD_NUM}.apk"
           cp "$APK_PATH" "$OUTPUT"

@@ -92,7 +92,7 @@ class SearXNGProvider : SearchProvider {
                 val url = item.optString("url", "")
                 if (url.isBlank()) continue
                 val snippet = item.optString("content", "")
-                val publishedDate = item.optString("publishedDate", null)
+                val publishedDate = item.optString("publishedDate").takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

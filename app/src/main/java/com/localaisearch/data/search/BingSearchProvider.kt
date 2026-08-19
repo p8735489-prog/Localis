@@ -92,7 +92,7 @@ class BingSearchProvider : SearchProvider {
                 val url = item.optString("url", "")
                 if (url.isBlank()) continue
                 val snippet = item.optString("snippet", "")
-                val datePublished = item.optString("datePublished", null)
+                val datePublished = item.optString("datePublished").takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

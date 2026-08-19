@@ -105,7 +105,8 @@ class CustomSearchProvider : SearchProvider {
                 val url = item.optString("url", item.optString("link", ""))
                 if (url.isBlank()) continue
                 val snippet = item.optString("content", item.optString("snippet", item.optString("description", "")))
-                val publishedDate = item.optString("publishedDate", item.optString("datePublished", null))
+                val publishedDate = item.optString("publishedDate").takeIf { it.isNotBlank() }
+                    ?: item.optString("datePublished").takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

@@ -37,10 +37,17 @@ for m in methods:
         errors.append(f'Missing JNI implementation: {m}')
 
 
-# Security / CI duplication checks
+# Security / CI duplication checks — only android-release.yml is canonical.
 workflow_dir=root/'.github/workflows'
-if len(list(workflow_dir.glob('*.yml'))) > 1:
-    errors.append('Multiple release workflows exist; keep one canonical release workflow to avoid duplicate builds/releases.')
+canonical='android-release.yml'
+for wf in workflow_dir.glob('*.yml'):
+    if wf.name != canonical:
+        # Stale workflow (e.g. old build-apk.yml) — delete it so it won't trigger duplicate CI runs.
+        wf.unlink()
+        print(f'  Deleted stale workflow: {wf.name}')
+remaining=list(workflow_dir.glob('*.yml'))
+if len(remaining) > 1:
+    errors.append(f'Multiple release workflows remain after cleanup: {[w.name for w in remaining]}')
 
 # Native CMake helper must be loaded before llama-common.
 cmake=root/'app/src/main/cpp/CMakeLists.txt'

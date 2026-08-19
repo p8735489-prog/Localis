@@ -13,18 +13,12 @@ local.properties
 *.aab
 
 # Signing keys -- NEVER commit
-localis-release.jks
-*.jks
-*.keystore
 *.jks
 *.keystore
 *.p12
 *.pfx
 
-localis-release.jks
 
-# In-repo release keystore (used by CI signing step)
-!app/localis-release.jks
 
 # Never commit signing material or encoded keystores
 keystore_base64.txt

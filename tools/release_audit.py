@@ -16,8 +16,12 @@ if 'services.gradle.org/distributions/gradle-8.9-bin.zip' not in wrapper:
 for name in ('SIGNING_KEYSTORE_PATH','SIGNING_STORE_PASSWORD','SIGNING_KEY_ALIAS','SIGNING_KEY_PASSWORD'):
     if name not in workflow:
         errors.append(f'Missing CI signing env: {name}')
-if not (root/'app/localis-release.jks').exists():
-    errors.append('Signing keystore app/localis-release.jks not found in repo.')
+if 'SIGNING_KEYSTORE_B64' not in workflow:
+    errors.append('CI must restore the signing keystore from SIGNING_KEYSTORE_B64 secret.')
+if re.search(r'SIGNING_(STORE_PASSWORD|KEY_PASSWORD):\\s*[^$\\n]+', workflow):
+    errors.append('Signing passwords must come from GitHub Actions secrets, not hard-coded workflow values.')
+if (root/'app/localis-release.jks').exists():
+    errors.append('Signing keystore must not be committed to the repository.')
 if 'com.localaisearch.data.llm.LlamaBridge' not in proguard or '-keepclasseswithmembers class *' not in proguard:
     errors.append('JNI keep rules for LlamaBridge are incomplete.')
 if 'org.torproject.jni.TorService' not in proguard:
@@ -37,17 +41,14 @@ for m in methods:
         errors.append(f'Missing JNI implementation: {m}')
 
 
-# Security / CI duplication checks — only android-release.yml is canonical.
+# Security / CI duplication checks — audit only; never mutate the repository.
 workflow_dir=root/'.github/workflows'
 canonical='android-release.yml'
-for wf in workflow_dir.glob('*.yml'):
-    if wf.name != canonical:
-        # Stale workflow (e.g. old build-apk.yml) — delete it so it won't trigger duplicate CI runs.
-        wf.unlink()
-        print(f'  Deleted stale workflow: {wf.name}')
 remaining=list(workflow_dir.glob('*.yml'))
+if not (workflow_dir/canonical).exists():
+    errors.append('Canonical workflow android-release.yml is missing.')
 if len(remaining) > 1:
-    errors.append(f'Multiple release workflows remain after cleanup: {[w.name for w in remaining]}')
+    errors.append(f'Multiple workflows remain; remove stale workflow files manually: {[w.name for w in remaining]}')
 
 # Native CMake helper must be loaded before llama-common.
 cmake=root/'app/src/main/cpp/CMakeLists.txt'
@@ -56,6 +57,21 @@ if 'include("${LLAMA_CMAKE_DIR}/common.cmake")' not in cmake_text:
     errors.append('Bundled llama.cpp CMake helper is not loaded before common/.')
 if not (root/'app/src/main/cpp/cmake/common.cmake').exists():
     errors.append('Missing app/src/main/cpp/cmake/common.cmake')
+
+# Native dependency checks: a release build must not silently downgrade to text-only.
+vendor_cmake=root/'app/src/main/cpp/vendor/CMakeLists.txt'
+mtmd_cmake=root/'app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt'
+if not vendor_cmake.exists():
+    errors.append('Missing vendor/CMakeLists.txt; llama.cpp vendor targets cannot be resolved.')
+if not mtmd_cmake.exists():
+    errors.append('Missing llama_src/tools/mtmd/CMakeLists.txt; multimodal runtime is incomplete.')
+for target in ('hash','miniaudio','stb','sheredom'):
+    if vendor_cmake.exists() and target not in vendor_cmake.read_text(errors='ignore'):
+        errors.append(f'llama.cpp vendor CMake does not expose expected target: {target}')
+if 'LLAMA_CPP_MTMD_REF=b10218' not in workflow:
+    errors.append('CI must pin LLAMA_CPP_MTMD_REF to a tested llama.cpp release tag (b10218), not master.')
+if 'LLAMA_BUILD_MTMD ON' not in (root/'app/src/main/cpp/CMakeLists.txt').read_text(errors='ignore'):
+    errors.append('LLAMA_BUILD_MTMD must remain enabled for release builds.')
 
 if errors:
     print('RELEASE AUDIT FAILED')

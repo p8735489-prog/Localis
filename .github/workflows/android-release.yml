@@ -17,10 +17,7 @@ env:
   CMAKE_VERSION: "3.22.1"
   NDK_VERSION: "27.2.12479018"
   JAVA_VERSION: "17"
-  SIGNING_KEYSTORE_PATH: app/localis-release.jks
-  SIGNING_STORE_PASSWORD: localis2024
-  SIGNING_KEY_ALIAS: localis
-  SIGNING_KEY_PASSWORD: localis2024
+  SIGNING_KEYSTORE_PATH: /tmp/localis-release.jks
 
 jobs:
   build-release:
@@ -61,21 +58,48 @@ jobs:
           test -x "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner"
           test -d "$ANDROID_HOME/ndk/${NDK_VERSION}"
 
-      - name: Verify signing keystore
+      - name: Restore signing keystore
+        env:
+          SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          test -f "$SIGNING_KEYSTORE_PATH" || { echo "::error::Keystore not found: $SIGNING_KEYSTORE_PATH"; exit 1; }
-          keytool -list -keystore "$SIGNING_KEYSTORE_PATH" -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null 2>&1 \
-            || { echo "::error::Keystore validation failed"; exit 1; }
-          echo "Keystore OK"
+          set -euo pipefail
+          test -n "$SIGNING_KEYSTORE_B64" || { echo "::error::Missing SIGNING_KEYSTORE_B64 secret"; exit 1; }
+          test -n "$SIGNING_STORE_PASSWORD" || { echo "::error::Missing SIGNING_STORE_PASSWORD secret"; exit 1; }
+          test -n "$SIGNING_KEY_ALIAS" || { echo "::error::Missing SIGNING_KEY_ALIAS secret"; exit 1; }
+          test -n "$SIGNING_KEY_PASSWORD" || { echo "::error::Missing SIGNING_KEY_PASSWORD secret"; exit 1; }
+          printf '%s' "$SIGNING_KEYSTORE_B64" | base64 --decode > "$SIGNING_KEYSTORE_PATH"
+          test -s "$SIGNING_KEYSTORE_PATH"
+          keytool -list -keystore "$SIGNING_KEYSTORE_PATH" \
+            -storepass "$SIGNING_STORE_PASSWORD" \
+            -alias "$SIGNING_KEY_ALIAS" >/dev/null
+          echo "Keystore restored and validated"
+          {
+            echo "SIGNING_STORE_PASSWORD=$SIGNING_STORE_PASSWORD"
+            echo "SIGNING_KEY_ALIAS=$SIGNING_KEY_ALIAS"
+            echo "SIGNING_KEY_PASSWORD=$SIGNING_KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
 
       - name: Fetch upstream llama.cpp mtmd runtime
         shell: bash
         run: |
           chmod +x tools/fetch_mtmd.sh
-          LLAMA_CPP_MTMD_REF=master tools/fetch_mtmd.sh || echo "::warning::fetch_mtmd.sh failed, building without mtmd"
+          LLAMA_CPP_MTMD_REF=b10218 tools/fetch_mtmd.sh
 
       - name: Make Gradle executable
         run: chmod +x ./gradlew
+
+      - name: Native dependency validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/src/main/cpp/vendor/CMakeLists.txt
+          test -f app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt
+          python3 tools/check_native_tree.py
+          grep -q 'LLAMA_BUILD_MTMD ON' app/src/main/cpp/CMakeLists.txt
+          echo "Native vendor + MTMD dependencies validated"
 
       - name: Source preflight
         run: python3 tools/ci_preflight.py
@@ -101,6 +125,10 @@ jobs:
           "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest application-id "$APK"
           "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest version-name "$APK"
           "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest version-code "$APK"
+
+      - name: Remove temporary signing keystore
+        if: always()
+        run: rm -f "$SIGNING_KEYSTORE_PATH"
 
       - name: Rename APK
         shell: bash

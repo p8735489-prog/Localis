@@ -51,7 +51,22 @@ android {
             isMinifyEnabled = true
             isShrinkResources = false
             val releaseSigning = signingConfigs.findByName("release")
-            if (releaseSigning?.storeFile?.exists() == true &&
+            if (System.getenv("CI") == "true") {
+                val signingFile = releaseSigning?.storeFile
+                check(signingFile?.exists() == true) {
+                    "Release signing is required in CI, but the keystore is missing."
+                }
+                check(!releaseSigning.storePassword.isNullOrBlank()) {
+                    "Release signing store password is missing in CI."
+                }
+                check(!releaseSigning.keyAlias.isNullOrBlank()) {
+                    "Release signing key alias is missing in CI."
+                }
+                check(!releaseSigning.keyPassword.isNullOrBlank()) {
+                    "Release signing key password is missing in CI."
+                }
+                signingConfig = releaseSigning
+            } else if (releaseSigning?.storeFile?.exists() == true &&
                 !releaseSigning.storePassword.isNullOrBlank() &&
                 !releaseSigning.keyAlias.isNullOrBlank() &&
                 !releaseSigning.keyPassword.isNullOrBlank()) {

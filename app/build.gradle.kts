@@ -81,9 +81,8 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    // kotlinCompilerExtensionVersion is managed by the kotlin.compose plugin (Kotlin 2.x).
+    // Do not set composeOptions.kotlinCompilerExtensionVersion when using the Compose Compiler Gradle Plugin.
     packaging {
         jniLibs {
             useLegacyPackaging = true
@@ -119,7 +118,11 @@ dependencies {
     // Embedded Tor service for optional app-only Tor routing and custom bridge configuration.
     // 0.4.9.5 is the latest release with minCompileSdk=1 (no API-level constraint).
     // Versions 0.4.9.5.1+ require compileSdk 36/37 which is incompatible with AGP 8.7.3 / compileSdk 35.
-    implementation("info.guardianproject:tor-android:0.4.9.5")
+    // NOTE: tor-android:0.4.9.5 transitively depends on kotlin-stdlib:2.3.0 (incompatible with
+    // our Kotlin 2.1.21 compiler). We exclude it and let the project's own kotlin-stdlib version win.
+    implementation("info.guardianproject:tor-android:0.4.9.5") {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+    }
     implementation("info.guardianproject:jtorctl:0.4.5.7")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

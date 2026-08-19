@@ -14,3 +14,9 @@
 -keepclasseswithmembers class * {
     native <methods>;
 }
+
+# Tor service - must not be obfuscated (Android Service loaded by reflection)
+-keep class org.torproject.jni.** { *; }
+-keep class info.guardianproject.** { *; }
+-dontwarn org.torproject.**
+-dontwarn info.guardianproject.**

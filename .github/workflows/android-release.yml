@@ -65,6 +65,7 @@ jobs:
           cp "$APK" "Localis-2.1.0-release.apk"
 
       - name: Create GitHub Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true

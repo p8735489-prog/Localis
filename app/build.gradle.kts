@@ -117,7 +117,9 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.kotlinx.coroutines.android)
     // Embedded Tor service for optional app-only Tor routing and custom bridge configuration.
-    implementation("info.guardianproject:tor-android:0.4.9.11")
+    // 0.4.9.5 is the latest release with minCompileSdk=1 (no API-level constraint).
+    // Versions 0.4.9.5.1+ require compileSdk 36/37 which is incompatible with AGP 8.7.3 / compileSdk 35.
+    implementation("info.guardianproject:tor-android:0.4.9.5")
     implementation("info.guardianproject:jtorctl:0.4.5.7")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

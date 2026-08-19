@@ -85,3 +85,34 @@ If `localis-release.jks` (or any keystore) was ever committed to a public GitHub
 - [ ] Keystore file is stored in a secure location with limited access
 - [ ] Keystore passwords are strong and unique
 - [ ] If the keystore was exposed, a new one has been generated
+
+
+## 6. Automatic GitHub Release
+
+The repository includes `.github/workflows/android-release.yml`.
+
+After adding the four GitHub Actions secrets below, pushing a tag such as `v2.1.0` will automatically:
+
+1. install the Android build tools;
+2. restore the signing keystore from `SIGNING_KEYSTORE_B64`;
+3. build `assembleRelease`;
+4. verify the APK signature with `apksigner`;
+5. create a GitHub Release;
+6. attach `Localis-2.1.0-release.apk`.
+
+Required repository secrets:
+
+- `SIGNING_KEYSTORE_B64`
+- `SIGNING_STORE_PASSWORD`
+- `SIGNING_KEY_ALIAS`
+- `SIGNING_KEY_PASSWORD`
+
+Do not commit the `.jks` file to the repository.
+
+To create the Base64 value locally:
+
+```bash
+base64 -w 0 localis-release.jks
+```
+
+Then paste that output into the `SIGNING_KEYSTORE_B64` Actions secret.

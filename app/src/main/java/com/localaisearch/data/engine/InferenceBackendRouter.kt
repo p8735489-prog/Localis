@@ -43,5 +43,5 @@ object InferenceBackendRouter {
     )
 
     private fun looksLikeGguf(model: GGUFModel): Boolean =
-        model.path.lowercase().endsWith(".gguf") || model.name.lowercase().contains("gguf")
+        model.filePath.lowercase().endsWith(".gguf") || model.name.lowercase().contains("gguf")
 }

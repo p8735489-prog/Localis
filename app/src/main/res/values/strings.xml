@@ -480,4 +480,7 @@
     <string name="hf_domestic_mirror">Domestic mirror · hf-mirror.com</string>
     <string name="imported_model">Imported: %1$s</string>
     <string name="gpu_label">GPU —</string>
+    <string name="model_error_status">Error</string>
+    <string name="model_loaded_ready">Model ready</string>
+    <string name="refresh">Refresh</string>
 </resources>

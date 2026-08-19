@@ -147,15 +147,15 @@ object TorManager {
 
     private fun findFreeSocksPort(): Int {
         for (port in DEFAULT_SOCKS_PORT..(DEFAULT_SOCKS_PORT + 10)) {
-            try {
+            val inUse = try {
                 Socket().use { socket ->
                     socket.connect(InetSocketAddress("127.0.0.1", port), 120)
-                    // A successful connect means another process owns the port.
-                    continue
+                    true
                 }
             } catch (_: Exception) {
-                return port
+                false
             }
+            if (!inUse) return port
         }
         return DEFAULT_SOCKS_PORT
     }

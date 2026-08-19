@@ -100,7 +100,9 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                 Button(
                     onClick = {
                         if (page == 2 && selectedLanguage != LanguageManager.SYSTEM_DEFAULT) {
-                            LanguageManager(context).applyLanguage(context, selectedLanguage)
+                            (context as? android.app.Activity)?.let { activity ->
+                                LanguageManager(activity).applyLanguage(activity, selectedLanguage)
+                            }
                         }
                         next()
                     },

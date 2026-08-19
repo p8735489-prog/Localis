@@ -8,6 +8,7 @@ import com.localaisearch.data.repository.ConversationRepository
 import com.localaisearch.data.repository.MemoryRepository
 import com.localaisearch.data.repository.PrivacyManager
 import com.localaisearch.data.repository.SettingsRepository
+import com.localaisearch.data.model.formatBytes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

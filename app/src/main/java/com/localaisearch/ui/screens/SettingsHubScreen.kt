@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.localaisearch.R
 import com.localaisearch.data.repository.LanguageManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsHubScreen(
     onNavigateBack: () -> Unit, onNavigateToAI: () -> Unit, onNavigateToNetwork: () -> Unit,

@@ -77,7 +77,8 @@ fun SettingsPerformanceScreen(
                 }
             }
             item {
-                val hardware = remember { HardwareDetector.detectHardware(LocalContext.current) }
+                val context = LocalContext.current
+                val hardware = remember { HardwareDetector.detectHardware(context) }
                 val ramGb = hardware.totalRamBytes / (1024.0 * 1024.0 * 1024.0)
                 Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

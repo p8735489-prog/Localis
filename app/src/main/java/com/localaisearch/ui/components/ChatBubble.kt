@@ -25,9 +25,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.localaisearch.data.model.ChatMessage
 import com.localaisearch.data.model.MessageRole
+import com.localaisearch.data.model.hasCitations
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
+import com.localaisearch.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * Chat message bubble.
@@ -57,7 +60,7 @@ fun ChatBubble(
                 bottomEnd = if (isUser) 4.dp else 16.dp
             ),
             color = if (isUser) colorScheme.primaryContainer else colorScheme.surfaceContainer,
-            modifier = Modifier.widthIn(max = 320.dp)
+            modifier = Modifier.widthIn(max = 280.dp)
         ) {
             Column(
                 modifier = Modifier.padding(12.dp)
@@ -84,7 +87,7 @@ fun ChatBubble(
                 if (message.hasCitations) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Sources:",
+                        text = stringResource(R.string.sources_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold

@@ -1,0 +1,409 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Localis</string>
+
+    
+    <string name="back">返回</string>
+    <string name="cancel">取消</string>
+    <string name="save">儲存</string>
+    <string name="delete">刪除</string>
+    <string name="add">新增</string>
+    <string name="close">關閉</string>
+    <string name="ok">確定</string>
+
+    
+    <string name="home_title">Localis</string>
+    <string name="search_placeholder">隨便問點什麼...</string>
+    <string name="send">傳送</string>
+    <string name="searching">搜尋中</string>
+    <string name="done">完成</string>
+    <string name="local_ai_private">本地AI - 完全私密，本機執行</string>
+    <string name="local_ai_search_enabled">本地AI + 網路搜尋已啟用</string>
+    <string name="ask_anything">隨便問</string>
+    <string name="new_conversation">新對話</string>
+    <string name="internet_search_enabled">網路搜尋已啟用</string>
+    <string name="clear">清除</string>
+    <string name="privacy_mode_on">隱私模式開啟</string>
+    <string name="privacy_mode_off">隱私模式關閉</string>
+    <string name="privacy_mode_active">隱私模式已啟動</string>
+    <string name="privacy_session">隱私工作階段</string>
+    <string name="privacy_session_ended">隱私工作階段已結束</string>
+    <string name="privacy_session_ended_desc">隱私工作階段已結束。本次工作階段的所有暫存資料已清理。</string>
+    <string name="privacy_mode_desc">隱私模式 - 不會儲存任何資料</string>
+    <string name="privacy_mode_chip">隱私工作階段</string>
+
+    
+    <string name="nav_chat">對話</string>
+    <string name="nav_models">模型</string>
+    <string name="nav_tools">工具</string>
+    <string name="nav_me">我的</string>
+
+    
+    <string name="menu">選單</string>
+    <string name="history">歷史</string>
+    <string name="memory_center">記憶中心</string>
+    <string name="model_center">模型中心</string>
+    <string name="models">模型</string>
+    <string name="settings">設定</string>
+    <string name="cloud">雲端</string>
+
+    
+    <string name="auto_mode">Localis Auto</string>
+
+    
+    <string name="agent_thinking">正在分析問題...</string>
+    <string name="agent_searching">正在搜尋網路...</string>
+    <string name="agent_reading">正在閱讀資料...</string>
+    <string name="agent_analyzing">正在分析結果...</string>
+    <string name="agent_validating">正在驗證資訊...</string>
+    <string name="agent_answering">正在產生回答...</string>
+    <string name="agent_complete">已完成</string>
+    <string name="search_round">搜尋輪次 %1$d/%2$d</string>
+
+    
+    <string name="sources">來源 (%1$d)</string>
+    <string name="open_source">開源</string>
+    <string name="sources_label">來源：</string>
+
+    
+    <string name="model_manager">模型管理</string>
+    <string name="import_gguf">匯入GGUF模型</string>
+    <string name="only_gguf_supported">僅支援GGUF格式模型檔案。不支援ONNX、QNN、MLX格式。</string>
+    <string name="no_models">尚未匯入模型。\n點擊"匯入GGUF模型"開始使用。</string>
+    <string name="load">載入</string>
+    <string name="unload">卸載</string>
+    <string name="active">目前</string>
+    <string name="importing_model">正在匯入模型...</string>
+    <string name="loading_model">正在載入模型...</string>
+    <string name="model_ready">模型已載入並準備就緒。</string>
+    <string name="import_failed">匯入失敗：%1$s</string>
+    <string name="load_failed">載入失敗：%1$s</string>
+    <string name="size_label">大小：%1$s</string>
+    <string name="quantization_label">量化：%1$s</string>
+    <string name="imported">已匯入：%1$s</string>
+
+    
+    <string name="trending">熱門</string>
+    <string name="search_results">搜尋結果</string>
+    <string name="downloaded">已下載</string>
+    <string name="search_models_hint">搜尋模型（如 llama、qwen、phi）</string>
+    <string name="search">搜尋</string>
+    <string name="dismiss">關閉</string>
+    <string name="gguf_files">GGUF檔案</string>
+    <string name="no_gguf_files">此儲存庫中未找到 .gguf 檔案。</string>
+    <string name="loading_trending">正在載入熱門模型...</string>
+    <string name="search_to_start">搜尋GGUF模型以開始</string>
+    <string name="no_downloaded">尚未下載任何模型。\n從熱門或搜尋標籤頁搜尋並下載。</string>
+    <string name="downloads_count">%1$dk</string>
+    <string name="download">下載</string>
+    <string name="pause">暫停</string>
+    <string name="resume">繼續</string>
+    <string name="retry">重試</string>
+    <string name="downloaded_status">已下載</string>
+    <string name="error_status">錯誤</string>
+    <string name="hf_source">HF</string>
+    <string name="mirror_source">鏡像</string>
+    <string name="eta_format">預計剩餘：%1$s</string>
+
+    
+    <string name="search_engine">搜尋引擎</string>
+    <string name="search_provider">搜尋提供者</string>
+    <string name="api_url">API網址</string>
+    <string name="api_key">API金鑰</string>
+    <string name="search_language">搜尋語言</string>
+    <string name="search_region">搜尋區域</string>
+    <string name="max_results">最大結果數</string>
+    <string name="max_search_rounds">最大搜尋輪次</string>
+    <string name="safe_search">安全搜尋</string>
+    <string name="model_parameters">模型參數</string>
+    <string name="temperature">溫度</string>
+    <string name="top_p">Top-P</string>
+    <string name="top_k">Top-K</string>
+    <string name="context_length">上下文長度</string>
+    <string name="max_tokens">最大令牌數</string>
+    <string name="gpu_acceleration">GPU加速</string>
+    <string name="gpu_layers">GPU層數</string>
+    <string name="threads">執行緒數</string>
+    <string name="appearance">外觀</string>
+    <string name="dark_mode">深色模式</string>
+    <string name="dynamic_color">動態顏色（Monet）</string>
+    <string name="privacy_data">隱私與資料</string>
+    <string name="enable_internet_search">啟用網路搜尋</string>
+    <string name="privacy_warning">警告：啟用後，搜尋查詢將傳送到設定的搜尋API。GGUF推論仍然完全在本機執行。</string>
+    <string name="privacy_default">GGUF模型完全在本機執行。不上傳任何資料。僅在需要即時資訊時啟用網路搜尋。</string>
+    <string name="data_security">資料與安全</string>
+    <string name="data_security_desc">隱私模式、記憶系統、刪除資料</string>
+    <string name="general_settings">一般設定</string>
+    <string name="language">語言</string>
+    <string name="language_desc">介面語言和RTL支援</string>
+    <string name="animation">動畫</string>
+    <string name="animation_level">動畫等級</string>
+    <string name="animation_desc">視覺效果和動作強度</string>
+
+    
+    <string name="privacy_session_title">隱私工作階段</string>
+    <string name="privacy_mode">隱私模式</string>
+    <string name="privacy_on_warning">隱私模式已開啟。對話、搜尋歷史和圖片快取不會被儲存。記憶生成已停用。</string>
+    <string name="privacy_off_info">隱私模式已關閉。正常資料持久化已啟動。在進行敏感查詢前啟用隱私模式。</string>
+    <string name="memory_system">記憶系統</string>
+    <string name="enable_memory">啟用記憶系統</string>
+    <string name="memory_desc">啟用後，AI會記住您對話中的重要事實和偏好，以提供更個人化的回答。隱私模式啟動時記憶自動停用。</string>
+    <string name="storage_usage">儲存空間使用</string>
+    <string name="conversations">對話</string>
+    <string name="memories">記憶</string>
+    <string name="image_cache">圖片快取</string>
+    <string name="estimated_total">預估總計</string>
+    <string name="data_management">資料管理</string>
+    <string name="delete_all_conversations">刪除所有對話</string>
+    <string name="delete_all_memories">刪除所有記憶</string>
+    <string name="clear_image_cache">清除圖片快取</string>
+    <string name="danger_zone">危險區域</string>
+    <string name="delete_all_local_data">刪除所有本地資料</string>
+    <string name="delete_conversations_confirm">這將永久刪除所有對話歷史。此操作不可撤銷。</string>
+    <string name="delete_memories_confirm">這將永久刪除所有儲存的記憶和偏好。AI將不再記住過去的上下文。此操作不可撤銷。</string>
+    <string name="clear_cache_confirm">這將刪除所有快取圖片。如有需要將重新下載。此操作不可撤銷。</string>
+    <string name="delete_all_confirm">這是一個不可逆的操作。所有對話、記憶、設定和快取資料將被永久刪除。</string>
+    <string name="delete_confirm_hint">請在下方輸入"DELETE"確認：</string>
+    <string name="nuclear_delete">徹底刪除</string>
+    <string name="delete_all">全部刪除</string>
+    <string name="clear_all">全部清除</string>
+    <string name="clear_cache">清除快取</string>
+
+    
+    <string name="conversations_title">對話</string>
+    <string name="new_chat">新對話</string>
+    <string name="clear_all_history">清除所有歷史？</string>
+    <string name="clear_history_confirm">這將永久刪除所有對話歷史。此操作不可撤銷。</string>
+    <string name="clear_all_history_action">全部清除</string>
+    <string name="rename_conversation">重新命名對話</string>
+    <string name="title">標題</string>
+    <string name="delete_conversation">刪除對話？</string>
+    <string name="delete_conversation_confirm">確定要刪除"%1$s"嗎？此操作不可撤銷。</string>
+    <string name="export_conversation">匯出對話</string>
+    <string name="export_success">對話匯出成功。JSON資料已產生，可以分享或儲存到外部。</string>
+    <string name="export_failed">匯出對話失敗。</string>
+    <string name="search_conversations">搜尋對話...</string>
+    <string name="no_conversations">暫無對話</string>
+    <string name="start_chat_hint">開始新對話</string>
+
+    
+    <string name="memory_center_title">記憶中心</string>
+    <string name="search_memories">搜尋記憶...</string>
+    <string name="no_memories">暫無記憶</string>
+    <string name="memory_hint">AI會記住您對話中的重要事實和偏好</string>
+    <string name="add_memory">新增記憶</string>
+    <string name="content">內容</string>
+    <string name="topic">主題</string>
+    <string name="edit_memory">編輯記憶</string>
+    <string name="delete_memory">刪除記憶？</string>
+    <string name="delete_memory_confirm">此記憶將被永久刪除。此操作不可撤銷。</string>
+    <string name="clear_all_memories">清除所有記憶？</string>
+    <string name="clear_memories_confirm">這將永久刪除所有儲存的記憶和偏好。AI將不再記住過去的上下文。此操作不可撤銷。</string>
+    <string name="clear_all_memories_action">全部清除</string>
+    <string name="source">來源：%1$s...</string>
+
+    
+    <string name="language_settings">語言設定</string>
+    <string name="system_default">系統預設</string>
+    <string name="restart_required">需要重新啟動</string>
+    <string name="restart_message">請重新啟動應用程式以使語言變更完全生效。</string>
+    <string name="language_english">English</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="language_traditional_chinese">繁體中文</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_japanese">日本語</string>
+    <string name="language_arabic">العربية</string>
+
+    
+    <string name="user">您</string>
+    <string name="assistant">AI助手</string>
+    <string name="streaming">...</string>
+
+    
+    <string name="error_generic">發生錯誤</string>
+    <string name="error_network">網路錯誤。請檢查您的網路連線。</string>
+    <string name="error_model_load">模型載入失敗</string>
+    <string name="error_search">搜尋失敗</string>
+
+    
+    <string name="version">版本</string>
+    <string name="about">關於</string>
+    <string name="unknown">未知</string>
+
+    
+    <string name="load_model">載入模型</string>
+    <string name="select_model">選擇模型</string>
+    <string name="reload">重新載入</string>
+    <string name="no_model_loaded">未載入模型</string>
+    <string name="loading_named_model">正在載入 %1$s...</string>
+    <string name="model_error">模型錯誤</string>
+    <string name="model_card_info">大小: %1$s  量化: %2$s</string>
+    <string name="pinned">已置頂</string>
+    <string name="rename">重新命名</string>
+    <string name="pin">置頂</string>
+    <string name="unpin">取消置頂</string>
+    <string name="export">匯出</string>
+    <string name="message_count_single">%1$d 則訊息</string>
+    <string name="message_count_plural">%1$d 則訊息</string>
+
+    
+    <string name="inference_parameters">推論參數</string>
+    <string name="hardware">硬體</string>
+    <string name="ai_and_models">AI 與模型</string>
+    <string name="network_and_search">網路與搜尋</string>
+    <string name="search_options">搜尋選項</string>
+    <string name="theme">主題</string>
+    <string name="ai_core">AI 核心</string>
+    <string name="local_ai_search">Local AI Search</string>
+    <string name="community">社群</string>
+    <string name="legal">法律資訊</string>
+    <string name="downloads_count_label">%1$s 次下載</string>
+    <string name="likes_count_label">%1$s 個讚</string>
+    <string name="gguf_tag">GGUF</string>
+    <string name="privacy_policy_full">隱私政策：所有 AI 推論均在您的裝置上本機執行。除非您明確啟用網路搜尋，否則不會向外部伺服器傳送任何資料。</string>
+    <string name="version_format">版本 %1$s</string>
+
+    
+    <string name="drawer_title">Localis</string>
+    <string name="app_tagline">本機 AI，私密而強大</string>
+    <string name="open_menu">開啟選單</string>
+    <string name="privacy_on">隱私模式開啟</string>
+    <string name="privacy_off">隱私模式關閉</string>
+    <string name="more_options">更多選項</string>
+    <string name="private_mode_active_no_data">隱私模式已啟動 - 不儲存任何資料</string>
+    <string name="local_ai_realtime_search">本機 AI + 即時搜尋</string>
+    <string name="ai_on_device">您的 AI 完全在裝置上執行</string>
+
+    
+    <string name="delete_all_conversations_title">刪除所有對話？</string>
+    <string name="delete_all_memories_title">刪除所有記憶？</string>
+    <string name="clear_image_cache_title">清除圖片快取？</string>
+    <string name="delete_all_local_data_title">刪除所有本機資料？</string>
+
+    
+    <string name="clear_all_history_desc">清除所有歷史</string>
+    <string name="clear_all_memories_desc">清除所有記憶</string>
+    <string name="add_memory_desc">新增記憶</string>
+
+    
+    <string name="language_portuguese">Português (Brasil)</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Deutsch</string>
+<string name="settings_search">Search settings</string><string name="settings_general">General</string><string name="settings_ai">AI</string><string name="settings_network">Network</string><string name="settings_privacy">Privacy</string><string name="settings_appearance_group">Appearance</string><string name="settings_data">Data</string><string name="settings_about">About</string><string name="settings_language">Language</string><string name="settings_language_desc">Interface language and layout</string><string name="settings_data_security">Data &amp; Security</string><string name="settings_data_security_desc">Privacy and local data controls</string><string name="settings_ai_models">AI &amp; Models</string><string name="settings_ai_models_desc">Models and inference parameters</string><string name="settings_chat">Chat</string><string name="settings_chat_desc">Chat behavior and response display</string><string name="settings_performance">Performance</string><string name="settings_performance_desc">Acceleration, threads and memory</string><string name="settings_network_search">Network &amp; Search</string><string name="settings_network_search_desc">Search engine and internet search</string><string name="settings_privacy_security">Privacy &amp; Security</string><string name="settings_privacy_security_desc">Privacy mode and data protection</string><string name="settings_appearance">Appearance</string><string name="settings_appearance_desc">Theme, colors, glass and animation</string><string name="settings_data_desc">Chat history, import/export and local data</string><string name="settings_about_desc">Version, open source and licenses</string><string name="language_system">System default</string><string name="language_restart_message">The app will restart to apply the new language.</string><string name="appearance_theme">Theme</string><string name="appearance_dark_mode">Dark mode</string><string name="appearance_system">System default</string><string name="appearance_light">Light</string><string name="appearance_dark">Dark</string><string name="appearance_dynamic_color">Dynamic color</string><string name="appearance_dynamic_color_desc">Use Android Monet colors when available</string><string name="appearance_ai_core">AI Core</string><string name="appearance_animation_level">Animation level</string><string name="appearance_animation_desc">Visual effects and motion intensity</string><string name="appearance_animation_off">Off</string><string name="appearance_animation_low">Low</string><string name="appearance_animation_standard">Standard</string><string name="appearance_animation_high">High</string>
+    <string name="settings_search_engine">搜尋引擎</string>
+    <string name="settings_search_provider">搜尋服務</string>
+    <string name="settings_api_url">API 位址</string>
+    <string name="settings_api_url_placeholder">https://your-searxng-instance.com</string>
+    <string name="settings_api_key">API 金鑰</string>
+    <string name="settings_api_key_placeholder">如有需要請輸入 API 金鑰</string>
+    <string name="settings_search_language">搜尋語言</string>
+    <string name="settings_search_region">搜尋地區</string>
+    <string name="settings_max_results">最大結果數</string>
+    <string name="settings_max_rounds">最大搜尋輪數</string>
+    <string name="settings_safe_search">安全搜尋</string>
+    <string name="settings_model_parameters">模型參數</string>
+    <string name="settings_temperature">温度</string>
+    <string name="settings_top_p">Top-P</string>
+    <string name="settings_top_k">Top-K</string>
+    <string name="settings_context_length">內容長度</string>
+    <string name="settings_max_tokens">最大 Token 數</string>
+    <string name="settings_gpu_acceleration">GPU 加速</string>
+    <string name="settings_gpu_layers">GPU 層數</string>
+    <string name="settings_threads">執行緒數</string>
+    <string name="settings_appearance_section">外觀</string>
+    <string name="settings_privacy_data">隱私與資料</string>
+    <string name="settings_enable_internet_search">啟用網路搜尋</string>
+    <string name="settings_search_warning">开启后，搜索请求会发送到所配置的搜索 API；GGUF 推理仍完全在设备本地运行。</string>
+    <string name="settings_gguf_privacy_note">GGUF 模型完全在设备本地运行，不会上传数据。只有需要实时信息时才建议开启联网搜索。</string>
+    <string name="settings_data_security_desc_short">隱私模式、記憶系統與資料刪除</string>
+    <string name="language_search">搜尋語言</string>
+    <string name="appearance_forced_font">強制使用 Google Sans + 思源黑體</string>
+    <string name="appearance_forced_font_desc">優先使用內建 Google Sans CN Flex，中文使用 CJK 字形回退；關閉後跟隨系統字型。</string>
+    <string name="appearance_monet">Monet 動態取色</string>
+    <string name="appearance_monet_desc">在支援的 Android 裝置上從桌布產生系統配色</string>
+    <string name="appearance_presets">Monet 風格配色預設</string>
+    <string name="appearance_presets_desc">關閉 Monet 後可選擇固定主題色</string>
+    <string name="appearance_blue">藍色</string>
+    <string name="appearance_red">紅色</string>
+    <string name="appearance_yellow">黃色</string>
+    <string name="appearance_green">綠色</string>
+
+    <string name="settings_inference_parameters">推理参数</string>
+    <string name="settings_hardware">硬件</string>
+    <string name="settings_message_display">消息显示</string>
+    <string name="settings_auto_scroll">自动滚动到新消息</string>
+    <string name="settings_markdown">显示 Markdown 格式</string>
+    <string name="settings_code_highlighting">显示代码高亮</string>
+    <string name="settings_behavior">行为</string>
+    <string name="settings_enter_sends">回车发送消息</string>
+    <string name="settings_auto_copy">自动复制最后一条回复</string>
+    <string name="settings_hardware_acceleration">硬件加速</string>
+    <string name="settings_optimization">优化</string>
+    <string name="settings_memory_optimization">内存优化</string>
+    <string name="settings_background_inference">后台推理</string>
+    <string name="settings_temperature_protection">温度保护</string>
+    <string name="settings_privacy_mode">隐私模式</string>
+    <string name="settings_privacy_conversation">隐私对话</string>
+    <string name="settings_data_management">数据管理</string>
+    <string name="settings_chat_history">聊天记录</string>
+    <string name="settings_import_history">导入聊天记录</string>
+    <string name="settings_export_history">导出聊天记录</string>
+    <string name="settings_clear_history">清空所有聊天记录</string>
+    <string name="settings_cache">缓存</string>
+    <string name="settings_clear_cache">清除缓存</string>
+    <string name="settings_danger_zone">危险操作</string>
+    <string name="settings_reset_data">重置所有应用数据</string>
+    <string name="settings_clear_history_q">清空聊天记录？</string>
+    <string name="settings_clear_history_desc">这将永久删除所有聊天记录，且无法撤销。</string>
+    <string name="settings_clear">清空</string>
+    <string name="settings_clear_cache_q">清除缓存？</string>
+    <string name="settings_clear_cache_desc">这将清除所有缓存数据，包括临时文件。</string>
+    <string name="settings_reset_q">重置应用？</string>
+    <string name="settings_reset_desc">这将重置所有设置并删除所有数据，应用随后会重新启动。</string>
+    <string name="settings_reset">重置</string>
+    <string name="settings_model_center">模型中心</string>
+    <string name="settings_model_source">模型数据源</string>
+    <string name="optional">可选</string>
+    <string name="settings_tor_routing">Tor / 私密路由</string>
+    <string name="settings_custom_bridges">自定义 Bridge 地址</string>
+    <string name="settings_bridge_placeholder">可选 • 每行填写一个 Bridge</string>
+    <string name="settings_tor_official">Tor Project 官方网站</string>
+    <string name="settings_manual_proxy">手动代理</string>
+    <string name="settings_proxy_type">代理类型</string>
+    <string name="settings_proxy_host">代理主机</string>
+    <string name="settings_proxy_port">代理端口</string>
+    <string name="settings_tor_active_note">Tor 路由已启用。关闭 Tor 前，手动代理路由会暂时被忽略。</string>
+    <string name="settings_privacy_mode_desc">開啟後不會儲存聊天記錄，所有資料均為暫存資料。</string>
+
+    <string name="settings_model_source_desc">选择模型中心使用的 API 与下载源。如果一个来源超时或返回空列表，会自动尝试另一个来源。</string>
+    <string name="settings_current_source">当前来源</string>
+    <string name="settings_hf_mirror">国内镜像 · hf-mirror.com</string>
+    <string name="settings_hf_official">Hugging Face 官方源</string>
+    <string name="settings_model_source_note">提示：国内镜像并非 Hugging Face 官方服务；当某个来源无法刷新时，自动回退可避免模型列表为空。</string>
+    <string name="settings_tor_route_title">通过 Tor 路由网络请求</string>
+    <string name="settings_tor_route_desc">使用设备内置的 Tor SOCKS 代理</string>
+    <string name="settings_bridge_note">Bridge 为可选配置。Bridge 地址由你自行提供，应用不会生成或硬编码 Bridge 凭据。obfs4 等可插拔传输可能还需要兼容的传输组件。</string>
+    <string name="settings_use_saved_bridges">使用已保存的自定义 Bridge</string>
+    <string name="settings_add_bridges_first">请先在上方添加 Bridge 地址</string>
+    <string name="settings_bridge_saved_note">你的 Bridge 配置将写入 Tor 配置</string>
+    <string name="settings_use_app_proxy">使用应用代理</string>
+    <string name="settings_app_proxy_desc">为应用网络请求使用 HTTP 或 SOCKS 代理</string>
+
+    <string name="no_results">找不到結果</string>
+    <string name="about_heading">關於</string>
+    <string name="about_info">資訊</string>
+    <string name="about_author">作者</string>
+    <string name="about_author_desc">Shirakawa · 獨立開發者</string>
+    <string name="about_version">版本</string>
+    <string name="about_open_source">開源</string>
+    <string name="about_source">專案原始碼</string>
+    <string name="about_tor">Tor 支援</string>
+    <string name="about_tor_desc">基於 Guardian Project 的 tor-android。可在網路設定中設定 Tor 路由。</string>
+    <string name="about_privacy">隱私</string>
+    <string name="about_privacy_desc">本機 GGUF 推理預設在裝置上執行。只有啟用網路搜尋或網路路由後，相關網路請求才會離開裝置。</string>
+
+    <string name="settings_tor_connecting">正在連接 Tor…</string>
+    <string name="settings_tor_connected">Tor 已連接</string>
+    <string name="settings_tor_failed">Tor 連接失敗</string>
+</resources>

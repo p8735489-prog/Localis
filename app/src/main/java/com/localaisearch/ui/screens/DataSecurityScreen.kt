@@ -17,13 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -52,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.res.stringResource
+import com.localaisearch.R
 import com.localaisearch.ui.animation.SpringSpecs
 import com.localaisearch.ui.viewmodel.DataSecurityViewModel
 
@@ -90,12 +91,12 @@ fun DataSecurityScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Data & Security") },
+                title = { Text(stringResource(R.string.data_security)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -115,9 +116,9 @@ fun DataSecurityScreen(
         ) {
             // ── Privacy Session Section ──
             item {
-                SectionCard(title = "Privacy Session", icon = Icons.Filled.Security) {
+                SectionCard(title = stringResource(R.string.privacy_session_title), icon = Icons.Filled.Lock) {
                     SwitchRow(
-                        label = "Privacy Mode",
+                        label = stringResource(R.string.privacy_mode),
                         checked = isPrivacyMode,
                         onCheckedChange = { viewModel.togglePrivacyMode() }
                     )
@@ -130,8 +131,7 @@ fun DataSecurityScreen(
                         Column {
                             Spacer(modifier = Modifier.height(8.dp))
                             WarningRow(
-                                text = "Privacy mode is ON. Conversations, search history, " +
-                                    "and image cache will NOT be saved. Memory generation is disabled."
+                                text = stringResource(R.string.privacy_on_warning)
                             )
                         }
                     }
@@ -144,8 +144,7 @@ fun DataSecurityScreen(
                         Column {
                             Spacer(modifier = Modifier.height(8.dp))
                             InfoRow(
-                                text = "Privacy mode is OFF. Normal data persistence is active. " +
-                                    "Enable privacy mode before sensitive queries."
+                                text = stringResource(R.string.privacy_off_info)
                             )
                         }
                     }
@@ -154,27 +153,25 @@ fun DataSecurityScreen(
 
             // ── Memory System Section ──
             item {
-                SectionCard(title = "Memory System", icon = Icons.Filled.Memory) {
+                SectionCard(title = stringResource(R.string.memory_system), icon = Icons.Filled.Save) {
                     SwitchRow(
-                        label = "Enable Memory System",
+                        label = stringResource(R.string.enable_memory),
                         checked = isMemoryEnabled,
                         onCheckedChange = { viewModel.setMemoryEnabled(it) }
                     )
 
                     InfoRow(
-                        text = "When enabled, the AI remembers facts and preferences from your " +
-                            "conversations to provide more personalized responses. " +
-                            "Memory is automatically disabled when Privacy Mode is active."
+                        text = stringResource(R.string.memory_desc)
                     )
                 }
             }
 
             // ── Storage Statistics ──
             item {
-                SectionCard(title = "Storage Usage", icon = Icons.Filled.Storage) {
-                    StorageStatRow(label = "Conversations", value = storageStats.conversationsCount)
-                    StorageStatRow(label = "Memories", value = storageStats.memoriesCount)
-                    StorageStatRow(label = "Image Cache", value = storageStats.imageCacheSize)
+                SectionCard(title = stringResource(R.string.storage_usage), icon = Icons.Filled.Save) {
+                    StorageStatRow(label = stringResource(R.string.conversations), value = storageStats.conversationsCount)
+                    StorageStatRow(label = stringResource(R.string.memories), value = storageStats.memoriesCount)
+                    StorageStatRow(label = stringResource(R.string.image_cache), value = storageStats.imageCacheSize)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -182,7 +179,7 @@ fun DataSecurityScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Estimated Total",
+                            text = stringResource(R.string.estimated_total),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = colorScheme.onSurface
@@ -199,19 +196,19 @@ fun DataSecurityScreen(
 
             // ── Data Management Section ──
             item {
-                SectionCard(title = "Data Management", icon = Icons.Filled.DeleteForever) {
+                SectionCard(title = stringResource(R.string.data_management), icon = Icons.Filled.Delete) {
                     OutlinedButton(
                         onClick = { showDeleteConversationsDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.LockOpen,
+                            imageVector = Icons.Filled.Lock,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Delete All Conversations")
+                        Text(stringResource(R.string.delete_all_conversations))
                     }
 
                     OutlinedButton(
@@ -220,12 +217,12 @@ fun DataSecurityScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Memory,
+                            imageVector = Icons.Filled.Save,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Delete All Memories")
+                        Text(stringResource(R.string.delete_all_memories))
                     }
 
                     OutlinedButton(
@@ -234,12 +231,12 @@ fun DataSecurityScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.AutoAwesome,
+                            imageVector = Icons.Filled.Star,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Clear Image Cache")
+                        Text(stringResource(R.string.clear_image_cache))
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -262,7 +259,7 @@ fun DataSecurityScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "Danger Zone",
+                                    text = stringResource(R.string.danger_zone),
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = colorScheme.error
@@ -275,13 +272,13 @@ fun DataSecurityScreen(
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.DeleteForever,
+                                    imageVector = Icons.Filled.Delete,
                                     contentDescription = null,
                                     tint = colorScheme.error,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Delete All Local Data", color = colorScheme.error)
+                                Text(stringResource(R.string.delete_all_local_data), color = colorScheme.error)
                             }
                         }
                     }
@@ -301,11 +298,10 @@ fun DataSecurityScreen(
                     tint = colorScheme.error
                 )
             },
-            title = { Text("Delete All Conversations?") },
+            title = { Text(stringResource(R.string.delete_all_conversations_title)) },
             text = {
                 Text(
-                    "This will permanently delete all conversation history. " +
-                        "This action cannot be undone."
+                    stringResource(R.string.delete_conversations_confirm)
                 )
             },
             confirmButton = {
@@ -315,12 +311,12 @@ fun DataSecurityScreen(
                         showDeleteConversationsDialog = false
                     }
                 ) {
-                    Text("Delete All", color = colorScheme.error)
+                    Text(stringResource(R.string.delete_all), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConversationsDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -337,11 +333,10 @@ fun DataSecurityScreen(
                     tint = colorScheme.error
                 )
             },
-            title = { Text("Delete All Memories?") },
+            title = { Text(stringResource(R.string.delete_all_memories_title)) },
             text = {
                 Text(
-                    "This will permanently delete all stored memories and preferences. " +
-                        "The AI will no longer remember past context. This action cannot be undone."
+                    stringResource(R.string.delete_memories_confirm)
                 )
             },
             confirmButton = {
@@ -351,12 +346,12 @@ fun DataSecurityScreen(
                         showDeleteMemoriesDialog = false
                     }
                 ) {
-                    Text("Delete All", color = colorScheme.error)
+                    Text(stringResource(R.string.delete_all), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteMemoriesDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -366,11 +361,10 @@ fun DataSecurityScreen(
     if (showClearCacheDialog) {
         AlertDialog(
             onDismissRequest = { showClearCacheDialog = false },
-            title = { Text("Clear Image Cache?") },
+            title = { Text(stringResource(R.string.clear_image_cache_title)) },
             text = {
                 Text(
-                    "This will remove all cached images. They will be re-downloaded " +
-                        "if needed. This action cannot be undone."
+                    stringResource(R.string.clear_cache_confirm)
                 )
             },
             confirmButton = {
@@ -380,12 +374,12 @@ fun DataSecurityScreen(
                         showClearCacheDialog = false
                     }
                 ) {
-                    Text("Clear Cache", color = colorScheme.error)
+                    Text(stringResource(R.string.clear_cache), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearCacheDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -402,17 +396,16 @@ fun DataSecurityScreen(
                     tint = colorScheme.error
                 )
             },
-            title = { Text("Delete ALL Local Data?") },
+            title = { Text(stringResource(R.string.delete_all_local_data_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "This is an irreversible action. ALL conversations, memories, " +
-                            "settings, and cached data will be permanently erased.",
+                        stringResource(R.string.delete_all_confirm),
                         fontWeight = FontWeight.Bold,
                         color = colorScheme.error
                     )
                     Text(
-                        "Type \"DELETE\" below to confirm:",
+                        stringResource(R.string.delete_confirm_hint),
                         style = MaterialTheme.typography.bodySmall
                     )
                     androidx.compose.material3.TextField(
@@ -432,7 +425,7 @@ fun DataSecurityScreen(
                     },
                     enabled = showDeleteAllConfirmText == "DELETE"
                 ) {
-                    Text("Nuclear Delete", color = colorScheme.error)
+                    Text(stringResource(R.string.nuclear_delete), color = colorScheme.error)
                 }
             },
             dismissButton = {
@@ -442,7 +435,7 @@ fun DataSecurityScreen(
                         showDeleteAllConfirmText = ""
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -494,26 +487,6 @@ private fun SectionCard(
 }
 
 @Composable
-private fun SwitchRow(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
 private fun WarningRow(text: String) {
     Surface(
         shape = RoundedCornerShape(10.dp),
@@ -553,7 +526,7 @@ private fun InfoRow(text: String) {
             verticalAlignment = Alignment.Top
         ) {
             Icon(
-                imageVector = Icons.Filled.AutoAwesome,
+                imageVector = Icons.Filled.Star,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(18.dp)

@@ -47,15 +47,17 @@ data class SearchSession(
     val rounds: List<SearchRound> = emptyList(),
     val allResults: List<SearchResult> = emptyList()
 ) {
-    val totalResults: Int get() = allResults.size
-    val totalRounds: Int get() = rounds.size
-
     fun addRound(round: SearchRound): SearchSession {
         val newRounds = rounds + round
         val deduped = deduplicateSearchResults(newRounds.flatMap { it.results })
         return copy(rounds = newRounds, allResults = deduped)
     }
 }
+
+/** Total number of results in a SearchSession. */
+val SearchSession.totalResults: Int get() = allResults.size
+/** Total number of rounds in a SearchSession. */
+val SearchSession.totalRounds: Int get() = rounds.size
 
 /**
  * Removes duplicate [SearchResult]s based on URL (case-insensitive, trailing slash normalized).

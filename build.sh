@@ -65,6 +65,9 @@ echo "Building Release APK..."
 ./gradlew assembleRelease --no-daemon
 
 APK="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
+if [ ! -f "$APK" ]; then
+    APK="$PROJECT_DIR/app/build/outputs/apk/release/app-release-unsigned.apk"
+fi
 if [ -f "$APK" ]; then
     echo ""
     echo "SUCCESS!"

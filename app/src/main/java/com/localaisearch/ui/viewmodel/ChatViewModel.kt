@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.agent.AgentCallback
 import com.localaisearch.data.agent.AgentEngine
-import com.localaisearch.data.llm.GGUFEngine
+import com.localaisearch.data.llm.LLMProviderFactory
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.AgentStatus
 import com.localaisearch.data.model.AgentStatusIdle
@@ -53,7 +53,7 @@ class ChatViewModel(
 ) : AndroidViewModel(application) {
 
     private val settingsRepo = SettingsRepository(application)
-    private val llmEngine: LLMEngine = GGUFEngine()
+    private val llmEngine: LLMEngine = LLMProviderFactory.createEngine(application)
     private val searchRepo = SearchRepository()
     val modelRepo = ModelRepository(application, llmEngine)
 
@@ -67,6 +67,8 @@ class ChatViewModel(
     private var agentEngine: AgentEngine? = null
     private var currentJob: Job? = null
     private var lastModelActivityTime: Long = System.currentTimeMillis()
+    private var _lastSaveTime: Long = 0L
+    private var _lastSavedContentHash: Int = 0
 
     // -- UI State --
 
@@ -91,6 +93,15 @@ class ChatViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _modelLoaded = MutableStateFlow(llmEngine.isLoaded)
+    val modelLoaded: StateFlow<Boolean> = _modelLoaded.asStateFlow()
+
+    private val _loadedModelName = MutableStateFlow(llmEngine.loadedModelName ?: "")
+    val loadedModelName: StateFlow<String> = _loadedModelName.asStateFlow()
+
+    private val _defaultSystemPrompt = MutableStateFlow("general")
+    val defaultSystemPrompt: StateFlow<String> = _defaultSystemPrompt.asStateFlow()
+
     private val _internetSearchEnabled = MutableStateFlow(false)
     val internetSearchEnabled: StateFlow<Boolean> = _internetSearchEnabled.asStateFlow()
 
@@ -112,6 +123,16 @@ class ChatViewModel(
     init {
         viewModelScope.launch {
             _internetSearchEnabled.value = settingsRepo.internetSearchEnabled.first()
+            _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
+        }
+        // Model loading is performed by the model screen's ViewModel, but the engine is shared.
+        // Poll only this tiny state so Home reflects load/unload without recreating the engine.
+        viewModelScope.launch {
+            while (true) {
+                _modelLoaded.value = llmEngine.isLoaded
+                _loadedModelName.value = llmEngine.loadedModelName ?: ""
+                kotlinx.coroutines.delay(400)
+            }
         }
     }
 
@@ -124,6 +145,19 @@ class ChatViewModel(
      * - Context optimization: summarize old messages if near token limit
      * - Auto-save: persist conversation after completion (non-privacy)
      */
+    fun setDefaultSystemPrompt(promptId: String) {
+        _defaultSystemPrompt.value = promptId
+        viewModelScope.launch { settingsRepo.setDefaultSystemPrompt(promptId) }
+    }
+
+    fun getSystemPromptText(): String = when (_defaultSystemPrompt.value) {
+        "concise" -> "你是一名简洁高效的 AI 助手。优先直接回答问题，避免无关铺垫；信息不足时明确说明。"
+        "precise" -> "你是一名严谨的 AI 助手。区分事实、推测和不确定信息；不要编造不存在的内容。"
+        "coding" -> "你是一名专业编程助手。优先给出可执行、可靠的解决方案；代码应清晰、完整，并解释关键修改。"
+        "chinese" -> "你是一名中文 AI 助手。默认使用自然、准确、易懂的简体中文回答；遇到专业术语时保留必要英文。"
+        else -> "你是一名友好、可靠、通用的 AI 助手。请准确理解用户意图，并给出有帮助、清晰的回答。"
+    }
+
     fun sendQuery(query: String) {
         if (query.isBlank() || _isProcessing.value) return
         if (!llmEngine.isLoaded) {
@@ -152,7 +186,7 @@ class ChatViewModel(
         )
         _conversation.value = _conversation.value.addMessage(assistantMessage)
 
-        viewModelScope.launch {
+        currentJob = viewModelScope.launch {
             try {
                 val inferenceConfig = settingsRepo.inferenceConfig.first()
                 val searchConfig = settingsRepo.searchConfig.first()
@@ -235,14 +269,15 @@ class ChatViewModel(
                     }
                 }
 
-                agentEngine!!.setCallback(callback)
+                agentEngine?.setCallback(callback)
 
-                agentEngine!!.execute(
+                agentEngine?.execute(
                     query = query,
                     config = inferenceConfig,
                     enableSearch = enableSearch,
-                    conversationHistory = history
-                ).collect { token ->
+                    conversationHistory = history,
+                    systemPrompt = getSystemPromptText()
+                )?.collect { token ->
                     // Tokens are handled by callback
                 }
 
@@ -261,6 +296,7 @@ class ChatViewModel(
             } finally {
                 _isProcessing.value = false
                 _agentStatus.value = AgentStatusIdle
+                currentJob = null
             }
         }
     }
@@ -330,13 +366,29 @@ class ChatViewModel(
 
     /**
      * Auto-save conversation and extract memories after a successful response.
-     * Skipped entirely in privacy mode.
+     * Skipped entirely in privacy mode. Prevents duplicate saves within a short window.
      */
     private suspend fun autoSaveAndExtractMemories(userQuery: String) {
         if (!privacyManager.canSaveConversation()) return
 
-        // Auto-save conversation
         val currentConv = _conversation.value
+        val now = System.currentTimeMillis()
+        val minIntervalMs = 5000L // 5 seconds minimum between saves
+
+        // Compute a simple content hash from the last message to detect duplicate saves
+        val lastMessageContent = currentConv.messages.lastOrNull()?.content ?: ""
+        val contentHash = lastMessageContent.hashCode()
+
+        // Skip if saved recently with the same content
+        if (now - _lastSaveTime < minIntervalMs && contentHash == _lastSavedContentHash) {
+            return
+        }
+
+        // Update save tracking
+        _lastSaveTime = now
+        _lastSavedContentHash = contentHash
+
+        // Auto-save conversation
         conversationRepo.saveConversation(currentConv)
 
         // Extract and save memories if memory system is enabled
@@ -357,7 +409,9 @@ class ChatViewModel(
      */
     fun cancel() {
         currentJob?.cancel()
-        agentEngine?.cancel()
+        viewModelScope.launch {
+            agentEngine?.cancel()
+        }
         _isProcessing.value = false
         _agentStatus.value = AgentStatusIdle
         updateLastMessage { it.copy(isStreaming = false) }
@@ -412,7 +466,9 @@ class ChatViewModel(
      */
     fun newConversation() {
         currentJob?.cancel()
-        agentEngine?.cancel()
+        viewModelScope.launch {
+            agentEngine?.cancel()
+        }
 
         // Save current conversation if not in privacy mode and has messages
         val currentConv = _conversation.value
@@ -443,7 +499,9 @@ class ChatViewModel(
             val conv = conversationRepo.getConversation(conversationId)
             if (conv != null) {
                 currentJob?.cancel()
-                agentEngine?.cancel()
+                agentEngine?.let { 
+                    viewModelScope.launch { it.cancel() }
+                }
                 _conversation.value = conv
                 _currentAnswer.value = ""
                 _citations.value = emptyList()
@@ -477,21 +535,23 @@ class ChatViewModel(
     }
 
     private fun updateLastMessage(transform: (ChatMessage) -> ChatMessage) {
+        val messages = _conversation.value.messages
+        if (messages.isEmpty()) return
         _conversation.value = _conversation.value.updateLastMessage(
-            transform(_conversation.value.messages.last())
+            transform(messages.last())
         )
     }
 
     override fun onCleared() {
         super.onCleared()
-        // Save current conversation if not in privacy mode
+        // Save current conversation asynchronously if not in privacy mode
         val currentConv = _conversation.value
         if (privacyManager.canSaveConversation() && currentConv.messages.isNotEmpty()) {
-            // Use a blocking scope to ensure save completes
-            kotlinx.coroutines.runBlocking {
+            viewModelScope.launch {
                 conversationRepo.saveConversation(currentConv)
             }
         }
-        llmEngine.release()
+        // The local GGUF engine is app-scoped and shared with model management.
+        // Do not release it from this ViewModel lifecycle.
     }
 }

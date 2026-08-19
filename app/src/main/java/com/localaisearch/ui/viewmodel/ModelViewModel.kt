@@ -22,7 +22,10 @@ class ModelViewModel(
 ) : AndroidViewModel(application) {
 
     private val settingsRepo = SettingsRepository(application)
-    private val _llmEngine = com.localaisearch.data.llm.GGUFEngine()
+    private val _llmEngine = com.localaisearch.data.llm.LLMProviderFactory.createProvider(
+        com.localaisearch.data.llm.LLMProviderType.LOCAL_GGUF,
+        application
+    )
     val modelRepo = ModelRepository(application, _llmEngine)
 
     private val _importStatus = MutableStateFlow<ImportStatus>(ImportStatus.Idle)
@@ -105,8 +108,9 @@ class ModelViewModel(
     }
 
     override fun onCleared() {
+        // The GGUF engine is app-scoped and shared with ChatViewModel/ModelCenterViewModel.
+        // Releasing it here used to make the chat lose the loaded model when this VM left scope.
         super.onCleared()
-        _llmEngine.release()
     }
 }
 

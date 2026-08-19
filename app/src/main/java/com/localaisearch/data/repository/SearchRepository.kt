@@ -44,12 +44,26 @@ class SearchRepository {
             )
         }
 
-        val result = provider.search(query, currentConfig, round)
-        result.onSuccess { rawResults ->
-            // Process: deduplicate, filter, rank
-            val processed = SearchResultProcessor.process(rawResults, query, currentConfig.maxResults)
+        val normalizedQuery = query.trim().replace(Regex("\\s+"), " ")
+        if (normalizedQuery.isBlank()) return@withContext Result.success(emptyList())
+        provider.search(normalizedQuery, currentConfig, round).map { rawResults ->
+            SearchResultProcessor.process(rawResults, normalizedQuery, currentConfig.maxResults)
         }
-        result
+    }
+
+    /** One-call search for simple UI/search-box usage without mutating global configuration. */
+    suspend fun quickSearch(query: String, limit: Int = 8): Result<List<SearchResult>> = withContext(Dispatchers.IO) {
+        val provider = currentProvider
+            ?: return@withContext Result.failure(IllegalStateException("Search provider not initialized"))
+        val normalizedQuery = query.trim().replace(Regex("\\s+"), " ")
+        if (normalizedQuery.isBlank()) return@withContext Result.success(emptyList())
+        val quickConfig = currentConfig.copy(maxResults = limit.coerceIn(1, 20), maxSearchRounds = 1)
+        if (!provider.isConfigured(quickConfig)) {
+            return@withContext Result.failure(IllegalStateException("Search provider not configured. Check API settings."))
+        }
+        provider.search(normalizedQuery, quickConfig, 0).map { raw ->
+            SearchResultProcessor.process(raw, normalizedQuery, quickConfig.maxResults)
+        }
     }
 
     /**

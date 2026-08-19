@@ -9,6 +9,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * SearXNG search provider implementation.
  *
@@ -22,7 +23,7 @@ class SearXNGProvider : SearchProvider {
     override val type: SearchProviderType = SearchProviderType.SEARXNG
 
     private val client by lazy {
-        OkHttpClient.Builder()
+        NetworkClientFactory.builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -92,7 +93,7 @@ class SearXNGProvider : SearchProvider {
                 val url = item.optString("url", "")
                 if (url.isBlank()) continue
                 val snippet = item.optString("content", "")
-                val publishedDate = item.optString("publishedDate", null)
+                val publishedDate = item.optString("publishedDate").takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

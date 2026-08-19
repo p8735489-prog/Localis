@@ -15,9 +15,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.IosShare
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -32,9 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.localaisearch.R
 import com.localaisearch.data.repository.StoredConversation
 import com.localaisearch.ui.animation.SpringSpecs
 import java.text.SimpleDateFormat
@@ -75,6 +78,7 @@ fun ConversationItem(
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val hapticView = LocalView.current
     var showMenu by remember { mutableStateOf(false) }
 
     val backgroundColor by animateColorAsState(
@@ -104,8 +108,9 @@ fun ConversationItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
-                    onClick = onClick,
+                    onClick = { AppHaptics.tap(hapticView); onClick() },
                     onLongClick = {
+                        AppHaptics.tap(hapticView)
                         onLongClick()
                         showMenu = true
                     }
@@ -124,8 +129,8 @@ fun ConversationItem(
                 ) {
                     if (conversation.pinned) {
                         Icon(
-                            imageVector = Icons.Filled.PushPin,
-                            contentDescription = "Pinned",
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = stringResource(R.string.pinned),
                             tint = colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -156,7 +161,7 @@ fun ConversationItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (messageCount == 1) "$messageCount message" else "$messageCount messages",
+                    text = if (messageCount == 1) stringResource(R.string.message_count_single, messageCount) else stringResource(R.string.message_count_plural, messageCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = colorScheme.onSurfaceVariant
                 )
@@ -169,7 +174,7 @@ fun ConversationItem(
             onDismissRequest = { showMenu = false }
         ) {
             DropdownMenuItem(
-                text = { Text("Rename") },
+                text = { Text(stringResource(R.string.rename)) },
                 leadingIcon = {
                     Icon(
                         Icons.Filled.Edit,
@@ -184,11 +189,11 @@ fun ConversationItem(
             )
             DropdownMenuItem(
                 text = {
-                    Text(if (conversation.pinned) "Unpin" else "Pin")
+                    Text(if (conversation.pinned) stringResource(R.string.unpin) else stringResource(R.string.pin))
                 },
                 leadingIcon = {
                     Icon(
-                        if (conversation.pinned) Icons.Outlined.PushPin else Icons.Filled.PushPin,
+                        if (conversation.pinned) Icons.Outlined.Star else Icons.Filled.Star,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
@@ -199,7 +204,7 @@ fun ConversationItem(
                 }
             )
             DropdownMenuItem(
-                text = { Text("Delete") },
+                text = { Text(stringResource(R.string.delete)) },
                 leadingIcon = {
                     Icon(
                         Icons.Filled.Delete,
@@ -214,13 +219,13 @@ fun ConversationItem(
                 }
             )
             DropdownMenuItem(
-                text = { Text("Export") },
+                text = { Text(stringResource(R.string.export)) },
                 leadingIcon = {
-                    Icon(
-                        Icons.Filled.IosShare,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
+                Icon(
+                    Icons.Filled.Share,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
                 },
                 onClick = {
                     showMenu = false

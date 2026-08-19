@@ -23,27 +23,30 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.FileDownload
-import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -55,6 +58,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -74,19 +78,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localaisearch.data.model.GGUFModel
+import com.localaisearch.data.model.displaySize
 import com.localaisearch.data.repository.DownloadState
 import com.localaisearch.data.repository.HFModelFile
 import com.localaisearch.data.repository.HFModelInfo
 import com.localaisearch.data.repository.ModelRepositoryFactory
+import com.localaisearch.data.performance.HardwareDetector
 import com.localaisearch.ui.animation.SpringSpecs
+import com.localaisearch.ui.components.Material3LoadingIndicator
 import com.localaisearch.ui.viewmodel.ModelCenterViewModel
 
 /**
  * Model Center screen - discover, search, browse, and download GGUF models
- * from Hugging Face Hub and Tsinghua University mirror.
+ * from Hugging Face Hub and domestic Hugging Face mirror.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +107,7 @@ fun ModelCenterScreen(
     val searchResults by viewModel.searchResults.collectAsState()
     val trendingModels by viewModel.trendingModels.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
+    val isLoadingTrending by viewModel.isLoadingTrending.collectAsState()
     val selectedSource by viewModel.selectedSource.collectAsState()
     val downloadStates by viewModel.downloadStates.collectAsState()
     val downloadedModels by viewModel.downloadedModels.collectAsState()
@@ -111,28 +120,15 @@ fun ModelCenterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Model Center") },
+                title = { Text(stringResource(R.string.model_center)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(end = 8.dp)) {
-                        SegmentedButton(
-                            selected = selectedSource == ModelRepositoryFactory.Source.HUGGING_FACE,
-                            onClick = { viewModel.setSource(ModelRepositoryFactory.Source.HUGGING_FACE) },
-                            shape = SegmentedButtonDefaults.itemShape(0, 2)
-                        ) {
-                            Text("HF", style = MaterialTheme.typography.labelSmall)
-                        }
-                        SegmentedButton(
-                            selected = selectedSource == ModelRepositoryFactory.Source.TSINGHUA_MIRROR,
-                            onClick = { viewModel.setSource(ModelRepositoryFactory.Source.TSINGHUA_MIRROR) },
-                            shape = SegmentedButtonDefaults.itemShape(1, 2)
-                        ) {
-                            Text("Mirror", style = MaterialTheme.typography.labelSmall)
-                        }
+                    IconButton(onClick = { viewModel.refresh() }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "刷新模型")
                     }
                 }
             )
@@ -143,42 +139,51 @@ fun ModelCenterScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Search bar
-            Row(
+            // Material 3 unified search field: one clean row, no parenthetical suffixes.
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                onSearch = {
+                    val hot = searchQuery.trim().equals("热门", true) ||
+                        searchQuery.trim().equals("hot", true) ||
+                        searchQuery.trim().equals("trending", true)
+                    selectedTab = 1
+                    viewModel.search(if (hot) "" else searchQuery)
+                },
+                active = false,
+                onActiveChange = {},
+                placeholder = { Text(stringResource(R.string.search_models_hint)) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (isSearching) {
+                        Material3LoadingIndicator(modifier = Modifier.size(28.dp), size = 28.dp)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search models (e.g., llama, qwen, phi)") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
-                    colors = androidx.compose.material3.TextFieldDefaults.colors(
-                        focusedContainerColor = colorScheme.surfaceContainer,
-                        unfocusedContainerColor = colorScheme.surfaceContainer,
-                        focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
-                    )
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = SearchBarDefaults.colors(
+                    containerColor = colorScheme.surfaceContainerHigh
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = { viewModel.search(searchQuery) },
-                    enabled = searchQuery.isNotBlank() && !isSearching
-                ) {
-                    if (isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = colorScheme.onPrimary
-                        )
-                    } else {
-                        Text("Search")
-                    }
+            )
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = colorScheme.surfaceContainerLow
+            ) {
+                Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.size(18.dp), tint = colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (selectedSource == ModelRepositoryFactory.Source.HUGGING_FACE) "Hugging Face 官方源" else "国内镜像 · hf-mirror.com",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text("来源在设置 → 网络中修改", style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -186,7 +191,7 @@ fun ModelCenterScreen(
             error?.let { errorMsg ->
                 Surface(
                     color = colorScheme.errorContainer,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -196,7 +201,7 @@ fun ModelCenterScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Filled.Error,
+                            Icons.Filled.Warning,
                             contentDescription = null,
                             tint = colorScheme.error,
                             modifier = Modifier.size(20.dp)
@@ -209,7 +214,7 @@ fun ModelCenterScreen(
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         TextButton(onClick = { viewModel.clearError() }) {
-                            Text("Dismiss")
+                            Text(stringResource(R.string.dismiss))
                         }
                     }
                 }
@@ -225,17 +230,17 @@ fun ModelCenterScreen(
                 FilterChip(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    label = { Text("Trending") }
+                    label = { Text(stringResource(R.string.trending)) }
                 )
                 FilterChip(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    label = { Text("Search Results") }
+                    label = { Text(stringResource(R.string.search_results)) }
                 )
                 FilterChip(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    label = { Text("Downloaded") }
+                    label = { Text(stringResource(R.string.downloaded)) }
                 )
             }
 
@@ -243,7 +248,11 @@ fun ModelCenterScreen(
 
             // Content
             when (selectedTab) {
-                0 -> TrendingList(
+                0 -> if (isLoadingTrending && trendingModels.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Material3LoadingIndicator(size = 72.dp)
+                    }
+                } else TrendingList(
                     models = trendingModels,
                     downloadStates = downloadStates,
                     onModelClick = { selectedModel = it },
@@ -300,7 +309,7 @@ private fun TrendingList(
     onDownloadClick: (HFModelInfo, HFModelFile) -> Unit
 ) {
     if (models.isEmpty()) {
-        EmptyState(message = "Loading trending models...")
+        EmptyState(message = stringResource(R.string.loading_trending))
         return
     }
 
@@ -330,11 +339,11 @@ private fun SearchResultsList(
     when {
         isSearching -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                Material3LoadingIndicator(size = 56.dp)
             }
         }
         models.isEmpty() -> {
-            EmptyState(message = "Search for GGUF models to get started")
+            EmptyState(message = stringResource(R.string.search_to_start))
         }
         else -> {
             LazyColumn(
@@ -393,7 +402,7 @@ private fun ModelCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainer
         ),
@@ -409,19 +418,28 @@ private fun ModelCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = model.name,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                    Text(
-                        text = "@${model.author}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colorScheme.primary
-                    )
+                    if (model.author.isNotBlank()) {
+                        Text(
+                            text = model.author,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 // Download status indicator
@@ -436,8 +454,8 @@ private fun ModelCard(
                         }
                         is DownloadState.Completed -> {
                             Icon(
-                                imageVector = Icons.Filled.CloudDownload,
-                                contentDescription = "Downloaded",
+                                imageVector = Icons.Filled.Download,
+                                contentDescription = stringResource(R.string.downloaded),
                                 tint = colorScheme.primary,
                                 modifier = Modifier.size(22.dp)
                             )
@@ -445,7 +463,7 @@ private fun ModelCard(
                         is DownloadState.Error -> {
                             Icon(
                                 imageVector = Icons.Filled.CloudOff,
-                                contentDescription = "Error",
+                                contentDescription = stringResource(R.string.model_error_status),
                                 tint = colorScheme.error,
                                 modifier = Modifier.size(22.dp)
                             )
@@ -497,7 +515,26 @@ private fun ModelCard(
                         }
                     }
                 }
+                ModelFitChip(modelName = model.name)
             }
+        }
+    }
+}
+
+@Composable
+private fun ModelFitChip(modelName: String) {
+    val hardware = remember { HardwareDetector.detectHardware(androidx.compose.ui.platform.LocalContext.current) }
+    val ramGb = hardware.totalRamBytes / (1024.0 * 1024.0 * 1024.0)
+    val params = Regex("(\\d+(?:\\.\\d+)?)B", RegexOption.IGNORE_CASE).find(modelName)?.groupValues?.getOrNull(1)?.toDoubleOrNull()
+    val level = when {
+        params == null -> Triple("", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+        ramGb >= params * 0.65 + 2.0 -> Triple(stringResource(R.string.performance_recommended), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+        ramGb >= params * 0.38 + 1.5 -> Triple(stringResource(R.string.performance_possible), MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
+        else -> Triple(stringResource(R.string.performance_insufficient), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+    }
+    if (level.first.isNotBlank()) {
+        Surface(shape = MaterialTheme.shapes.small, color = level.second) {
+            Text(level.first, style = MaterialTheme.typography.labelSmall, color = level.third, modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp))
         }
     }
 }
@@ -512,7 +549,7 @@ private fun DownloadedModelCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainerHigh
         )
@@ -525,7 +562,7 @@ private fun DownloadedModelCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = Icons.Outlined.FolderOpen,
+                imageVector = Icons.Outlined.Folder,
                 contentDescription = null,
                 tint = colorScheme.primary,
                 modifier = Modifier.size(32.dp)
@@ -547,7 +584,7 @@ private fun DownloadedModelCard(
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.delete),
                     tint = colorScheme.error
                 )
             }
@@ -580,9 +617,14 @@ private fun ModelDetailDialog(
         onDismissRequest = onDismiss,
         title = { Text(model.name) },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
-                    text = "@${model.author}",
+                    text = model.author,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -607,7 +649,7 @@ private fun ModelDetailDialog(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 Text(
-                    text = "GGUF Files",
+                    text = stringResource(R.string.gguf_files),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -619,11 +661,11 @@ private fun ModelDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Material3LoadingIndicator(modifier = Modifier.size(40.dp), size = 40.dp)
                     }
                 } else if (files.isEmpty()) {
                     Text(
-                        text = "No .gguf files found in this repository.",
+                        text = stringResource(R.string.no_gguf_files),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -645,7 +687,7 @@ private fun ModelDetailDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.close))
             }
         }
     )
@@ -665,7 +707,7 @@ private fun FileDownloadCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainer
         )
@@ -680,32 +722,37 @@ private fun FileDownloadCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
                     Text(
                         text = file.path.substringAfterLast('/'),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "${file.displaySize}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colorScheme.onSurfaceVariant
-                        )
-                        if (file.quantization != "unknown") {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = colorScheme.secondaryContainer
-                            ) {
-                                Text(
-                                    text = file.quantization,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
+                    Text(
+                        text = file.displaySize,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                    if (file.quantization != "unknown") {
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = colorScheme.secondaryContainer
+                        ) {
+                            Text(
+                                text = file.quantization,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                maxLines = 1
+                            )
                         }
                     }
                 }
@@ -715,41 +762,41 @@ private fun FileDownloadCard(
                     is DownloadState.Downloading -> {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = onPause, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Pause, contentDescription = "Pause", modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.Pause, contentDescription = stringResource(R.string.pause), modifier = Modifier.size(20.dp))
                             }
                             IconButton(onClick = onCancel, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Cancel", modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.cancel), modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                     is DownloadState.Paused -> {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = onResume, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.PlayArrow, contentDescription = "Resume", modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.resume), modifier = Modifier.size(20.dp))
                             }
                             IconButton(onClick = onCancel, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Cancel", modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.cancel), modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                     is DownloadState.Completed -> {
                         Icon(
-                            imageVector = Icons.Filled.CloudDownload,
-                            contentDescription = "Downloaded",
+                            imageVector = Icons.Filled.Download,
+                            contentDescription = stringResource(R.string.downloaded),
                             tint = colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                     is DownloadState.Error -> {
                         IconButton(onClick = onDownload, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Filled.Error, contentDescription = "Retry", tint = colorScheme.error, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.retry), tint = colorScheme.error, modifier = Modifier.size(20.dp))
                         }
                     }
                     else -> {
                         Button(onClick = onDownload) {
-                            Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Download")
+                            Text(stringResource(R.string.download))
                         }
                     }
                 }
@@ -791,7 +838,7 @@ private fun FileDownloadCard(
                         else -> "%d s".format(etaSeconds)
                     }
                     Text(
-                        text = "ETA: $etaText",
+                        text = stringResource(R.string.eta_format, etaText),
                         style = MaterialTheme.typography.labelSmall,
                         color = colorScheme.onSurfaceVariant
                     )

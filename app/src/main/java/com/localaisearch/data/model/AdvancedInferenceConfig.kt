@@ -24,9 +24,13 @@ data class InferenceConfig(
     val contextLength: Int = 4096,
     val maxTokens: Int = 2048,
     val repeatPenalty: Float = 1.1f,
+    val frequencyPenalty: Float = 0f,
+    val presencePenalty: Float = 0f,
     val useGpu: Boolean = true,
     val gpuLayers: Int = 0,
     val threads: Int = 4,
+    val thinkingDepth: Int = 2,
+    val backend: HardwareBackend = HardwareBackend.CPU,
     val seed: Int = -1
 )
 
@@ -58,9 +62,12 @@ data class AdvancedInferenceConfig(
     val contextLength: Int = 4096,
     val maxTokens: Int = 2048,
     val repeatPenalty: Float = 1.1f,
+    val frequencyPenalty: Float = 0f,
+    val presencePenalty: Float = 0f,
     val useGpu: Boolean = true,
     val gpuLayers: Int = 0,
     val threads: Int = 4,
+    val thinkingDepth: Int = 2,
     val seed: Int = -1,
     // Advanced fields
     val batchSize: Int = -1,
@@ -89,9 +96,13 @@ data class AdvancedInferenceConfig(
             contextLength = contextLength,
             maxTokens = maxTokens,
             repeatPenalty = repeatPenalty,
+            frequencyPenalty = frequencyPenalty,
+            presencePenalty = presencePenalty,
             useGpu = useGpu,
             gpuLayers = gpuLayers,
             threads = threads,
+            thinkingDepth = thinkingDepth,
+            backend = backend,
             seed = seed
         )
     }
@@ -146,6 +157,7 @@ fun PerformanceProfile.toAdvancedInferenceConfig(): AdvancedInferenceConfig {
         useGpu = backend == HardwareBackend.GPU || backend == HardwareBackend.AUTO,
         gpuLayers = gpuLayers,
         threads = cpuThreads,
+        thinkingDepth = 2,
         seed = -1,
         batchSize = batchSize,
         useMmap = useMmap,

@@ -2,7 +2,7 @@ package com.localaisearch.ui.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -10,53 +10,83 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.localaisearch.R
 import com.localaisearch.data.model.AgentState
 import com.localaisearch.ui.components.AIOrb
 import com.localaisearch.ui.components.AgentProgressBar
-import com.localaisearch.ui.components.AutoModeToggle
 import com.localaisearch.ui.components.ChatBubble
 import com.localaisearch.ui.components.MorphingSendButton
 import com.localaisearch.ui.components.PrivacyBadge
@@ -64,21 +94,21 @@ import com.localaisearch.ui.components.SearchInputBar
 import com.localaisearch.ui.components.SendButtonState
 import com.localaisearch.ui.components.SourceCard
 import com.localaisearch.ui.viewmodel.ChatViewModel
+import com.localaisearch.ui.viewmodel.ConversationViewModel
+import kotlinx.coroutines.launch
 
 /**
- * Home screen - the main entry point of the app.
+ * Home screen - Modern ChatGPT-style AI home.
  *
  * Layout:
- * - Top bar with navigation icons (history, memory, models, model center, settings)
- * - Privacy mode toggle (lock icon)
- * - Auto Mode toggle card
- * - Central AI Orb
- * - Search input bar + morphing send button
- * - Chat messages (when conversation exists)
- * - Source cards (when search results exist)
- * - Agent progress bar (when processing)
- * - Privacy session end notification
+ * - Minimalist top bar (hamburger + title + more)
+ * - Side drawer for navigation (history, models, memory, settings)
+ * - Central AI Core (orb) with welcome text when no messages
+ * - Large floating Composer at bottom
+ * - Smooth transition from empty state to chat view
+ * - Privacy mode indicator handled gracefully (not crowding top bar)
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
@@ -87,7 +117,8 @@ fun HomeScreen(
     onNavigateToHistory: () -> Unit,
     onNavigateToMemory: () -> Unit,
     onNavigateToDataSecurity: () -> Unit,
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = viewModel(),
+    conversationViewModel: ConversationViewModel = viewModel()
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val conversation by viewModel.conversation.collectAsState()
@@ -98,10 +129,19 @@ fun HomeScreen(
     val error by viewModel.error.collectAsState()
     val internetSearchEnabled by viewModel.internetSearchEnabled.collectAsState()
     val isPrivacyMode by viewModel.isPrivacyMode.collectAsState()
-    val isAutoMode by viewModel.isAutoModeEnabled.collectAsState()
     val privacySessionEnded by viewModel.privacySessionEnded.collectAsState()
+    val modelLoaded by viewModel.modelLoaded.collectAsState()
+    val loadedModelName by viewModel.loadedModelName.collectAsState()
+    val defaultSystemPrompt by viewModel.defaultSystemPrompt.collectAsState()
+    val storedConversations by conversationViewModel.conversations.collectAsState()
+
+    var showSystemPromptDialog by remember { mutableStateOf(false) }
 
     var inputText by remember { mutableStateOf("") }
+    var showMenu by remember { mutableStateOf(false) }
+
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     val sendButtonState = when {
         isProcessing && agentStatus.state == AgentState.SEARCHING -> SendButtonState.SEARCHING
@@ -111,215 +151,363 @@ fun HomeScreen(
     }
 
     val orbState = if (isProcessing) agentStatus.state else AgentState.IDLE
+    val hasMessages = conversation.messages.isNotEmpty()
 
     // Privacy session ended notification
     if (privacySessionEnded) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissPrivacySessionNotification() },
             icon = {
-                Icon(
-                    imageVector = Icons.Filled.LockOpen,
-                    contentDescription = null,
-                    tint = colorScheme.primary
-                )
+                            Icon(
+                                imageVector = Icons.Filled.Lock,
+                                contentDescription = null,
+                                tint = colorScheme.primary
+                            )
             },
-            title = { Text("Privacy Session Ended") },
+            title = { Text(stringResource(R.string.privacy_session_ended)) },
             text = {
-                Text("Privacy session has ended. All temporary data from this session has been cleaned up.")
+                Text(stringResource(R.string.privacy_session_ended_desc))
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissPrivacySessionNotification() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // -- Top bar --
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // Privacy mode toggle
-                    IconButton(onClick = { viewModel.togglePrivacyMode() }) {
-                        Icon(
-                            imageVector = if (isPrivacyMode) Icons.Filled.Lock else Icons.Filled.LockOpen,
-                            contentDescription = if (isPrivacyMode) "Privacy mode ON" else "Privacy mode OFF",
-                            tint = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
-                        )
-                    }
+    if (showSystemPromptDialog) {
+        SystemPromptDialog(
+            selected = defaultSystemPrompt,
+            onSelect = { viewModel.setDefaultSystemPrompt(it) },
+            onDismiss = { showSystemPromptDialog = false }
+        )
+    }
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                windowInsets = WindowInsets.statusBars,
+                modifier = Modifier.width(280.dp)
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = stringResource(R.string.drawer_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                Text(
+                    text = stringResource(R.string.app_tagline),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Filled.Message, contentDescription = null) },
+                    label = { Text(stringResource(R.string.new_chat)) },
+                    selected = false,
+                    onClick = {
+                        viewModel.newConversation()
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                Text(
+                    text = stringResource(R.string.history),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                if (storedConversations.isEmpty()) {
                     Text(
-                        text = "Localis",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = colorScheme.onSurface
+                        text = stringResource(R.string.no_history),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
-
-                    // Privacy badge when active
-                    PrivacyBadge(
-                        isPrivacyMode = isPrivacyMode,
-                        onToggle = { viewModel.togglePrivacyMode() }
-                    )
-                }
-
-                Row {
-                    // Conversation history
-                    IconButton(onClick = onNavigateToHistory) {
-                        Icon(
-                            imageVector = Icons.Outlined.History,
-                            contentDescription = "Conversation History",
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                    // Memory center
-                    IconButton(onClick = onNavigateToMemory) {
-                        Icon(
-                            imageVector = Icons.Outlined.Psychology,
-                            contentDescription = "Memory Center",
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                    // Model center (download)
-                    IconButton(onClick = onNavigateToModelCenter) {
-                        Icon(
-                            imageVector = Icons.Outlined.CloudDownload,
-                            contentDescription = "Model Center",
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                    // Local models
-                    IconButton(onClick = onNavigateToModels) {
-                        Icon(
-                            imageVector = Icons.Filled.Memory,
-                            contentDescription = "Models",
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                    // Settings
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Settings",
-                            tint = colorScheme.onSurfaceVariant
+                } else {
+                    storedConversations.take(8).forEach { stored ->
+                        NavigationDrawerItem(
+                            icon = { Icon(Icons.Outlined.History, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            label = {
+                                Text(
+                                    stored.conversation.title.ifBlank { stringResource(R.string.new_chat) },
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            },
+                            selected = stored.conversation.id == conversation.id,
+                            onClick = {
+                                viewModel.loadConversation(stored.conversation.id)
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
                 }
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Outlined.Science, contentDescription = null) },
+                    label = { Text(stringResource(R.string.models)) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToModels()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Outlined.Star, contentDescription = null) },
+                    label = { Text(stringResource(R.string.memory_center)) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToMemory()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Outlined.Save, contentDescription = null) },
+                    label = { Text(stringResource(R.string.model_center)) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToModelCenter()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                    label = { Text(stringResource(R.string.settings)) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToSettings()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
             }
-
-            // -- Auto Mode toggle (compact, only when no conversation) --
-            AnimatedVisibility(
-                visible = conversation.messages.isEmpty(),
-                enter = fadeIn() + slideInVertically(),
-                exit = fadeOut() + slideOutVertically()
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.home_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (isPrivacyMode) {
+                                Text(
+                                    text = stringResource(R.string.privacy_mode),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colorScheme.primary
+                                )
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            scope.launch {
+                                if (drawerState.currentValue == DrawerValue.Closed) drawerState.open()
+                                else drawerState.close()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Menu,
+                                contentDescription = stringResource(R.string.open_menu)
+                            )
+                        }
+                    },
+                    actions = {
+                        // Privacy toggle (small, not crowding)
+                        IconButton(onClick = { viewModel.togglePrivacyMode() }) {
+                            Icon(
+                                imageVector = if (isPrivacyMode)
+                                    androidx.compose.material.icons.Icons.Filled.Lock
+                                else
+                                    Icons.Filled.Lock,
+                                contentDescription = if (isPrivacyMode) stringResource(R.string.privacy_on) else stringResource(R.string.privacy_off),
+                                tint = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // Pixel-style compact feature menu
+                        Box {
+                            IconButton(onClick = { showMenu = !showMenu }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = stringResource(R.string.more_options)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                shape = RoundedCornerShape(20.dp),
+                                containerColor = colorScheme.surfaceContainerHigh,
+                                tonalElevation = 3.dp
+                            ) {
+                                DropdownMenuItem(
+                                    leadingIcon = { Icon(Icons.Outlined.Tune, null) },
+                                    text = { Text("系统指令") },
+                                    onClick = { showMenu = false; showSystemPromptDialog = true }
+                                )
+                                DropdownMenuItem(
+                                    leadingIcon = { Icon(Icons.Outlined.Search, null) },
+                                    text = { Text(if (internetSearchEnabled) "关闭联网搜索" else "开启联网搜索") },
+                                    onClick = { showMenu = false; viewModel.toggleInternetSearch() }
+                                )
+                                DropdownMenuItem(
+                                    leadingIcon = { Icon(Icons.Filled.Lock, null) },
+                                    text = { Text(if (isPrivacyMode) "关闭隐私模式" else "开启隐私模式") },
+                                    onClick = { showMenu = false; viewModel.togglePrivacyMode() }
+                                )
+                                DropdownMenuItem(
+                                    leadingIcon = { Icon(Icons.Outlined.Settings, null) },
+                                    text = { Text("设置") },
+                                    onClick = { showMenu = false; onNavigateToSettings() }
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
+                    ),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            },
+            modifier = Modifier.imePadding()
+        ) { paddingValues ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                color = colorScheme.background
             ) {
-                AutoModeToggle(
-                    enabled = isAutoMode,
-                    onToggle = { viewModel.toggleAutoMode() },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
-
-            // -- Main content area --
-            if (conversation.messages.isEmpty()) {
-                // Empty state: Orb + search bar
-                EmptyStateContent(
-                    orbState = orbState,
-                    inputText = inputText,
-                    onInputChange = { inputText = it },
-                    onSend = {
-                        if (inputText.isNotBlank()) {
-                            viewModel.sendQuery(inputText)
-                            inputText = ""
-                        }
-                    },
-                    sendButtonState = sendButtonState,
-                    internetSearchEnabled = internetSearchEnabled,
-                    onToggleSearch = { viewModel.toggleInternetSearch() },
-                    agentStatus = agentStatus,
-                    isProcessing = isProcessing,
-                    isPrivacyMode = isPrivacyMode
-                )
-            } else {
-                // Conversation state: messages + input at bottom
-                ConversationContent(
-                    messages = conversation.messages,
-                    orbState = orbState,
-                    searchResults = searchResults,
-                    citations = citations,
-                    agentStatus = agentStatus,
-                    isProcessing = isProcessing,
-                    inputText = inputText,
-                    onInputChange = { inputText = it },
-                    onSend = {
-                        if (inputText.isNotBlank()) {
-                            viewModel.sendQuery(inputText)
-                            inputText = ""
-                        }
-                    },
-                    sendButtonState = sendButtonState,
-                    internetSearchEnabled = internetSearchEnabled,
-                    onToggleSearch = { viewModel.toggleInternetSearch() },
-                    onCancel = { viewModel.cancel() },
-                    error = error,
-                    isPrivacyMode = isPrivacyMode,
-                    onNewConversation = { viewModel.newConversation() }
-                )
+                AnimatedContent(
+                    targetState = hasMessages,
+                transitionSpec = {
+                    fadeIn(tween(300)) togetherWith fadeOut(tween(200))
+                },
+                    label = "homeTransition"
+                ) { hasMsgs ->
+                    if (!hasMsgs) {
+                        EmptyStateScreen(
+                            orbState = orbState,
+                            modelLoaded = modelLoaded,
+                            modelName = loadedModelName,
+                            onSelectModel = onNavigateToModels,
+                            isPrivacyMode = isPrivacyMode,
+                            internetSearchEnabled = internetSearchEnabled,
+                            inputText = inputText,
+                            onInputChange = { inputText = it },
+                            onSend = {
+                                if (inputText.isNotBlank()) {
+                                    viewModel.sendQuery(inputText)
+                                    inputText = ""
+                                }
+                            },
+                            sendButtonState = sendButtonState,
+                            isProcessing = isProcessing,
+                            inputEnabled = modelLoaded,
+                            agentStatus = agentStatus
+                        )
+                    } else {
+                        ChatScreen(
+                            messages = conversation.messages,
+                            orbState = orbState,
+                            searchResults = searchResults,
+                            citations = citations,
+                            agentStatus = agentStatus,
+                            isProcessing = isProcessing,
+                            inputText = inputText,
+                            onInputChange = { inputText = it },
+                            onSend = {
+                                if (inputText.isNotBlank()) {
+                                    viewModel.sendQuery(inputText)
+                                    inputText = ""
+                                }
+                            },
+                            sendButtonState = sendButtonState,
+                            internetSearchEnabled = internetSearchEnabled,
+                            onToggleSearch = { viewModel.toggleInternetSearch() },
+                            onCancel = { viewModel.cancel() },
+                            error = error,
+                            isPrivacyMode = isPrivacyMode,
+                            onNewConversation = { viewModel.newConversation() },
+                            inputEnabled = modelLoaded
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EmptyStateContent(
+private fun EmptyStateScreen(
     orbState: AgentState,
+    modelLoaded: Boolean,
+    modelName: String,
+    onSelectModel: () -> Unit,
+    isPrivacyMode: Boolean,
+    internetSearchEnabled: Boolean,
     inputText: String,
     onInputChange: (String) -> Unit,
     onSend: () -> Unit,
     sendButtonState: SendButtonState,
-    internetSearchEnabled: Boolean,
-    onToggleSearch: () -> Unit,
-    agentStatus: com.localaisearch.data.model.AgentStatus,
     isProcessing: Boolean,
-    isPrivacyMode: Boolean
+    agentStatus: com.localaisearch.data.model.AgentStatus,
+    inputEnabled: Boolean
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // AI Orb
-        AIOrb(
-            state = orbState,
-            size = 140.dp,
-            primaryColor = colorScheme.primary,
-            secondaryColor = colorScheme.tertiary,
-            accentColor = colorScheme.primary.copy(alpha = 0.7f),
-            glowColor = colorScheme.primary.copy(alpha = 0.3f)
-        )
+        Spacer(modifier = Modifier.weight(1.15f))
 
-        Spacer(modifier = Modifier.height(32.dp))
+        // Large neutral model card, matching modern GPT-style empty states.
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(292.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = colorScheme.surfaceVariant.copy(alpha = 0.72f),
+            tonalElevation = 1.dp
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                AIOrb(
+                    state = orbState,
+                    size = 190.dp,
+                    animationLevel = "standard",
+                    modelState = if (modelLoaded) com.localaisearch.ui.components.ModelState.LOADED else com.localaisearch.ui.components.ModelState.NO_MODEL,
+                    modelName = modelName,
+                    onSelectModel = onSelectModel
+                )
+            }
+        }
 
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Welcome text
         Text(
-            text = "Ask anything",
+            text = stringResource(R.string.ask_anything),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             color = colorScheme.onSurface
@@ -329,17 +517,17 @@ private fun EmptyStateContent(
 
         Text(
             text = when {
-                isPrivacyMode -> "Privacy mode - no data will be saved"
-                internetSearchEnabled -> "Local AI + Internet search enabled"
-                else -> "Local AI - fully private, on-device"
+                isPrivacyMode -> stringResource(R.string.private_mode_active_no_data)
+                internetSearchEnabled -> stringResource(R.string.local_ai_realtime_search)
+                else -> stringResource(R.string.ai_on_device)
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
+            color = colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
-        // Search bar + send button
+        // Large floating Composer
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom
@@ -349,17 +537,23 @@ private fun EmptyStateContent(
                 onValueChange = onInputChange,
                 onSend = onSend,
                 internetSearchEnabled = internetSearchEnabled,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.padding(4.dp))
-            MorphingSendButton(
-                state = sendButtonState,
-                onClick = onSend,
-                enabled = inputText.isNotBlank() && !isProcessing
+                modifier = Modifier
+                    .weight(1f)
+                    .imePadding(),
+                enabled = inputEnabled
             )
         }
 
-        // Agent progress
+        if (!inputEnabled) {
+            Text(
+                text = "模型尚未加载，加载完成后才能发送消息",
+                style = MaterialTheme.typography.labelMedium,
+                color = colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        }
+
+        // Progress indicator
         AnimatedVisibility(
             visible = isProcessing,
             enter = fadeIn() + slideInVertically(),
@@ -367,18 +561,23 @@ private fun EmptyStateContent(
         ) {
             Column(
                 modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
+                    .fillMaxWidth()
+                    .padding(top = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AgentProgressBar(status = agentStatus)
             }
         }
+
+        Spacer(modifier = Modifier.weight(0.22f))
+
+        // Bottom padding for navigation bar
+        Spacer(modifier = Modifier.navigationBarsPadding())
     }
 }
 
 @Composable
-private fun ConversationContent(
+private fun ChatScreen(
     messages: List<com.localaisearch.data.model.ChatMessage>,
     orbState: AgentState,
     searchResults: List<com.localaisearch.data.model.SearchResult>,
@@ -394,7 +593,8 @@ private fun ConversationContent(
     onCancel: () -> Unit,
     error: String?,
     isPrivacyMode: Boolean,
-    onNewConversation: () -> Unit
+    onNewConversation: () -> Unit,
+    inputEnabled: Boolean
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val uriHandler = LocalUriHandler.current
@@ -405,7 +605,12 @@ private fun ConversationContent(
         // Messages list
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = 8.dp,
+                end = 16.dp,
+                bottom = 12.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Small orb at top when processing
@@ -417,11 +622,8 @@ private fun ConversationContent(
                     ) {
                         AIOrb(
                             state = orbState,
-                            size = 80.dp,
-                            primaryColor = colorScheme.primary,
-                            secondaryColor = colorScheme.tertiary,
-                            accentColor = colorScheme.primary.copy(alpha = 0.7f),
-                            glowColor = colorScheme.primary.copy(alpha = 0.3f)
+                            size = 60.dp,
+                            animationLevel = "standard"
                         )
                     }
                 }
@@ -443,7 +645,7 @@ private fun ConversationContent(
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Sources (${citations.size})",
+                        text = stringResource(R.string.sources, citations.size),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = colorScheme.onSurfaceVariant,
@@ -479,24 +681,28 @@ private fun ConversationContent(
             }
         }
 
-        // Bottom input bar
+        // Floating Composer at bottom
         Surface(
-            color = colorScheme.surface,
-            tonalElevation = 3.dp,
-            shadowElevation = 8.dp
+            color = colorScheme.surface.copy(alpha = 0.92f),
+            tonalElevation = 2.dp,
+            shadowElevation = 8.dp,
+            shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+            modifier = Modifier
+                .navigationBarsPadding()
+                .imePadding()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                // New conversation button (only when not processing and has messages)
+                // New conversation button
                 if (!isProcessing && messages.isNotEmpty()) {
                     IconButton(onClick = onNewConversation) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Chat,
-                            contentDescription = "New conversation",
+                            imageVector = Icons.Filled.Message,
+                            contentDescription = stringResource(R.string.new_conversation),
                             tint = colorScheme.onSurfaceVariant
                         )
                     }
@@ -507,15 +713,59 @@ private fun ConversationContent(
                     onValueChange = onInputChange,
                     onSend = onSend,
                     internetSearchEnabled = internetSearchEnabled,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.padding(4.dp))
-                MorphingSendButton(
-                    state = sendButtonState,
-                    onClick = onSend,
-                    enabled = inputText.isNotBlank() && !isProcessing
+                    modifier = Modifier.weight(1f),
+                    enabled = inputEnabled
                 )
             }
         }
     }
+}
+
+
+@Composable
+private fun SystemPromptDialog(
+    selected: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = listOf(
+        Triple("general", "通用助手", "友好、可靠，适合日常问答"),
+        Triple("concise", "简洁回答", "优先结论，减少无关铺垫"),
+        Triple("precise", "严谨回答", "区分事实、推测与不确定信息"),
+        Triple("coding", "编程助手", "优先提供可靠、可执行的代码方案"),
+        Triple("chinese", "中文助手", "默认使用自然准确的简体中文")
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("默认 AI 系统提示词") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                options.forEach { option ->
+                    val id = option.first
+                    val title = option.second
+                    val desc = option.third
+                    Surface(
+                        onClick = { onSelect(id); onDismiss() },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (selected == id) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(title, fontWeight = FontWeight.SemiBold)
+                                Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (selected == id) {
+                                Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } },
+        shape = RoundedCornerShape(24.dp)
+    )
 }

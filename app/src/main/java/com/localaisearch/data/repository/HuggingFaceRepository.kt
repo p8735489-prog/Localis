@@ -9,6 +9,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * Hugging Face Hub API repository for discovering and downloading GGUF models.
  *
@@ -28,7 +29,7 @@ class HuggingFaceRepository {
         private const val GGUF_FILTER = "gguf"
     }
 
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClientFactory.builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
@@ -216,7 +217,8 @@ class HuggingFaceRepository {
      * This is based on actual API structure, not fabricated.
      */
     fun getDownloadUrl(repoId: String, filePath: String): String {
-        return "$HF_BASE/$repoId/resolve/main/${java.net.URLEncoder.encode(filePath, "UTF-8")}"
+        val encodedPath = filePath.split("/").joinToString("/") { java.net.URLEncoder.encode(it, "UTF-8").replace("+", "%20") }
+        return "$HF_BASE/$repoId/resolve/main/$encodedPath"
     }
 
     private fun parseTags(array: org.json.JSONArray?): List<String> {
@@ -225,12 +227,15 @@ class HuggingFaceRepository {
     }
 
     private fun extractQuantization(fileName: String): String {
-        val patterns = listOf("Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0", "Q4_0", "Q5_0", "Q2_K", "Q3_K_M", "Q4_K_S", "Q5_K_S", "IQ4_XS", "IQ3_M", "FP16")
-        for (pattern in patterns) {
-            if (fileName.contains(pattern, ignoreCase = true)) {
-                return pattern.uppercase()
-            }
-        }
+        val upper = fileName.uppercase()
+        val iq = Regex("\\bIQ[1-9][0-9A-Z_]*\\b").find(upper)?.value
+        if (iq != null) return iq
+        val q = Regex("\\bQ(?:[1-9][0-9]?)(?:_[A-Z0-9]+)*\\b").find(upper)?.value
+        if (q != null) return q
+        if (upper.contains("FP16")) return "FP16"
+        if (upper.contains("BF16")) return "BF16"
+        if (upper.contains("F32")) return "F32"
+        if (upper.contains("F16")) return "F16"
         return "unknown"
     }
 

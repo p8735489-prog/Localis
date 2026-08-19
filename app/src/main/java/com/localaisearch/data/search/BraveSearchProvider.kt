@@ -9,6 +9,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * Brave Search API provider.
  * API docs: https://api-dashboard.search.brave.com/
@@ -19,7 +20,7 @@ class BraveSearchProvider : SearchProvider {
     override val type: SearchProviderType = SearchProviderType.BRAVE
 
     private val client by lazy {
-        OkHttpClient.Builder()
+        NetworkClientFactory.builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -88,7 +89,7 @@ class BraveSearchProvider : SearchProvider {
                 val url = item.optString("url", "")
                 if (url.isBlank()) continue
                 val snippet = item.optString("description", "")
-                val age = item.optString("age", null)
+                val age = item.optString("age").takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

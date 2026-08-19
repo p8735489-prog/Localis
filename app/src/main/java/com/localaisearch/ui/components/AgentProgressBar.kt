@@ -122,7 +122,7 @@ fun AgentProgressBar(
                 }
 
                 // Arrow between dots
-                if (step != steps.last()) {
+                if (steps.isNotEmpty() && step != steps.last()) {
                     Spacer(modifier = Modifier.width(2.dp))
                 }
             }

@@ -25,10 +25,12 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis(),
     val isStreaming: Boolean = false,
     val searchSession: SearchSession? = null
-) {
-    val hasCitations: Boolean get() = citations.isNotEmpty()
-    val isFromSearch: Boolean get() = searchSession != null && searchSession.totalRounds > 0
-}
+)
+
+/** Whether this message has any citations. */
+val ChatMessage.hasCitations: Boolean get() = citations.isNotEmpty()
+/** Whether this message originated from a search with active rounds. */
+val ChatMessage.isFromSearch: Boolean get() = searchSession != null && searchSession.totalRounds > 0
 
 /**
  * A conversation session containing all messages.

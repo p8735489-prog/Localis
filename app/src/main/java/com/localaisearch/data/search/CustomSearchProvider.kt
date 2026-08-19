@@ -10,6 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * Custom search provider for user-defined API endpoints.
  *
@@ -24,7 +25,7 @@ class CustomSearchProvider : SearchProvider {
     override val type: SearchProviderType = SearchProviderType.CUSTOM
 
     private val client by lazy {
-        OkHttpClient.Builder()
+        NetworkClientFactory.builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -105,7 +106,7 @@ class CustomSearchProvider : SearchProvider {
                 val url = item.optString("url", item.optString("link", ""))
                 if (url.isBlank()) continue
                 val snippet = item.optString("content", item.optString("snippet", item.optString("description", "")))
-                val publishedDate = item.optString("publishedDate", item.optString("datePublished", null))
+                val publishedDate = item.optString("publishedDate", item.optString("datePublished")).takeIf { it.isNotBlank() }
 
                 results.add(
                     SearchResult(

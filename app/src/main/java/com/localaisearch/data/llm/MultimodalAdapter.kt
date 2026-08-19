@@ -151,7 +151,16 @@ open class GenericVisionAdapter(
         imageInput: ImageInput?,
         config: AdvancedInferenceConfig
     ): Flow<String> = flow {
-        emit("[${architectureName}] Image analysis not yet implemented for this model architecture.")
+        // Do not silently pretend to understand pixels. The Java-side bundle/router
+        // is ready for multimodal routing, but the native mtmd/mmproj bridge is not
+        // present in this project snapshot yet. Fail explicitly so the UI can offer
+        // a useful setup message instead of returning fabricated image descriptions.
+        if (imageInput != null) {
+            throw UnsupportedOperationException(
+                "${architectureName} image inference requires the llama.cpp mtmd/mmproj native bridge."
+            )
+        }
+        llmEngine.generateStream(prompt, config.toInferenceConfig()).collect { emit(it) }
     }
 
     override suspend fun unload(): Result<Unit> {

@@ -10,8 +10,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
- * Tsinghua University mirror of Hugging Face.
+ * domestic Hugging Face mirror of Hugging Face.
  *
  * API endpoint: https://hf-mirror.com (replaces huggingface.co)
  * The API structure is identical to Hugging Face Hub but served from a mirror.
@@ -24,7 +25,7 @@ class TsinghuaMirrorRepository {
         private const val MIRROR_BASE = "https://hf-mirror.com"
     }
 
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClientFactory.builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
@@ -151,6 +152,7 @@ class TsinghuaMirrorRepository {
             val request = Request.Builder()
                 .url(url)
                 .header("Accept", "application/json")
+                .header("User-Agent", "LocalAISearch/1.0")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -236,7 +238,12 @@ class TsinghuaMirrorRepository {
      * Generate download URL using the mirror.
      */
     fun getDownloadUrl(repoId: String, filePath: String): String {
-        return "$MIRROR_BASE/$repoId/resolve/main/${java.net.URLEncoder.encode(filePath, "UTF-8")}"
+        // Encode each path segment separately. Encoding the whole path would turn
+        // "/" into "%2F" and can break mirrors/CDN routing for files in subfolders.
+        val encodedPath = filePath
+            .split("/")
+            .joinToString("/") { java.net.URLEncoder.encode(it, "UTF-8").replace("+", "%20") }
+        return "$MIRROR_BASE/$repoId/resolve/main/$encodedPath"
     }
 
     private fun parseTags(array: JSONArray?): List<String> {
@@ -245,12 +252,15 @@ class TsinghuaMirrorRepository {
     }
 
     private fun extractQuantization(fileName: String): String {
-        val patterns = listOf("Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0", "Q4_0", "Q5_0", "Q2_K", "Q3_K_M", "Q4_K_S", "Q5_K_S", "IQ4_XS", "IQ3_M", "FP16")
-        for (pattern in patterns) {
-            if (fileName.contains(pattern, ignoreCase = true)) {
-                return pattern.uppercase()
-            }
-        }
+        val upper = fileName.uppercase()
+        val iq = Regex("\\bIQ[1-9][0-9A-Z_]*\\b").find(upper)?.value
+        if (iq != null) return iq
+        val q = Regex("\\bQ(?:[1-9][0-9]?)(?:_[A-Z0-9]+)*\\b").find(upper)?.value
+        if (q != null) return q
+        if (upper.contains("FP16")) return "FP16"
+        if (upper.contains("BF16")) return "BF16"
+        if (upper.contains("F32")) return "F32"
+        if (upper.contains("F16")) return "F16"
         return "unknown"
     }
 }

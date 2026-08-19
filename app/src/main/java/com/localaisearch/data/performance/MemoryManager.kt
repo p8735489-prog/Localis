@@ -36,9 +36,9 @@ interface LLMEngine {
 }
 
 /**
- * Data class representing advanced inference configuration parameters.
+ * Data class representing memory-optimized inference configuration parameters.
  */
-data class AdvancedInferenceConfig(
+data class MemoryOptimizedConfig(
     val contextLength: Int,
     val batchSize: Int,
     val useMmap: Boolean,
@@ -220,10 +220,10 @@ class MemoryManager(
      * Adjustments include reducing context length, batch size, enabling mmap,
      * and reducing kv cache quality when memory is low.
      *
-     * @param advancedConfig The current [AdvancedInferenceConfig].
-     * @return A modified [AdvancedInferenceConfig] optimized for current memory conditions.
+     * @param advancedConfig The current [MemoryOptimizedConfig].
+     * @return A modified [MemoryOptimizedConfig] optimized for current memory conditions.
      */
-    fun autoAdjustForMemory(advancedConfig: AdvancedInferenceConfig): AdvancedInferenceConfig {
+    fun autoAdjustForMemory(advancedConfig: MemoryOptimizedConfig): MemoryOptimizedConfig {
         val memoryInfo = queryMemoryInfo()
         val availPercent = if (memoryInfo.totalMem > 0) {
             memoryInfo.availMem.toFloat() / memoryInfo.totalMem.toFloat()

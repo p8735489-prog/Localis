@@ -144,7 +144,7 @@ class ImageProcessor(
             val halfHeight = height / 2
             val halfWidth = width / 2
             while (
-                halfHeight / inSampleSize >= reqHeight &&
+                halfHeight / inSampleSize >= reqHeight ||
                 halfWidth / inSampleSize >= reqWidth
             ) {
                 inSampleSize *= 2

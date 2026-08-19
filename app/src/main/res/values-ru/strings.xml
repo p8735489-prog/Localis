@@ -1,0 +1,348 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Localis</string>
+
+    
+    <string name="back">Назад</string>
+    <string name="cancel">Отмена</string>
+    <string name="save">Сохранить</string>
+    <string name="delete">Удалить</string>
+    <string name="add">Добавить</string>
+    <string name="close">Закрыть</string>
+    <string name="ok">ОК</string>
+
+    
+    <string name="home_title">Localis</string>
+    <string name="search_placeholder">Спросите что угодно...</string>
+    <string name="send">Отправить</string>
+    <string name="searching">Поиск</string>
+    <string name="done">Готово</string>
+    <string name="local_ai_private">Локальный ИИ - полностью приватный, на устройстве</string>
+    <string name="local_ai_search_enabled">Локальный ИИ + интернет-поиск включен</string>
+    <string name="ask_anything">Спросите что угодно</string>
+    <string name="new_conversation">Новый диалог</string>
+    <string name="internet_search_enabled">Интернет-поиск включен</string>
+    <string name="clear">Очистить</string>
+    <string name="privacy_mode_on">Режим конфиденциальности ВКЛ</string>
+    <string name="privacy_mode_off">Режим конфиденциальности ВЫКЛ</string>
+    <string name="privacy_mode_active">Режим конфиденциальности активен</string>
+    <string name="privacy_session">Конфиденциальная сессия</string>
+    <string name="privacy_session_ended">Конфиденциальная сессия завершена</string>
+    <string name="privacy_session_ended_desc">Конфиденциальная сессия завершена. Все временные данные этой сессии были удалены.</string>
+    <string name="privacy_mode_desc">Режим конфиденциальности - данные не будут сохранены</string>
+    <string name="privacy_mode_chip">Конфиденциально</string>
+
+    
+    <string name="nav_chat">Чат</string>
+    <string name="nav_models">Модели</string>
+    <string name="nav_tools">Инструменты</string>
+    <string name="nav_me">Профиль</string>
+
+    
+    <string name="menu">Меню</string>
+    <string name="history">История</string>
+    <string name="memory_center">Центр памяти</string>
+    <string name="model_center">Центр моделей</string>
+    <string name="models">Модели</string>
+    <string name="settings">Настройки</string>
+    <string name="cloud">Облако</string>
+
+    
+    <string name="auto_mode">Localis Auto</string>
+
+    
+    <string name="agent_thinking">Анализ вашего вопроса...</string>
+    <string name="agent_searching">Поиск в интернете...</string>
+    <string name="agent_reading">Чтение источников...</string>
+    <string name="agent_analyzing">Анализ результатов...</string>
+    <string name="agent_validating">Проверка информации...</string>
+    <string name="agent_answering">Генерация ответа...</string>
+    <string name="agent_complete">Завершено</string>
+    <string name="search_round">Раунд поиска %1$d/%2$d</string>
+
+    
+    <string name="sources">Источники (%1$d)</string>
+    <string name="open_source">Открыть источник</string>
+    <string name="sources_label">Источники:</string>
+
+    
+    <string name="model_manager">Управление моделями</string>
+    <string name="import_gguf">Импортировать модель GGUF</string>
+    <string name="only_gguf_supported">Поддерживаются только файлы моделей в формате GGUF. ONNX, QNN, MLX не поддерживаются.</string>
+    <string name="no_models">Модели еще не импортированы.\nНажмите "Импортировать модель GGUF", чтобы начать.</string>
+    <string name="load">Загрузить</string>
+    <string name="unload">Выгрузить</string>
+    <string name="active">Активна</string>
+    <string name="importing_model">Импортирование модели...</string>
+    <string name="loading_model">Загрузка модели...</string>
+    <string name="model_ready">Модель загружена и готова.</string>
+    <string name="import_failed">Ошибка импорта: %1$s</string>
+    <string name="load_failed">Ошибка загрузки: %1$s</string>
+    <string name="size_label">Размер: %1$s</string>
+    <string name="quantization_label">Квантование: %1$s</string>
+    <string name="imported">Импортировано: %1$s</string>
+
+    
+    <string name="trending">Популярные</string>
+    <string name="search_results">Результаты поиска</string>
+    <string name="downloaded">Загружено</string>
+    <string name="search_models_hint">Поиск моделей (например, llama, qwen, phi)</string>
+    <string name="search">Поиск</string>
+    <string name="dismiss">Закрыть</string>
+    <string name="gguf_files">Файлы GGUF</string>
+    <string name="no_gguf_files">В этом репозитории не найдено файлов .gguf.</string>
+    <string name="loading_trending">Загрузка популярных моделей...</string>
+    <string name="search_to_start">Выполните поиск моделей GGUF для начала</string>
+    <string name="no_downloaded">Модели еще не загружены.\nВыполните поиск и загрузку во вкладке Популярные или Поиск.</string>
+    <string name="downloads_count">%1$dk</string>
+    <string name="download">Скачать</string>
+    <string name="pause">Пауза</string>
+    <string name="resume">Продолжить</string>
+    <string name="retry">Повторить</string>
+    <string name="downloaded_status">Загружено</string>
+    <string name="error_status">Ошибка</string>
+    <string name="hf_source">HF</string>
+    <string name="mirror_source">Зеркало</string>
+    <string name="eta_format">Осталось: %1$s</string>
+
+    
+    <string name="search_engine">Поисковая система</string>
+    <string name="search_provider">Поисковый провайдер</string>
+    <string name="api_url">URL API</string>
+    <string name="api_key">Ключ API</string>
+    <string name="search_language">Язык поиска</string>
+    <string name="search_region">Регион поиска</string>
+    <string name="max_results">Макс. результатов</string>
+    <string name="max_search_rounds">Макс. раундов поиска</string>
+    <string name="safe_search">Безопасный поиск</string>
+    <string name="model_parameters">Параметры модели</string>
+    <string name="temperature">Температура</string>
+    <string name="top_p">Top-P</string>
+    <string name="top_k">Top-K</string>
+    <string name="context_length">Длина контекста</string>
+    <string name="max_tokens">Макс. токенов</string>
+    <string name="gpu_acceleration">Ускорение GPU</string>
+    <string name="gpu_layers">Слои GPU</string>
+    <string name="threads">Потоки</string>
+    <string name="appearance">Внешний вид</string>
+    <string name="dark_mode">Темный режим</string>
+    <string name="dynamic_color">Динамические цвета (Monet)</string>
+    <string name="privacy_data">Конфиденциальность и данные</string>
+    <string name="enable_internet_search">Включить интернет-поиск</string>
+    <string name="privacy_warning">Предупреждение: при включении поисковые запросы будут отправлены на настроенный API поиска. Инференс GGUF остается полностью локальным.</string>
+    <string name="privacy_default">Модель GGUF работает полностью на устройстве. Данные не загружаются. Включайте интернет-поиск только если нужна актуальная информация.</string>
+    <string name="data_security">Данные и безопасность</string>
+    <string name="data_security_desc">Режим конфиденциальности, система памяти, удаление данных</string>
+    <string name="general_settings">Общие настройки</string>
+    <string name="language">Язык</string>
+    <string name="language_desc">Язык интерфейса и поддержка RTL</string>
+    <string name="animation">Анимация</string>
+    <string name="animation_level">Уровень анимации</string>
+    <string name="animation_desc">Визуальные эффекты и интенсивность движения</string>
+
+    
+    <string name="privacy_session_title">Конфиденциальная сессия</string>
+    <string name="privacy_mode">Режим конфиденциальности</string>
+    <string name="privacy_on_warning">Режим конфиденциальности ВКЛЮЧЕН. Диалоги, история поиска и кэш изображений НЕ будут сохранены. Генерация памяти отключена.</string>
+    <string name="privacy_off_info">Режим конфиденциальности ВЫКЛЮЧЕН. Нормальное сохранение данных активно. Включите режим конфиденциальности перед конфиденциальными запросами.</string>
+    <string name="memory_system">Система памяти</string>
+    <string name="enable_memory">Включить систему памяти</string>
+    <string name="memory_desc">При включении ИИ запоминает факты и предпочтения из ваших диалогов для более персонализированных ответов. Память автоматически отключается в режиме конфиденциальности.</string>
+    <string name="storage_usage">Использование хранилища</string>
+    <string name="conversations">Диалоги</string>
+    <string name="memories">Память</string>
+    <string name="image_cache">Кэш изображений</string>
+    <string name="estimated_total">Примерный итог</string>
+    <string name="data_management">Управление данными</string>
+    <string name="delete_all_conversations">Удалить все диалоги</string>
+    <string name="delete_all_memories">Удалить всю память</string>
+    <string name="clear_image_cache">Очистить кэш изображений</string>
+    <string name="danger_zone">Опасная зона</string>
+    <string name="delete_all_local_data">Удалить все локальные данные</string>
+    <string name="delete_conversations_confirm">Это навсегда удалит всю историю диалогов. Это действие нельзя отменить.</string>
+    <string name="delete_memories_confirm">Это навсегда удалит всю сохраненную память и предпочтения. ИИ больше не будет помнить прошлый контекст. Это действие нельзя отменить.</string>
+    <string name="clear_cache_confirm">Это удалит все кэшированные изображения. Они будут повторно загружены при необходимости. Это действие нельзя отменить.</string>
+    <string name="delete_all_confirm">Это необратимое действие. ВСЕ диалоги, память, настройки и кэшированные данные будут безвозвратно удалены.</string>
+    <string name="delete_confirm_hint">Введите "DELETE" ниже для подтверждения:</string>
+    <string name="nuclear_delete">Полное удаление</string>
+    <string name="delete_all">Удалить все</string>
+    <string name="clear_all">Очистить все</string>
+    <string name="clear_cache">Очистить кэш</string>
+
+    
+    <string name="conversations_title">Диалоги</string>
+    <string name="new_chat">Новый чат</string>
+    <string name="clear_all_history">Очистить всю историю?</string>
+    <string name="clear_history_confirm">Это навсегда удалит ВСЮ историю диалогов. Это действие нельзя отменить.</string>
+    <string name="clear_all_history_action">Очистить все</string>
+    <string name="rename_conversation">Переименовать диалог</string>
+    <string name="title">Название</string>
+    <string name="delete_conversation">Удалить диалог?</string>
+    <string name="delete_conversation_confirm">Вы уверены, что хотите удалить "%1$s"? Это действие нельзя отменить.</string>
+    <string name="export_conversation">Экспортировать диалог</string>
+    <string name="export_success">Диалог успешно экспортирован. JSON-данные созданы и могут быть отправлены или сохранены.</string>
+    <string name="export_failed">Не удалось экспортировать диалог.</string>
+    <string name="search_conversations">Поиск диалогов...</string>
+    <string name="no_conversations">Пока нет диалогов</string>
+    <string name="start_chat_hint">Начните новый чат</string>
+
+    
+    <string name="memory_center_title">Центр памяти</string>
+    <string name="search_memories">Поиск памяти...</string>
+    <string name="no_memories">Пока нет памяти</string>
+    <string name="memory_hint">ИИ будет запоминать важные факты и предпочтения из ваших диалогов</string>
+    <string name="add_memory">Добавить память</string>
+    <string name="content">Содержание</string>
+    <string name="topic">Тема</string>
+    <string name="edit_memory">Редактировать память</string>
+    <string name="delete_memory">Удалить память?</string>
+    <string name="delete_memory_confirm">Эта память будет удалена навсегда. Это действие нельзя отменить.</string>
+    <string name="clear_all_memories">Очистить всю память?</string>
+    <string name="clear_memories_confirm">Это навсегда удалит всю сохраненную память и предпочтения. ИИ больше не будет помнить прошлый контекст. Это действие нельзя отменить.</string>
+    <string name="clear_all_memories_action">Очистить все</string>
+    <string name="source">Источник: %1$s...</string>
+
+    
+    <string name="language_settings">Настройки языка</string>
+    <string name="system_default">Системный по умолчанию</string>
+    <string name="restart_required">Требуется перезапуск</string>
+    <string name="restart_message">Пожалуйста, перезапустите приложение для полного применения изменений языка.</string>
+    <string name="language_english">English</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="language_traditional_chinese">繁體中文</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_japanese">日本語</string>
+    <string name="language_arabic">العربية</string>
+
+    
+    <string name="user">Вы</string>
+    <string name="assistant">ИИ-помощник</string>
+    <string name="streaming">...</string>
+
+    
+    <string name="error_generic">Произошла ошибка</string>
+    <string name="error_network">Ошибка сети. Пожалуйста, проверьте подключение.</string>
+    <string name="error_model_load">Не удалось загрузить модель</string>
+    <string name="error_search">Ошибка поиска</string>
+
+    
+    <string name="version">Версия</string>
+    <string name="about">О приложении</string>
+<string name="settings_search">Search settings</string><string name="settings_general">General</string><string name="settings_ai">AI</string><string name="settings_network">Network</string><string name="settings_privacy">Privacy</string><string name="settings_appearance_group">Appearance</string><string name="settings_data">Data</string><string name="settings_about">About</string><string name="settings_language">Language</string><string name="settings_language_desc">Interface language and layout</string><string name="settings_data_security">Data &amp; Security</string><string name="settings_data_security_desc">Privacy and local data controls</string><string name="settings_ai_models">AI &amp; Models</string><string name="settings_ai_models_desc">Models and inference parameters</string><string name="settings_chat">Chat</string><string name="settings_chat_desc">Chat behavior and response display</string><string name="settings_performance">Performance</string><string name="settings_performance_desc">Acceleration, threads and memory</string><string name="settings_network_search">Network &amp; Search</string><string name="settings_network_search_desc">Search engine and internet search</string><string name="settings_privacy_security">Privacy &amp; Security</string><string name="settings_privacy_security_desc">Privacy mode and data protection</string><string name="settings_appearance">Appearance</string><string name="settings_appearance_desc">Theme, colors, glass and animation</string><string name="settings_data_desc">Chat history, import/export and local data</string><string name="settings_about_desc">Version, open source and licenses</string><string name="language_system">System default</string><string name="language_portuguese">Portuguese</string><string name="language_french">French</string><string name="language_german">German</string><string name="language_restart_message">The app will restart to apply the new language.</string><string name="appearance_theme">Theme</string><string name="appearance_dark_mode">Dark mode</string><string name="appearance_system">System default</string><string name="appearance_light">Light</string><string name="appearance_dark">Dark</string><string name="appearance_dynamic_color">Dynamic color</string><string name="appearance_dynamic_color_desc">Use Android Monet colors when available</string><string name="appearance_ai_core">AI Core</string><string name="appearance_animation_level">Animation level</string><string name="appearance_animation_desc">Visual effects and motion intensity</string><string name="appearance_animation_off">Off</string><string name="appearance_animation_low">Low</string><string name="appearance_animation_standard">Standard</string><string name="appearance_animation_high">High</string>
+    <string name="settings_search_engine">Поисковая система</string>
+    <string name="settings_search_provider">Провайдер поиска</string>
+    <string name="settings_api_url">API URL</string>
+    <string name="settings_api_url_placeholder">https://your-searxng-instance.com</string>
+    <string name="settings_api_key">API-ключ</string>
+    <string name="settings_api_key_placeholder">Enter API key (if required)</string>
+    <string name="settings_search_language">Язык поиска</string>
+    <string name="settings_search_region">Регион поиска</string>
+    <string name="settings_max_results">Max Results</string>
+    <string name="settings_max_rounds">Max Search Rounds</string>
+    <string name="settings_safe_search">Безопасный поиск</string>
+    <string name="settings_model_parameters">Параметры модели</string>
+    <string name="settings_temperature">Температура</string>
+    <string name="settings_top_p">Top-P</string>
+    <string name="settings_top_k">Top-K</string>
+    <string name="settings_context_length">Размер контекста</string>
+    <string name="settings_max_tokens">Максимум токенов</string>
+    <string name="settings_gpu_acceleration">Ускорение GPU</string>
+    <string name="settings_gpu_layers">Слои GPU</string>
+    <string name="settings_threads">Потоки</string>
+    <string name="settings_appearance_section">Внешний вид</string>
+    <string name="settings_privacy_data">Конфиденциальность и данные</string>
+    <string name="settings_enable_internet_search">Включить поиск в интернете</string>
+    <string name="settings_search_warning">Warning: When enabled, search queries will be sent to the configured search API. GGUF inference remains fully on-device.</string>
+    <string name="settings_gguf_privacy_note">GGUF model runs entirely on-device. No data is uploaded. Enable internet search only if you need real-time information.</string>
+    <string name="settings_data_security_desc_short">Приватность, память и удаление данных</string>
+    <string name="language_search">Поиск языков</string>
+    <string name="appearance_forced_font">Принудительно использовать Google Sans + Source Han Sans</string>
+    <string name="appearance_forced_font_desc">Сначала используется встроенный Google Sans CN Flex с CJK-резервом. При отключении используется системный шрифт.</string>
+    <string name="appearance_monet">Динамические цвета Monet</string>
+    <string name="appearance_monet_desc">Использовать системные цвета Android из обоев, если доступно</string>
+    <string name="appearance_presets">Предустановки цветов в стиле Monet</string>
+    <string name="appearance_presets_desc">Выберите фиксированный акцент при отключённом Monet</string>
+    <string name="appearance_blue">Синий</string>
+    <string name="appearance_red">Красный</string>
+    <string name="appearance_yellow">Жёлтый</string>
+    <string name="appearance_green">Зелёный</string>
+
+    <string name="settings_inference_parameters">Inference Parameters</string>
+    <string name="settings_hardware">Hardware</string>
+    <string name="settings_message_display">Message display</string>
+    <string name="settings_auto_scroll">Auto-scroll to new messages</string>
+    <string name="settings_markdown">Show Markdown formatting</string>
+    <string name="settings_code_highlighting">Show code highlighting</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_enter_sends">Enter key sends message</string>
+    <string name="settings_auto_copy">Auto-copy last response</string>
+    <string name="settings_hardware_acceleration">Hardware Acceleration</string>
+    <string name="settings_optimization">Optimization</string>
+    <string name="settings_memory_optimization">Memory Optimization</string>
+    <string name="settings_background_inference">Background Inference</string>
+    <string name="settings_temperature_protection">Temperature Protection</string>
+    <string name="settings_privacy_mode">Privacy Mode</string>
+    <string name="settings_privacy_conversation">Privacy Conversation</string>
+    <string name="settings_data_management">Data Management</string>
+    <string name="settings_chat_history">Chat History</string>
+    <string name="settings_import_history">Import Chat History</string>
+    <string name="settings_export_history">Export Chat History</string>
+    <string name="settings_clear_history">Clear All Chat History</string>
+    <string name="settings_cache">Cache</string>
+    <string name="settings_clear_cache">Clear Cache</string>
+    <string name="settings_danger_zone">Danger Zone</string>
+    <string name="settings_reset_data">Reset All App Data</string>
+    <string name="settings_clear_history_q">Clear Chat History?</string>
+    <string name="settings_clear_history_desc">This will permanently delete all your chat conversations. This action cannot be undone.</string>
+    <string name="settings_clear">Clear</string>
+    <string name="settings_clear_cache_q">Clear Cache?</string>
+    <string name="settings_clear_cache_desc">This will clear all cached data including temporary files.</string>
+    <string name="settings_reset_q">Reset App?</string>
+    <string name="settings_reset_desc">This will reset all settings and delete all data. The app will restart.</string>
+    <string name="settings_reset">Reset</string>
+    <string name="settings_model_center">Model Center</string>
+    <string name="settings_model_source">Model source</string>
+    <string name="optional">Optional</string>
+    <string name="settings_tor_routing">Tor / Private Routing</string>
+    <string name="settings_custom_bridges">Custom bridge addresses</string>
+    <string name="settings_bridge_placeholder">Optional • one Bridge line per row</string>
+    <string name="settings_tor_official">Tor Project official website</string>
+    <string name="settings_manual_proxy">Manual Proxy</string>
+    <string name="settings_proxy_type">Proxy type</string>
+    <string name="settings_proxy_host">Proxy host</string>
+    <string name="settings_proxy_port">Proxy port</string>
+    <string name="settings_tor_active_note">Tor routing is active. Manual proxy routing is temporarily ignored until Tor is turned off.</string>
+    <string name="settings_privacy_mode_desc">When enabled, no chat history will be saved. All data is temporary.</string>
+
+    <string name="settings_model_source_desc">Select the API and download source used by Model Center. If one source times out or returns an empty list, the other source is tried automatically.</string>
+    <string name="settings_current_source">Current source</string>
+    <string name="settings_hf_mirror">Domestic mirror · hf-mirror.com</string>
+    <string name="settings_hf_official">Hugging Face official source</string>
+    <string name="settings_model_source_note">Note: the domestic mirror is not an official Hugging Face service. Automatic fallback helps avoid an empty model list when one source is unavailable.</string>
+    <string name="settings_tor_route_title">Route network requests through Tor</string>
+    <string name="settings_tor_route_desc">Uses an embedded Tor SOCKS proxy on this device</string>
+    <string name="settings_bridge_note">A bridge is optional. Bridge addresses are private configuration supplied by you; the app does not generate or hard-code bridge credentials. Pluggable transports such as obfs4 may require a compatible transport binary.</string>
+    <string name="settings_use_saved_bridges">Use saved custom bridges</string>
+    <string name="settings_add_bridges_first">Add your bridge lines above first</string>
+    <string name="settings_bridge_saved_note">Your bridge configuration will be written to Tor configuration</string>
+    <string name="settings_use_app_proxy">Use app proxy</string>
+    <string name="settings_app_proxy_desc">HTTP or SOCKS proxy for app network requests</string>
+
+    <string name="no_results">Ничего не найдено</string>
+    <string name="about_heading">О приложении</string>
+    <string name="about_info">Информация</string>
+    <string name="about_author">Автор</string>
+    <string name="about_author_desc">Shirakawa · независимый разработчик</string>
+    <string name="about_version">Версия</string>
+    <string name="about_open_source">Открытый исходный код</string>
+    <string name="about_source">Исходный код</string>
+    <string name="about_tor">Поддержка Tor</string>
+    <string name="about_tor_desc">Используется tor-android от Guardian Project. Настройка маршрутизации Tor доступна в разделе «Сеть».</string>
+    <string name="about_privacy">Конфиденциальность</string>
+    <string name="about_privacy_desc">Локальный GGUF запускается на устройстве по умолчанию. Сетевые запросы покидают устройство только при включении поиска или сетевой маршрутизации.</string>
+
+    <string name="settings_tor_connecting">Подключение к Tor…</string>
+    <string name="settings_tor_connected">Tor подключён</string>
+    <string name="settings_tor_failed">Не удалось подключиться к Tor</string>
+</resources>

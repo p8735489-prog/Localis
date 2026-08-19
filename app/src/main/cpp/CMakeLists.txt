@@ -1,48 +1,94 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(llama_bridge)
+project(localaisearch_native LANGUAGES C CXX ASM)
 
-# Android Gradle Plugin does not auto-inject LIBRARY_NAME for CMake builds,
-# so we define it explicitly to match our project name.
-set(LIBRARY_NAME "llama_bridge")
+# Build the complete upstream GGML backend instead of a hand-picked subset.
+# The previous bridge omitted several GGML translation units/backends; that could
+# make libllama_bridge.so fail to link and left Kotlin reporting "native library
+# is unavailable" even though the llama.cpp sources were bundled in the project.
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
+set(GGML_CPU ON CACHE BOOL "" FORCE)
+set(GGML_CPU_ALL_VARIANTS OFF CACHE BOOL "" FORCE)
+set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
+set(GGML_BLAS OFF CACHE BOOL "" FORCE)
+set(GGML_CUDA OFF CACHE BOOL "" FORCE)
+set(GGML_HIP OFF CACHE BOOL "" FORCE)
+set(GGML_VULKAN OFF CACHE BOOL "" FORCE)
+set(GGML_OPENCL OFF CACHE BOOL "" FORCE)
+set(GGML_METAL OFF CACHE BOOL "" FORCE)
+set(GGML_WEBGPU OFF CACHE BOOL "" FORCE)
+set(GGML_RPC OFF CACHE BOOL "" FORCE)
 
-# ─── llama.cpp Integration ───────────────────────────────────────────
-# To enable local GGUF inference, you must build llama.cpp as a static
-# library and link it here. See README.md for detailed instructions.
-#
-# Quick steps:
-# 1. Clone llama.cpp: git clone https://github.com/ggerganov/llama.cpp
-# 2. Build for Android (arm64-v8a / x86_64) with Vulkan/OpenCL for GPU
-# 3. Set LLAMA_CPP_DIR to the build output directory
-# 4. Uncomment the lines below
-#
-# set(LLAMA_CPP_DIR "" CACHE PATH "Path to llama.cpp build directory")
-#
-# add_library(llama STATIC IMPORTED)
-# set_target_properties(llama PROPERTIES
-#     IMPORTED_LOCATION ${LLAMA_CPP_DIR}/libllama.a
-#     INTERFACE_INCLUDE_DIRECTORIES ${LLAMA_CPP_DIR}/../include
-# )
-#
-# add_library(ggml STATIC IMPORTED)
-# set_target_properties(ggml PROPERTIES
-#     IMPORTED_LOCATION ${LLAMA_CPP_DIR}/libggml.a
-# )
-# ────────────────────────────────────────────────────────────────────
+# Fail the native link if any llama/ggml symbol is missing. Without this, a
+# broken .so can make the Kotlin layer report only "native library unavailable".
+if(ANDROID)
+    add_link_options(-Wl,--no-undefined)
+endif()
 
-add_library(${LIBRARY_NAME} SHARED
-    llama_bridge.cpp
+# Android builds use the CPU backend by default. The llama.cpp model loader and
+# every model implementation are compiled from the bundled source tree, so GGUF
+# support follows the complete llama.cpp architecture/quantization support of
+# this source snapshot rather than a hard-coded model allow-list.
+add_subdirectory(ggml)
+
+file(GLOB LLAMA_MODEL_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/models/*.cpp
 )
 
-# Uncomment when llama.cpp is linked:
-# target_link_libraries(${LIBRARY_NAME}
-#     llama
-#     ggml
-#     log
-#     android
-# )
+set(LLAMA_CORE_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-adapter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-arch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-batch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-chat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-context.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-cparams.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-grammar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-graph.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-hparams.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-io.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-kv-cache.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-kv-cache-dsa.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-kv-cache-dsv4.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-kv-cache-iswa.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-memory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-memory-hybrid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-memory-hybrid-iswa.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-memory-recurrent.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-mmap.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-model-loader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-model-saver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-model.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-quant.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-sampler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/llama-vocab.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/unicode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/unicode-data.cpp
+    ${LLAMA_MODEL_SOURCES}
+)
 
-# Stub linkage (no llama.cpp):
-target_link_libraries(${LIBRARY_NAME}
-    log
-    android
+add_library(local_llama STATIC ${LLAMA_CORE_SOURCES})
+target_include_directories(local_llama PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src
+)
+target_compile_features(local_llama PRIVATE cxx_std_17)
+target_link_libraries(local_llama PUBLIC ggml)
+set_target_properties(local_llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+add_library(llama_bridge SHARED llama_bridge.cpp)
+target_include_directories(llama_bridge PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src
+    ${CMAKE_CURRENT_SOURCE_DIR}/ggml/include
+)
+target_compile_features(llama_bridge PRIVATE cxx_std_17)
+target_compile_options(llama_bridge PRIVATE -fexceptions -frtti)
+target_link_libraries(llama_bridge PRIVATE local_llama ggml log android)
+set_target_properties(llama_bridge PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    POSITION_INDEPENDENT_CODE ON
 )

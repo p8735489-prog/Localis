@@ -389,7 +389,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
     llama_memory_clear(llama_get_memory(mc->ctx), true);
     llama_pos nPast = 0;
     const size_t nChunks = mtmd_input_chunks_size(chunks);
-    const int nBatch = std::max(1, std::min(1024, llama_n_ctx(mc->ctx)));
+    const int nBatch = std::max(1, std::min(1024, (int)llama_n_ctx(mc->ctx)));
     for (size_t i = 0; i < nChunks; ++i) {
         const mtmd_input_chunk* chunk = mtmd_input_chunks_get(chunks, i);
         llama_pos nextPast = nPast;

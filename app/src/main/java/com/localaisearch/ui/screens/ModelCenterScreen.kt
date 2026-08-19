@@ -46,6 +46,7 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -81,6 +82,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.localaisearch.R
 import com.localaisearch.data.model.GGUFModel
 import com.localaisearch.data.model.displaySize
 import com.localaisearch.data.repository.DownloadState
@@ -128,7 +130,7 @@ fun ModelCenterScreen(
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "刷新模型")
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh_models))
                     }
                 }
             )
@@ -179,11 +181,11 @@ fun ModelCenterScreen(
                     Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.size(18.dp), tint = colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        if (selectedSource == ModelRepositoryFactory.Source.HUGGING_FACE) "Hugging Face 官方源" else "国内镜像 · hf-mirror.com",
+                        if (selectedSource == ModelRepositoryFactory.Source.HUGGING_FACE) stringResource(R.string.hf_official_source) else stringResource(R.string.hf_domestic_mirror),
                         style = MaterialTheme.typography.labelLarge
                     )
                     Spacer(Modifier.weight(1f))
-                    Text("来源在设置 → 网络中修改", style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.model_source_settings_hint), style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -371,7 +373,7 @@ private fun DownloadedModelsList(
     onLoad: () -> Unit
 ) {
     if (models.isEmpty()) {
-        EmptyState(message = "No downloaded models yet.\nSearch and download from the Trending or Search tabs.")
+        EmptyState(message = stringResource(R.string.no_downloaded))
         return
     }
 
@@ -642,7 +644,7 @@ private fun ModelDetailDialog(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
-                    IconWithText(Icons.Filled.Star, "${model.downloads / 1000}k downloads")
+                    IconWithText(Icons.Filled.Star, stringResource(R.string.performance_downloads, "${model.downloads / 1000}k"))
                     IconWithText(Icons.Filled.Favorite, "${model.likes} likes")
                 }
 

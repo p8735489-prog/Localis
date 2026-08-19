@@ -156,7 +156,7 @@ fun SourceCard(
                     )
                     Icon(
                         imageVector = Icons.Filled.OpenInNew,
-                        contentDescription = "Open source",
+                        contentDescription = stringResource(R.string.open_source),
                         tint = colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(14.dp)
                     )

@@ -74,7 +74,7 @@ fun SettingsPrivacyScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Open Data & Security Center",
+                        text = stringResource(R.string.open_data_security_center),
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )

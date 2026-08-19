@@ -2,13 +2,13 @@ package com.localaisearch.data.repository
 
 import android.content.Context
 import android.content.Intent
+import android.content.ComponentName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.torproject.jni.TorService
 import java.io.File
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -42,6 +42,11 @@ object TorManager {
 
     private var appContext: Context? = null
 
+    private const val TOR_SERVICE_CLASS = "org.torproject.jni.TorService"
+    private const val ACTION_START = "org.torproject.android.intent.action.START"
+    private const val ACTION_STOP = "org.torproject.android.intent.action.STOP"
+    private const val EXTRA_PACKAGE_NAME = "org.torproject.android.intent.extra.PACKAGE_NAME"
+
     fun initialize(context: Context) {
         appContext = context.applicationContext
     }
@@ -52,7 +57,7 @@ object TorManager {
         lastError = null
 
         try {
-            val torrc = TorService.getTorrc(context)
+            val torrc = getTorrc(context)
             torrc.parentFile?.mkdirs()
             activeSocksPort = findFreeSocksPort()
             writeTorrc(torrc, bridgeLines, activeSocksPort)
@@ -60,16 +65,10 @@ object TorManager {
             // Use the public TorService action recommended by tor-android.
             // This avoids relying on implementation details of the embedded Service.
             runCatching {
-                context.startService(Intent(context, TorService::class.java).apply {
-                    action = TorService.ACTION_STOP
-                    putExtra(TorService.EXTRA_PACKAGE_NAME, context.packageName)
-                })
+                context.startService(torIntent(context, ACTION_STOP))
             }
             delay(400)
-            context.startService(Intent(context, TorService::class.java).apply {
-                action = TorService.ACTION_START
-                putExtra(TorService.EXTRA_PACKAGE_NAME, context.packageName)
-            })
+            context.startService(torIntent(context, ACTION_START))
 
             // Fail fast instead of leaving the UI in an indefinite connecting state.
             val ready = waitForSocks(activeSocksPort, 30_000L)
@@ -94,12 +93,9 @@ object TorManager {
     fun stop() {
         val context = appContext ?: return
         runCatching {
-            context.startService(Intent(context, TorService::class.java).apply {
-                action = TorService.ACTION_STOP
-                putExtra(TorService.EXTRA_PACKAGE_NAME, context.packageName)
-            })
+            context.startService(torIntent(context, ACTION_STOP))
         }
-        runCatching { context.stopService(Intent(context, TorService::class.java)) }
+        runCatching { context.stopService(torIntent(context, ACTION_STOP)) }
         if (NetworkClientFactory.currentProxy().host == "127.0.0.1" &&
             NetworkClientFactory.currentProxy().port == activeSocksPort &&
             NetworkClientFactory.currentProxy().type.equals("SOCKS", ignoreCase = true)
@@ -108,6 +104,24 @@ object TorManager {
         }
         status = Status.OFF
         lastError = null
+    }
+
+
+    private fun torIntent(context: Context, action: String): Intent =
+        Intent(action).apply {
+            component = ComponentName(context.packageName, TOR_SERVICE_CLASS)
+            putExtra(EXTRA_PACKAGE_NAME, context.packageName)
+        }
+
+    private fun getTorrc(context: Context): File {
+        return try {
+            val clazz = Class.forName(TOR_SERVICE_CLASS)
+            val method = clazz.getMethod("getTorrc", Context::class.java)
+            (method.invoke(null, context) as? File)
+                ?: File(context.filesDir, "tor/torrc")
+        } catch (_: Throwable) {
+            File(context.filesDir, "tor/torrc")
+        }
     }
 
     private fun writeTorrc(file: File, bridgeLines: String, socksPort: Int) {

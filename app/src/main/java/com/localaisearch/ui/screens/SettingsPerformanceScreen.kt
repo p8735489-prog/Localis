@@ -84,7 +84,7 @@ fun SettingsPerformanceScreen(
                         Text(stringResource(R.string.settings_hardware_detected), style = MaterialTheme.typography.titleMedium)
                         Text("${hardware.buildManufacturer} · ${hardware.buildHardware}", style = MaterialTheme.typography.bodyMedium)
                         Text("${"%.1f".format(ramGb)} GB RAM · ${hardware.cpuCores} CPU · ${hardware.gpuVendor ?: "GPU —"} · ${hardware.chipsetFamily}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(when { hardware.supportsGoogleTpu -> "Google TPU 可用入口（仅 Tensor 设备）"; hardware.supportsMediaTekApu -> "MediaTek APU 已识别（当前 llama.cpp 桥保持 CPU 推理）"; hardware.hasNpu -> "AI 加速器已识别（当前 native 后端保持 CPU）"; else -> "CPU 推理 · 自动使用设备可用指令集" }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(when { hardware.supportsGoogleTpu -> R.string.hardware_tpu_status; hardware.supportsMediaTekApu -> R.string.hardware_mediatek_status; hardware.hasNpu -> R.string.hardware_npu_status; else -> R.string.hardware_cpu_status }), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

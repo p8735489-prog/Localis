@@ -212,7 +212,7 @@ private fun ImportStatusIndicator(importStatus: ImportStatus) {
         }
         is ImportStatus.Success -> {
             Text(
-                text = "Imported: ${importStatus.model.name}",
+                text = stringResource(R.string.imported_model, importStatus.model.name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
@@ -220,7 +220,7 @@ private fun ImportStatusIndicator(importStatus: ImportStatus) {
         }
         is ImportStatus.Error -> {
             Text(
-                text = "Import failed: ${importStatus.message}",
+                text = stringResource(R.string.import_failed, importStatus.message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
@@ -315,7 +315,7 @@ private fun LoadStatusIndicator(loadStatus: LoadStatus) {
         }
         is LoadStatus.Error -> {
             Text(
-                text = "Load failed: ${loadStatus.message}",
+                text = stringResource(R.string.load_failed, loadStatus.message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)

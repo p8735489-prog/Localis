@@ -326,7 +326,7 @@
     <string name="settings_gguf_privacy_note">GGUF 模型完全在设备本地运行，不会上传数据。只有需要实时信息时才建议开启联网搜索。</string>
     <string name="settings_data_security_desc_short">隐私模式、记忆系统和数据删除</string>
     <string name="language_search">搜索语言</string>
-    <string name="appearance_forced_font">强制使用 Google Sans + 思源黑体</string>
+    <string name="appearance_forced_font">强制使用 Google Sans / 苹方</string>
     <string name="appearance_forced_font_desc">优先使用内置 Google Sans CN Flex，中文使用 CJK 字形回退；关闭后跟随系统字体。</string>
 
     <string name="settings_inference_parameters">推理参数</string>
@@ -467,4 +467,11 @@
     <string name="memory_preset_projects">项目</string>
     <string name="memory_preset_device">设备</string>
     <string name="memory_preset_recent">最近</string>
-    </resources>
+    <string name="settings_thinking_depth">Thinking depth</string><string name="settings_thinking_fast">Fast</string><string name="settings_thinking_balanced">Balanced</string><string name="settings_thinking_deep">Deep</string><string name="settings_thinking_max">Maximum</string><string name="settings_compute_backend">Compute backend</string><string name="settings_backend_cpu">CPU</string><string name="settings_backend_gpu">GPU</string><string name="settings_backend_npu">NPU</string><string name="settings_backend_note">CPU is always available. GPU/NPU depend on the device and compiled backend support and fall back to CPU when unavailable.</string><string name="system_prompt">系统指令</string><string name="enable_web_search">开启联网搜索</string><string name="disable_web_search">关闭联网搜索</string><string name="enable_private_mode">开启隐私模式</string><string name="disable_private_mode">关闭隐私模式</string><string name="default_ai_system_prompt">默认 AI 系统提示词</string><string name="hardware_tpu_status">Google TPU 可用入口（仅 Tensor 设备）</string><string name="hardware_mediatek_status">MediaTek APU 已识别（当前 llama.cpp 使用 CPU）</string><string name="hardware_npu_status">AI 加速器已识别（当前 native 后端使用 CPU）</string><string name="hardware_cpu_status">CPU 推理 · 自动使用设备可用指令集</string><string name="model_source_settings_hint">模型源可在设置 → 网络中修改</string><string name="downloads_suffix">下载</string><string name="performance_downloads">%1$s 次下载</string>
+    <string name="refresh_models">刷新模型</string>
+    <string name="open_data_security_center">打开数据与安全中心</string>
+    <string name="hf_official_source">Hugging Face 官方源</string>
+    <string name="hf_domestic_mirror">国内镜像 · hf-mirror.com</string>
+    <string name="imported_model">已导入：%1$s</string>
+    <string name="gpu_label">GPU —</string>
+</resources>

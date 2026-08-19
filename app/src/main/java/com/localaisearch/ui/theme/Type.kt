@@ -11,10 +11,26 @@ import androidx.compose.ui.unit.sp
 // Material 3 Expressive typography
 // Slightly larger display sizes and more expressive weights
 
+private fun bundledVariableFamily(fontRes: Int): FontFamily = FontFamily(
+    Font(fontRes, FontWeight.Thin),
+    Font(fontRes, FontWeight.ExtraLight),
+    Font(fontRes, FontWeight.Light),
+    Font(fontRes, FontWeight.Normal),
+    Font(fontRes, FontWeight.Medium),
+    Font(fontRes, FontWeight.SemiBold),
+    Font(fontRes, FontWeight.Bold),
+    Font(fontRes, FontWeight.ExtraBold),
+    Font(fontRes, FontWeight.Black)
+)
+
 fun appTypography(fontMode: String): Typography {
+    // Both bundled fonts are variable fonts. Register the same font resource at
+    // Material 3's common weights so Android/Compose can select the requested
+    // weight instead of treating the whole UI as Regular. The system font remains
+    // the fallback for glyphs that are not present (emoji, symbols, etc.).
     val family = when (fontMode) {
-        "google_sans" -> FontFamily(Font(R.font.google_sans_cn_flex, FontWeight.Normal))
-        "pingfang" -> FontFamily(Font(R.font.pingfang, FontWeight.Normal))
+        "google_sans" -> bundledVariableFamily(R.font.google_sans_cn_flex)
+        "pingfang" -> bundledVariableFamily(R.font.pingfang)
         else -> FontFamily.SansSerif
     }
     return Typography(

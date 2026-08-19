@@ -86,3 +86,11 @@ Android `versionName` 已固定为 `2.1.0`，About 页面通过 `BuildConfig.VER
 ## License
 
 请以仓库中的 `LICENSE` 文件为准。
+
+## Build fixes in the language/CI refresh
+
+- `GGUFEngine` uses `kotlinx.coroutines.channels.awaitClose`.
+- Tor is addressed through the stable public `tor-android` action strings and an explicit component, avoiding a compile-time dependency on `TorService` symbols while retaining the Guardian Project service at runtime.
+- Model Center explicitly imports the app `R` class and Material 3 `CircularProgressIndicator`.
+- GitHub Actions installs and pins Android NDK 27.2.12479018 for the native llama.cpp build.
+- Android string resources are audited across all bundled locales; the current locale sets contain the same 483 keys.

@@ -356,22 +356,22 @@ fun HomeScreen(
                             ) {
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Outlined.Tune, null) },
-                                    text = { Text("系统指令") },
+                                    text = { Text(stringResource(R.string.system_prompt)) },
                                     onClick = { showMenu = false; showSystemPromptDialog = true }
                                 )
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Outlined.Search, null) },
-                                    text = { Text(if (internetSearchEnabled) "关闭联网搜索" else "开启联网搜索") },
+                                    text = { Text(stringResource(if (internetSearchEnabled) R.string.disable_web_search else R.string.enable_web_search)) },
                                     onClick = { showMenu = false; viewModel.toggleInternetSearch() }
                                 )
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Filled.Lock, null) },
-                                    text = { Text(if (isPrivacyMode) "关闭隐私模式" else "开启隐私模式") },
+                                    text = { Text(stringResource(if (isPrivacyMode) R.string.disable_private_mode else R.string.enable_private_mode)) },
                                     onClick = { showMenu = false; viewModel.togglePrivacyMode() }
                                 )
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Outlined.Settings, null) },
-                                    text = { Text("设置") },
+                                    text = { Text(stringResource(R.string.settings)) },
                                     onClick = { showMenu = false; onNavigateToSettings() }
                                 )
                             }
@@ -737,7 +737,7 @@ private fun SystemPromptDialog(
     )
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("默认 AI 系统提示词") },
+        title = { Text(stringResource(R.string.default_ai_system_prompt)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 options.forEach { option ->
@@ -765,7 +765,7 @@ private fun SystemPromptDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } },
         shape = RoundedCornerShape(24.dp)
     )
 }

@@ -320,7 +320,7 @@
     <string name="settings_gguf_privacy_note">GGUF model runs entirely on-device. No data is uploaded. Enable internet search only if you need real-time information.</string>
     <string name="settings_data_security_desc_short">Privacy mode, memory system, delete data</string>
     <string name="language_search">Search languages</string>
-    <string name="appearance_forced_font">Force Google Sans + Source Han Sans</string>
+    <string name="appearance_forced_font">Force Google Sans / 苹方</string>
     <string name="appearance_forced_font_desc">Use bundled Google Sans CN Flex first, with CJK glyph fallback. Turn off to follow the system font.</string>
 
     <string name="settings_inference_parameters">Inference Parameters</string>
@@ -473,4 +473,11 @@
     <string name="memory_preset_projects">Projects</string>
     <string name="memory_preset_device">Device</string>
     <string name="memory_preset_recent">Recent</string>
-    </resources>
+    <string name="system_prompt">System prompt</string><string name="enable_web_search">Enable web search</string><string name="disable_web_search">Disable web search</string><string name="enable_private_mode">Enable private mode</string><string name="disable_private_mode">Disable private mode</string><string name="default_ai_system_prompt">Default AI system prompt</string><string name="hardware_tpu_status">Google TPU available (Tensor devices only)</string><string name="hardware_mediatek_status">MediaTek APU detected (llama.cpp currently uses CPU)</string><string name="hardware_npu_status">AI accelerator detected (native backend currently uses CPU)</string><string name="hardware_cpu_status">CPU inference · automatically uses available instruction sets</string><string name="model_source_settings_hint">Change model source in Settings → Network</string><string name="downloads_suffix">downloads</string><string name="performance_downloads">%1$s downloads</string>
+    <string name="refresh_models">Refresh models</string>
+    <string name="open_data_security_center">Open Data &amp; Security Center</string>
+    <string name="hf_official_source">Hugging Face official</string>
+    <string name="hf_domestic_mirror">Domestic mirror · hf-mirror.com</string>
+    <string name="imported_model">Imported: %1$s</string>
+    <string name="gpu_label">GPU —</string>
+</resources>

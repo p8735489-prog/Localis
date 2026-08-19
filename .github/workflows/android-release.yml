@@ -77,16 +77,6 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Remove stale workflows
-        shell: bash
-        run: |
-          for f in .github/workflows/*.yml; do
-            if [ "$(basename "$f")" != "android-release.yml" ]; then
-            echo "Removing stale workflow: $f"
-            rm -f "$f"
-            fi
-          done
-
       - name: Source preflight
         run: python3 tools/ci_preflight.py
 

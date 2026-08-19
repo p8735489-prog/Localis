@@ -186,12 +186,6 @@ void common_peg_ast_arena::visit(const common_peg_parse_result & result, const c
 
 struct parser_executor;
 
-common_peg_parser_id common_peg_arena::add_parser(common_peg_parser_variant parser) {
-    common_peg_parser_id id = parsers_.size();
-    parsers_.push_back(std::move(parser));
-    return id;
-}
-
 void common_peg_arena::add_rule(const std::string & name, common_peg_parser_id id) {
     rules_[name] = id;
 }

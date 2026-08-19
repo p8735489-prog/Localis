@@ -343,7 +343,17 @@ class common_peg_arena {
   private:
     std::string dump_impl(common_peg_parser_id id, std::set<common_peg_parser_id> & visited) const;
 
-    common_peg_parser_id add_parser(common_peg_parser_variant parser);
+    template <typename T>
+    common_peg_parser_id add_parser(T && parser) {
+        using parser_type = std::decay_t<T>;
+        static_assert(
+            std::is_constructible_v<common_peg_parser_variant, std::in_place_type_t<parser_type>, T &&>,
+            "PEG parser type must be a direct alternative of common_peg_parser_variant"
+        );
+        const common_peg_parser_id id = parsers_.size();
+        parsers_.emplace_back(std::in_place_type<parser_type>, std::forward<T>(parser));
+        return id;
+    }
     void add_rule(const std::string & name, common_peg_parser_id id);
 
     common_peg_parser_id resolve_ref(common_peg_parser_id id);
@@ -353,7 +363,10 @@ class common_peg_parser_builder {
     common_peg_arena arena_;
 
     common_peg_parser wrap(common_peg_parser_id id) { return common_peg_parser(id, *this); }
-    common_peg_parser add(const common_peg_parser_variant & p) { return wrap(arena_.add_parser(p)); }
+    template <typename T>
+    common_peg_parser add(T && p) {
+        return wrap(arena_.add_parser(std::forward<T>(p)));
+    }
 
   public:
     common_peg_parser_builder();

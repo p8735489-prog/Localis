@@ -17,8 +17,10 @@
 #include "llama.h"
 #include "common/chat.h"
 #include "ggml.h"
+#ifdef LLAMA_MTMD_AVAILABLE
 #include "mtmd.h"
 #include "mtmd-helper.h"
+#endif
 
 #define LOG_TAG "LlamaBridge"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -32,7 +34,11 @@ struct ModelContext {
     llama_context* ctx = nullptr;
     int64_t memoryUsage = -1;
     std::string modelPath;
+#ifdef LLAMA_MTMD_AVAILABLE
     mtmd_context* mtmd = nullptr;
+#else
+    void* mtmd = nullptr;
+#endif
     std::string mmprojPath;
     std::mutex inferenceMutex;
 };
@@ -196,7 +202,9 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeUnloadModel(JNIEnv*, jobject, 
         std::lock_guard<std::mutex> lock(g_mutex);
         auto it = g_contexts.find(handle);
         if (it == g_contexts.end() || it->second != mc) return JNI_FALSE;
+#ifdef LLAMA_MTMD_AVAILABLE
         if (mc->mtmd) { mtmd_free(mc->mtmd); mc->mtmd = nullptr; }
+#endif
         if (mc->ctx) { llama_free(mc->ctx); mc->ctx = nullptr; }
         if (mc->model) { llama_model_free(mc->model); mc->model = nullptr; }
         g_contexts.erase(it);
@@ -246,6 +254,10 @@ static std::string sanitizeGeneratedPiece(const std::string & piece) {
 JNIEXPORT jboolean JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadVisionProjector(
         JNIEnv* env, jobject, jlong handle, jstring jMmprojPath, jint threads, jboolean useGpu) {
+#ifndef LLAMA_MTMD_AVAILABLE
+    setLastError("Multimodal runtime (mtmd) was not compiled into this build");
+    return JNI_FALSE;
+#else
     ModelContext* mc = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -298,14 +310,19 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadVisionProjector(
     env->ReleaseStringUTFChars(jMmprojPath, path);
     LOGI("mtmd vision projector loaded successfully");
     return JNI_TRUE;
+#endif
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeHasVision(JNIEnv*, jobject, jlong handle) {
+#ifndef LLAMA_MTMD_AVAILABLE
+    return JNI_FALSE;
+#else
     std::lock_guard<std::mutex> lock(g_mutex);
     auto it = g_contexts.find(handle);
     if (it == g_contexts.end() || !it->second || !it->second->mtmd) return JNI_FALSE;
     return mtmd_support_vision(it->second->mtmd) ? JNI_TRUE : JNI_FALSE;
+#endif
 }
 
 JNIEXPORT jboolean JNICALL
@@ -313,6 +330,10 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
         JNIEnv* env, jobject, jlong handle, jstring jPrompt, jbyteArray jImage,
         jfloat temperature, jint maxTokens, jint topK, jfloat topP,
         jfloat repeatPenalty, jfloat frequencyPenalty, jfloat presencePenalty, jobject callback) {
+#ifndef LLAMA_MTMD_AVAILABLE
+    setLastError("Multimodal runtime (mtmd) was not compiled into this build");
+    return JNI_FALSE;
+#else
     ModelContext* mc = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -447,6 +468,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
     llama_sampler_free(smpl);
     llama_batch_free(batch);
     return ok ? JNI_TRUE : JNI_FALSE;
+#endif
 }
 
 JNIEXPORT jboolean JNICALL

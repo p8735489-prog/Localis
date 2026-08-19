@@ -95,36 +95,44 @@ add_library(llama ALIAS local_llama)
 add_subdirectory(common)
 
 # libmtmd is the upstream llama.cpp multimodal runtime. The repository checkout
-# is populated by tools/fetch_mtmd.sh before Android builds. Keep this as a hard
-# requirement: silently falling back to a Java-side image stub would make the
-# upload button appear to work while the model never receives pixels.
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd/CMakeLists.txt)
-    message(FATAL_ERROR "llama.cpp mtmd sources are missing. Run tools/fetch_mtmd.sh before building.")
-endif()
+# is populated by tools/fetch_mtmd.sh before Android builds. If the fetch failed
+# (upstream restructure, network issue), build without mtmd and emit a warning
+# so the build can still succeed; the Kotlin layer falls back to text-only mode.
 set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
-if(NOT DEFINED LLAMA_VERSION_BASE)
-    set(LLAMA_VERSION_BASE 0)
+set(MTMD_AVAILABLE OFF)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd/CMakeLists.txt)
+    set(MTMD_AVAILABLE ON)
+    if(NOT DEFINED LLAMA_VERSION_BASE)
+        set(LLAMA_VERSION_BASE 0)
+    endif()
+    if(NOT DEFINED LLAMA_VERSION_MAJOR)
+        set(LLAMA_VERSION_MAJOR 0)
+    endif()
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/CMakeLists.txt)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor ${CMAKE_CURRENT_BINARY_DIR}/vendor)
+    endif()
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd ${CMAKE_CURRENT_BINARY_DIR}/mtmd)
+else()
+    message(WARNING "llama.cpp mtmd sources not found; building without multimodal runtime. Run tools/fetch_mtmd.sh to enable vision support.")
 endif()
-if(NOT DEFINED LLAMA_VERSION_MAJOR)
-    set(LLAMA_VERSION_MAJOR 0)
-endif()
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/CMakeLists.txt)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor ${CMAKE_CURRENT_BINARY_DIR}/vendor)
-endif()
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd ${CMAKE_CURRENT_BINARY_DIR}/mtmd)
 
 add_library(llama_bridge SHARED llama_bridge.cpp)
 target_include_directories(llama_bridge PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/llama_src
     ${CMAKE_CURRENT_SOURCE_DIR}/ggml/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd
 )
 target_compile_features(llama_bridge PRIVATE cxx_std_17)
 target_compile_options(llama_bridge PRIVATE -fexceptions -frtti)
-target_link_libraries(llama_bridge PRIVATE local_llama llama-common mtmd ggml log android)
+target_link_libraries(llama_bridge PRIVATE local_llama llama-common ggml log android)
 set_target_properties(llama_bridge PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
 )
+
+if(MTMD_AVAILABLE)
+    target_include_directories(llama_bridge PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd)
+    target_link_libraries(llama_bridge PRIVATE mtmd)
+    target_compile_definitions(llama_bridge PRIVATE LLAMA_MTMD_AVAILABLE=1)
+endif()

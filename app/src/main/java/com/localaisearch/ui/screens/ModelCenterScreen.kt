@@ -528,7 +528,8 @@ private fun ModelCard(
 
 @Composable
 private fun ModelFitChip(modelName: String) {
-    val hardware = remember { HardwareDetector.detectHardware(androidx.compose.ui.platform.LocalContext.current) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val hardware = remember { HardwareDetector.detectHardware(context) }
     val ramGb = hardware.totalRamBytes / (1024.0 * 1024.0 * 1024.0)
     val params = Regex("(\\d+(?:\\.\\d+)?)B", RegexOption.IGNORE_CASE).find(modelName)?.groupValues?.getOrNull(1)?.toDoubleOrNull()
     val level = when {

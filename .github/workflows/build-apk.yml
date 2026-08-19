@@ -37,7 +37,8 @@ jobs:
 
       - name: Install SDK components
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmake;3.22.1" "ndk;27.0.12077973"
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmake;3.22.1" "ndk;27.2.12479018"
+          test -d "$ANDROID_SDK_ROOT/ndk/27.2.12479018"
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -52,17 +53,25 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Write signing keystore from GitHub Secret
+      - name: Validate release secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" || { echo "::error::Missing SIGNING_KEYSTORE_B64 secret"; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "::error::Missing SIGNING_STORE_PASSWORD secret"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::Missing SIGNING_KEY_ALIAS secret"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "::error::Missing SIGNING_KEY_PASSWORD secret"; exit 1; }
+
+      - name: Restore signing keystore
         env:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > /tmp/signing.keystore
-            echo "SIGNING_KEYSTORE_PATH=/tmp/signing.keystore" >> "$GITHUB_ENV"
-            echo "Keystore written from secret"
-          else
-            echo "No SIGNING_KEYSTORE_B64 secret found — APK will be unsigned"
-          fi
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/localis-release.jks"
+          test -s "$RUNNER_TEMP/localis-release.jks" || { echo "::error::Keystore decode failed"; exit 1; }
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/localis-release.jks" >> "$GITHUB_ENV"
 
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon --stacktrace
@@ -73,8 +82,9 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
-      - name: Remove temporary keystore
-        run: rm -f /tmp/signing.keystore
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/localis-release.jks"
 
       - name: Verify APK signature
         run: |
@@ -83,7 +93,7 @@ jobs:
           ls -lh $APK_PATH
           ${ANDROID_SDK_ROOT}/build-tools/35.0.0/aapt dump badging $APK_PATH | head -3
           echo "---"
-          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/apksigner verify --verbose $APK_PATH || true
+          ${ANDROID_SDK_ROOT}/build-tools/35.0.0/apksigner verify --verbose $APK_PATH
 
       - name: Rename APK with version
         run: |

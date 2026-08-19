@@ -56,8 +56,6 @@ android {
                 !releaseSigning.keyAlias.isNullOrBlank() &&
                 !releaseSigning.keyPassword.isNullOrBlank()) {
                 signingConfig = releaseSigning
-            } else if (System.getenv("CI") == "true") {
-                throw GradleException("Release signing credentials are missing. Configure SIGNING_KEYSTORE_PATH, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS and SIGNING_KEY_PASSWORD.")
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

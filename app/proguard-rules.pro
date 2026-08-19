@@ -14,3 +14,13 @@
 -keepclasseswithmembers class * {
     native <methods>;
 }
+
+# JNI invokes this callback method by name from C++; keep it stable in release/R8.
+-keep class com.localaisearch.data.llm.LlamaBridge$TokenCallback { *; }
+-keepclassmembers class com.localaisearch.data.llm.LlamaBridge$TokenCallback {
+    fun onToken(java.lang.String);
+}
+
+# TorService is referenced from AndroidManifest and loaded by the embedded AAR.
+-keep class org.torproject.jni.TorService { *; }
+-dontwarn org.torproject.jni.**

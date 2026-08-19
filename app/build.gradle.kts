@@ -51,8 +51,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = false
             val releaseSigning = signingConfigs.findByName("release")
-            if (releaseSigning?.storeFile?.exists() == true) {
+            if (releaseSigning?.storeFile?.exists() == true &&
+                !releaseSigning.storePassword.isNullOrBlank() &&
+                !releaseSigning.keyAlias.isNullOrBlank() &&
+                !releaseSigning.keyPassword.isNullOrBlank()) {
                 signingConfig = releaseSigning
+            } else if (System.getenv("CI") == "true") {
+                throw GradleException("Release signing credentials are missing. Configure SIGNING_KEYSTORE_PATH, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS and SIGNING_KEY_PASSWORD.")
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -81,9 +86,6 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
     packaging {
         jniLibs {

@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.repository.ConversationRepository
 import com.localaisearch.data.repository.StoredConversation
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,8 +35,14 @@ class ConversationViewModel(
     private val _exportResult = MutableStateFlow<String?>(null)
     val exportResult: StateFlow<String?> = _exportResult.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private var debounceJob: Job? = null
+    private var initJob: Job? = null
+
     init {
-        viewModelScope.launch {
+        initJob = viewModelScope.launch {
             repository.getAllStoredConversations().collect { list ->
                 _conversations.value = list
             }
@@ -47,7 +55,9 @@ class ConversationViewModel(
      */
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
-        viewModelScope.launch {
+        debounceJob?.cancel()
+        debounceJob = viewModelScope.launch {
+            delay(300)
             if (query.isBlank()) {
                 repository.getAllStoredConversations().collect { list ->
                     _conversations.value = list
@@ -64,10 +74,16 @@ class ConversationViewModel(
      * Toggle the pinned state of a conversation.
      */
     fun togglePin(id: String) {
+        if (_isLoading.value) return
+        _isLoading.value = true
         viewModelScope.launch {
-            val current = _conversations.value.find { it.conversation.id == id }
-            val newPinned = !(current?.pinned ?: false)
-            repository.pinConversation(id, newPinned)
+            try {
+                val current = _conversations.value.find { it.conversation.id == id }
+                val newPinned = !(current?.pinned ?: false)
+                repository.pinConversation(id, newPinned)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -75,8 +91,14 @@ class ConversationViewModel(
      * Rename a conversation.
      */
     fun renameConversation(id: String, newTitle: String) {
+        if (_isLoading.value) return
+        _isLoading.value = true
         viewModelScope.launch {
-            repository.renameConversation(id, newTitle)
+            try {
+                repository.renameConversation(id, newTitle)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -84,8 +106,14 @@ class ConversationViewModel(
      * Delete a conversation.
      */
     fun deleteConversation(id: String) {
+        if (_isLoading.value) return
+        _isLoading.value = true
         viewModelScope.launch {
-            repository.deleteConversation(id)
+            try {
+                repository.deleteConversation(id)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -95,9 +123,15 @@ class ConversationViewModel(
      * @param id The conversation ID to export.
      */
     fun exportConversation(id: String) {
+        if (_isLoading.value) return
+        _isLoading.value = true
         viewModelScope.launch {
-            val json = repository.exportConversation(id)
-            _exportResult.value = json
+            try {
+                val json = repository.exportConversation(id)
+                _exportResult.value = json
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -108,12 +142,24 @@ class ConversationViewModel(
         _exportResult.value = null
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        debounceJob?.cancel()
+        initJob?.cancel()
+    }
+
     /**
      * Clear all conversation history.
      */
     fun clearAllConversations() {
+        if (_isLoading.value) return
+        _isLoading.value = true
         viewModelScope.launch {
-            repository.clearAllConversations()
+            try {
+                repository.clearAllConversations()
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }

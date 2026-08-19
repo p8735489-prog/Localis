@@ -337,6 +337,48 @@ class ConversationRepository(private val context: Context) {
         }
     }
 
+    @Serializable
+    data class ConversationExport(
+        val schemaVersion: Int = 1,
+        val exportedAt: Long = System.currentTimeMillis(),
+        val conversations: List<StoredConversation>
+    )
+
+    /** Export every conversation, including pin/model metadata. */
+    suspend fun exportAllConversations(): String {
+        val exportJson = Json { prettyPrint = true; encodeDefaults = true }
+        return try {
+            val all = dataStore.data.map { loadConversations(it) }.first()
+            exportJson.encodeToString(ConversationExport(conversations = all))
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    /** Import an export created by this app. Returns number of conversations imported. */
+    suspend fun importAllConversations(jsonText: String): Result<Int> {
+        return try {
+            val incoming = runCatching {
+                json.decodeFromString<ConversationExport>(jsonText).conversations
+            }.getOrElse {
+                listOf(StoredConversation(conversation = json.decodeFromString<Conversation>(jsonText)))
+            }
+            dataStore.edit { prefs ->
+                val current = loadConversations(prefs).toMutableList()
+                val byId = current.associateBy { it.conversation.id }.toMutableMap()
+                incoming.forEach { item -> byId[item.conversation.id] = item }
+                val merged = byId.values.sortedWith(
+                    compareByDescending<StoredConversation> { it.pinned }
+                        .thenByDescending { it.conversation.updatedAt }
+                )
+                prefs[CONVERSATIONS_JSON] = json.encodeToString(merged)
+            }
+            Result.success(incoming.size)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /**
      * Observe the total number of stored conversations.
      */

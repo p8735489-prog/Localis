@@ -17,10 +17,11 @@ data class GGUFModel(
     val parameterCount: String = "unknown",
     val isLoaded: Boolean = false,
     val importedAt: Long = System.currentTimeMillis()
-) {
-    val displaySize: String
-        get() = formatFileSize(fileSizeBytes)
-}
+)
+
+/** Human-readable file size string for a GGUFModel. */
+val GGUFModel.displaySize: String
+    get() = formatFileSize(fileSizeBytes)
 
 /**
  * Formats a byte count into a human-readable string (e.g. "1.5 GB").

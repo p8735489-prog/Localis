@@ -90,6 +90,7 @@ object ModelRouter {
 
         // --- Image path -------------------------------------------------------
         if (imageInput != null) {
+            // Active model is vision-capable → use it directly
             if (activeModel != null && isVisionCapable(activeModel)) {
                 return RouteResult(
                     selectedModelId = activeModel.id,
@@ -99,6 +100,7 @@ object ModelRouter {
                 )
             }
 
+            // Active model lacks vision — look for another vision model
             val visionFallback = availableModels.firstOrNull { isVisionCapable(it) }
             if (visionFallback != null) {
                 return RouteResult(
@@ -115,7 +117,7 @@ object ModelRouter {
             return RouteResult(
                 selectedModelId = selected?.id,
                 taskType = TaskType.TEXT_CHAT,
-                requiresFallback = activeModel == null,
+                requiresFallback = true,
                 fallbackReason = if (selected == null) {
                     "No models available. Image input cannot be processed."
                 } else {
@@ -171,10 +173,10 @@ object ModelRouter {
         return when (taskType) {
             TaskType.MULTIMODAL, TaskType.IMAGE_ANALYSIS -> {
                 availableModels.firstOrNull { isVisionCapable(it) }
-                    ?: availableModels.first()
+                    ?: availableModels.firstOrNull()
             }
             TaskType.WEB_SEARCH, TaskType.TEXT_CHAT -> {
-                availableModels.first()
+                availableModels.firstOrNull()
             }
         }
     }

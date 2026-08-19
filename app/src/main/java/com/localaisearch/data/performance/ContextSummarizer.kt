@@ -152,7 +152,12 @@ class ContextSummarizer(private val llmEngine: LLMEngine) {
         var dropped = 0
 
         // Always include the very last message (current user input)
-        val lastMessage = messages.last()
+        val lastMessage = messages.lastOrNull() ?: return ContextBuildResult(
+            selectedMessages = messages,
+            summaryMessage = null,
+            droppedCount = 0,
+            estimatedTokens = estimateTokenCount(messages)
+        )
         val lastTokens = estimateTokenCount(listOf(lastMessage))
         result.add(lastMessage)
         tokenSum += lastTokens

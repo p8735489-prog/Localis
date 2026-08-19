@@ -108,8 +108,9 @@ class ModelViewModel(
     }
 
     override fun onCleared() {
+        // The GGUF engine is app-scoped and shared with ChatViewModel/ModelCenterViewModel.
+        // Releasing it here used to make the chat lose the loaded model when this VM left scope.
         super.onCleared()
-        _llmEngine.release()
     }
 }
 

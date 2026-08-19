@@ -3,6 +3,7 @@ package com.localaisearch.data.repository
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import com.localaisearch.data.llm.GGUFEngine
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.GGUFModel
 import com.localaisearch.data.model.InferenceConfig
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.io.FileOutputStream
 
@@ -39,9 +42,30 @@ class ModelRepository(
 
     private val _activeModel = MutableStateFlow<GGUFModel?>(null)
     val activeModel: StateFlow<GGUFModel?> = _activeModel.asStateFlow()
+    private val modelOperationMutex = Mutex()
 
     init {
         refreshModels()
+    }
+
+    /**
+     * Validate that a file is a valid GGUF file by checking the magic number.
+     * The file header must start with "GGUF" (bytes 0x47 0x47 0x55 0x46).
+     */
+    fun validateGGUFFile(file: File): Boolean {
+        if (!file.exists() || file.length() < 4) return false
+        return try {
+            file.inputStream().use { input ->
+                val header = ByteArray(4)
+                if (input.read(header) != 4) return false
+                header[0] == 0x47.toByte() &&
+                        header[1] == 0x47.toByte() &&
+                        header[2] == 0x55.toByte() &&
+                        header[3] == 0x46.toByte()
+            }
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /**
@@ -98,6 +122,14 @@ class ModelRepository(
                 IllegalArgumentException("Cannot read file from URI")
             )
 
+            // Validate GGUF magic number after copy
+            if (!validateGGUFFile(targetFile)) {
+                targetFile.delete()
+                return@withContext Result.failure(
+                    IllegalStateException("Invalid GGUF file: magic number mismatch")
+                )
+            }
+
             val model = GGUFModel(
                 id = targetFile.absolutePath,
                 name = targetFile.nameWithoutExtension,
@@ -116,6 +148,7 @@ class ModelRepository(
      * Delete a model file and unload it if active.
      */
     suspend fun deleteModel(model: GGUFModel): Result<Unit> = withContext(Dispatchers.IO) {
+        modelOperationMutex.withLock {
         try {
             if (_activeModel.value?.id == model.id) {
                 engine.unloadModel()
@@ -132,6 +165,7 @@ class ModelRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+        }
     }
 
     /**
@@ -139,22 +173,32 @@ class ModelRepository(
      */
     suspend fun loadModel(model: GGUFModel, config: InferenceConfig): Result<Unit> =
         withContext(Dispatchers.IO) {
-            val result = engine.loadModel(model.filePath, config)
-            result.onSuccess {
-                _activeModel.value = model.copy(isLoaded = true)
+            modelOperationMutex.withLock {
+                val file = File(model.filePath)
+                if (!file.isFile || !validateGGUFFile(file)) {
+                    return@withLock Result.failure(IllegalArgumentException("Invalid or missing GGUF file: ${model.filePath}"))
+                }
+                val result = engine.loadModel(model.filePath, config)
+                result.onSuccess {
+                    _activeModel.value = model.copy(isLoaded = true)
+                }
+                result
             }
-            result
         }
 
     /**
      * Unload the current model.
      */
     suspend fun unloadModel(): Result<Unit> = withContext(Dispatchers.IO) {
-        val result = engine.unloadModel()
-        result.onSuccess {
-            _activeModel.value = null
+        modelOperationMutex.withLock {
+            try {
+                engine.unloadModel()
+                _activeModel.value = null
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
         }
-        result
     }
 
     /**
@@ -162,9 +206,23 @@ class ModelRepository(
      */
     suspend fun switchModel(model: GGUFModel, config: InferenceConfig): Result<Unit> =
         withContext(Dispatchers.IO) {
-            engine.unloadModel()
-            _activeModel.value = null
-            loadModel(model, config)
+            modelOperationMutex.withLock {
+                try {
+                    val file = File(model.filePath)
+                    if (!file.isFile || !validateGGUFFile(file)) {
+                        return@withLock Result.failure(IllegalArgumentException("Invalid or missing GGUF file: ${model.filePath}"))
+                    }
+                    engine.unloadModel()
+                    _activeModel.value = null
+                    val result = engine.loadModel(model.filePath, config)
+                    result.onSuccess {
+                        _activeModel.value = model.copy(isLoaded = true)
+                    }
+                    result
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            }
         }
 
     /**

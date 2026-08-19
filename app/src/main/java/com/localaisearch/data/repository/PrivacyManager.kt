@@ -1,9 +1,13 @@
 package com.localaisearch.data.repository
 
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * Manages privacy session state and enforces privacy rules.
@@ -24,6 +28,8 @@ import kotlinx.coroutines.launch
  */
 class PrivacyManager(private val settingsRepository: SettingsRepository) {
 
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     /** Current privacy mode state (volatile, lost on process death). */
     private val _isPrivacyMode = MutableStateFlow(false)
     val isPrivacyMode: StateFlow<Boolean> = _isPrivacyMode.asStateFlow()
@@ -37,7 +43,7 @@ class PrivacyManager(private val settingsRepository: SettingsRepository) {
         // Privacy mode is intentionally NOT persisted so that it defaults
         // to off on every app launch (user must explicitly activate each
         // session).
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+        scope.launch {
             settingsRepository.memorySystemEnabled.collect { enabled ->
                 _isMemoryEnabled.value = enabled
             }
@@ -79,7 +85,7 @@ class PrivacyManager(private val settingsRepository: SettingsRepository) {
      */
     fun setMemoryEnabled(enabled: Boolean) {
         _isMemoryEnabled.value = enabled
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        scope.launch {
             settingsRepository.setMemorySystemEnabled(enabled)
         }
     }
@@ -143,16 +149,16 @@ class PrivacyManager(private val settingsRepository: SettingsRepository) {
     fun getPrivacySummary(): String {
         return buildString {
             if (_isPrivacyMode.value) {
-                append("Privacy Mode: ON\\n")
-                append("  - Conversations will NOT be saved\\n")
-                append("  - Search history will NOT be recorded\\n")
-                append("  - Image cache is disabled\\n")
-                append("  - Memory/summary generation is disabled\\n")
+                append("Privacy Mode: ON\n")
+                append("  - Conversations will NOT be saved\n")
+                append("  - Search history will NOT be recorded\n")
+                append("  - Image cache is disabled\n")
+                append("  - Memory/summary generation is disabled\n")
             } else {
-                append("Privacy Mode: OFF\\n")
-                append("  - Conversations will be saved\\n")
-                append("  - Search history will be recorded\\n")
-                append("  - Image cache is enabled\\n")
+                append("Privacy Mode: OFF\n")
+                append("  - Conversations will be saved\n")
+                append("  - Search history will be recorded\n")
+                append("  - Image cache is enabled\n")
             }
             if (_isMemoryEnabled.value) {
                 append("Memory System: ENABLED")
@@ -174,5 +180,12 @@ class PrivacyManager(private val settingsRepository: SettingsRepository) {
         // but included here for completeness in case this method is called
         // directly).
         _isPrivacyMode.value = false
+    }
+
+    /**
+     * Release resources and cancel coroutine scope.
+     */
+    fun release() {
+        scope.cancel()
     }
 }

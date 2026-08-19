@@ -14,10 +14,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
@@ -31,11 +29,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.localaisearch.R
 import com.localaisearch.ui.animation.SpringSpecs
 
 /**
@@ -48,10 +49,13 @@ enum class SendButtonState {
 }
 
 /**
- * Morphing send button.
+ * Independent circular send button with purple-blue gradient.
  *
- * Transitions: Send -> Searching -> Done
- * Uses spring physics and shape morphing for a fluid, elastic feel.
+ * Features:
+ * - Circular shape
+ * - Purple-blue gradient background
+ * - White send icon
+ * - No excessive glow effects
  */
 @Composable
 fun MorphingSendButton(
@@ -60,30 +64,16 @@ fun MorphingSendButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-
-    // Corner radius animates between circle (idle) and squircle (searching)
-    val cornerRadius = animateFloatAsState(
-        targetValue = when (state) {
-            SendButtonState.IDLE -> 1f     // fully circular
-            SendButtonState.SEARCHING -> 0.7f  // squircle
-            SendButtonState.DONE -> 1f    // back to circular
-        },
-        animationSpec = SpringSpecs.morph,
-        label = "cornerRadius"
-    )
-
     // Scale animation for bounce effects
     val scaleAnim = remember { Animatable(1f) }
+    val hapticView = LocalView.current
 
     LaunchedEffect(state) {
         when (state) {
             SendButtonState.SEARCHING -> {
-                // Subtle pulse while searching
                 scaleAnim.animateTo(0.92f, SpringSpecs.morph)
             }
             SendButtonState.DONE -> {
-                // Spring bounce on completion
                 scaleAnim.animateTo(1.15f, SpringSpecs.completion)
                 scaleAnim.animateTo(1f, SpringSpecs.bouncy)
             }
@@ -93,44 +83,33 @@ fun MorphingSendButton(
         }
     }
 
-    val backgroundColor = when (state) {
-        SendButtonState.IDLE -> if (enabled) colorScheme.primary else colorScheme.surfaceVariant
-        SendButtonState.SEARCHING -> colorScheme.tertiary
-        SendButtonState.DONE -> colorScheme.primary
-    }
+    // Gradient colors: purple to blue
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF8B7FD4),  // soft purple
+            Color(0xFF7FB8D4)   // soft blue
+        )
+    )
 
-    val contentColor = when (state) {
-        SendButtonState.IDLE -> if (enabled) colorScheme.onPrimary else colorScheme.onSurfaceVariant
-        SendButtonState.SEARCHING -> colorScheme.onTertiary
-        SendButtonState.DONE -> colorScheme.onPrimary
-    }
-
-    // Pulsing glow for searching state
-    val pulseScale = if (state == SendButtonState.SEARCHING) {
-        animateFloatAsState(
-            targetValue = 1.05f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = 200f
-            ),
-            label = "pulse"
-        ).value
-    } else 1f
+    val iconTint = Color.White
+    val isClickable = enabled && state == SendButtonState.IDLE
 
     Surface(
         modifier = modifier
-            .size(48.dp)
-            .scale(scaleX = scaleAnim.value * pulseScale, scaleY = scaleAnim.value * pulseScale),
-        shape = RoundedCornerShape(percent = (cornerRadius.value * 50).toInt()),
-        color = backgroundColor,
-        contentColor = contentColor,
-        tonalElevation = if (enabled) 4.dp else 0.dp,
-        shadowElevation = if (enabled) 8.dp else 0.dp,
-        onClick = if (enabled && state == SendButtonState.IDLE) onClick else ({})
+            .scale(scaleAnim.value),
+        shape = CircleShape,
+        color = Color.Transparent,
+        shadowElevation = if (isClickable) 2.dp else 0.dp,
+        onClick = if (isClickable) { { AppHaptics.confirm(hapticView); onClick() } } else ({ })
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(
+                    if (enabled) gradientBrush else Brush.linearGradient(listOf(Color.Gray.copy(alpha = 0.3f), Color.Gray.copy(alpha = 0.3f)))
+                )
         ) {
             AnimatedContent(
                 targetState = state,
@@ -148,11 +127,12 @@ fun MorphingSendButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = when (buttonState) {
-                        SendButtonState.IDLE -> "Send"
-                        SendButtonState.SEARCHING -> "Searching"
-                        SendButtonState.DONE -> "Done"
+                        SendButtonState.IDLE -> stringResource(R.string.send)
+                        SendButtonState.SEARCHING -> stringResource(R.string.searching)
+                        SendButtonState.DONE -> stringResource(R.string.done)
                     },
-                    modifier = Modifier.size(22.dp)
+                    tint = iconTint,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

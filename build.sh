@@ -48,15 +48,11 @@ if [ ! -f "./gradlew" ]; then
 fi
 chmod +x ./gradlew
 
-# Create keystore if needed
-KEYSTORE="$PROJECT_DIR/localis-release.jks"
-if [ ! -f "$KEYSTORE" ]; then
-    echo "Creating signing keystore..."
-    keytool -genkey -v -keystore "$KEYSTORE" -alias localis \
-        -keyalg RSA -keysize 2048 -validity 10000 \
-        -storepass localis2024 -keypass localis2024 \
-        -dname "CN=Localis" 2>/dev/null
-    echo "Keystore created: $KEYSTORE"
+# Release signing is intentionally external. Never generate a keystore with a
+# hard-coded password in the repository. For a local signed build, export:
+# SIGNING_KEYSTORE_PATH, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD.
+if [ -n "${SIGNING_KEYSTORE_PATH:-}" ]; then
+    export SIGNING_KEYSTORE_PATH SIGNING_STORE_PASSWORD SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD
 fi
 
 # Build
@@ -65,6 +61,9 @@ echo "Building Release APK..."
 ./gradlew assembleRelease --no-daemon
 
 APK="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
+if [ ! -f "$APK" ]; then
+    APK="$PROJECT_DIR/app/build/outputs/apk/release/app-release-unsigned.apk"
+fi
 if [ -f "$APK" ]; then
     echo ""
     echo "SUCCESS!"

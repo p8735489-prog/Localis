@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.localaisearch.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -23,10 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -50,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -58,6 +62,8 @@ import com.localaisearch.data.repository.StoredConversation
 import com.localaisearch.ui.animation.SpringSpecs
 import com.localaisearch.ui.components.ConversationItem
 import com.localaisearch.ui.viewmodel.ConversationViewModel
+import androidx.compose.ui.res.stringResource
+import com.localaisearch.R
 
 /**
  * Full screen for browsing conversation history.
@@ -86,6 +92,7 @@ fun ConversationHistoryScreen(
     val colorScheme = MaterialTheme.colorScheme
     val conversations by viewModel.conversations.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     var showRenameDialog by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<StoredConversation?>(null) }
@@ -100,35 +107,41 @@ fun ConversationHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Conversations") },
+                title = { Text(stringResource(R.string.conversations_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
                 actions = {
                     // Clear all button (only when conversations exist)
                     if (conversations.isNotEmpty()) {
-                        IconButton(onClick = { showClearAllDialog = true }) {
+                        IconButton(
+                            onClick = { showClearAllDialog = true },
+                            enabled = !isLoading
+                        ) {
                             Icon(
-                                imageVector = Icons.Filled.DeleteSweep,
-                                contentDescription = "Clear all history",
-                                tint = colorScheme.error
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.clear_all_history_desc),
+                                tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.error
                             )
                         }
                     }
-                    TextButton(onClick = onNewConversation) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("New Chat")
-                    }
+                        TextButton(
+                            onClick = onNewConversation,
+                            enabled = !isLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.new_chat))
+                        }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colorScheme.background,
@@ -140,9 +153,14 @@ fun ConversationHistoryScreen(
             FloatingActionButton(
                 onClick = onNewConversation,
                 containerColor = colorScheme.primary,
-                contentColor = colorScheme.onPrimary
+                contentColor = colorScheme.onPrimary,
+                modifier = Modifier.alpha(if (isLoading) 0.5f else 1f)
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "New conversation")
+                if (isLoading) {
+                    LoadingIndicator(modifier = Modifier.size(24.dp))
+                } else {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_chat))
+                }
             }
         }
     ) { innerPadding ->
@@ -158,7 +176,7 @@ fun ConversationHistoryScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search conversations...") },
+                placeholder = { Text(stringResource(R.string.search_conversations)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Search,
@@ -167,7 +185,7 @@ fun ConversationHistoryScreen(
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = androidx.compose.material3.TextFieldDefaults.colors(
                     focusedContainerColor = colorScheme.surfaceContainerHigh,
                     unfocusedContainerColor = colorScheme.surfaceContainerHigh,
@@ -184,33 +202,51 @@ fun ConversationHistoryScreen(
             if (conversations.isEmpty()) {
                 EmptyConversationState()
             } else {
+                val pinnedConversations = conversations.filter { it.pinned }
+                val recentConversations = conversations.filterNot { it.pinned }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    items(conversations, key = { it.conversation.id }) { stored ->
-                        ConversationItem(
-                            conversation = stored,
-                            isSelected = false,
-                            onClick = { onOpenConversation(stored.conversation.id) },
-                            onLongClick = {},
-                            onPin = { viewModel.togglePin(stored.conversation.id) },
-                            onDelete = {
-                                deleteTarget = stored
-                                showDeleteDialog = true
-                            },
-                            onRename = {
-                                renameTarget = stored
-                                renameText = stored.conversation.title
-                                showRenameDialog = true
-                            },
-                            onExport = {
-                                viewModel.exportConversation(stored.conversation.id)
+                    if (pinnedConversations.isNotEmpty()) {
+                        item {
+                            Text(
+                                stringResource(R.string.pinned),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 6.dp)
+                            )
+                        }
+                        items(pinnedConversations, key = { it.conversation.id }) { stored ->
+                            HistoryRow(stored, conversations, isLoading, viewModel, colorScheme, onOpenConversation)
+                        }
+                        if (recentConversations.isNotEmpty()) {
+                            item {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 14.dp),
+                                    color = colorScheme.outlineVariant.copy(alpha = 0.45f)
+                                )
                             }
-                        )
+                        }
+                    }
+                    if (recentConversations.isNotEmpty()) {
+                        item {
+                            Text(
+                                stringResource(R.string.history),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                            )
+                        }
+                        items(recentConversations, key = { it.conversation.id }) { stored ->
+                            HistoryRow(stored, conversations, isLoading, viewModel, colorScheme, onOpenConversation)
+                        }
                     }
                 }
+
             }
         }
     }
@@ -219,12 +255,12 @@ fun ConversationHistoryScreen(
     if (showRenameDialog && renameTarget != null) {
         AlertDialog(
             onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename Conversation") },
+            title = { Text(stringResource(R.string.rename_conversation)) },
             text = {
                 OutlinedTextField(
                     value = renameText,
                     onValueChange = { renameText = it },
-                    label = { Text("Title") },
+                    label = { Text(stringResource(R.string.title)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -237,14 +273,15 @@ fun ConversationHistoryScreen(
                         }
                         showRenameDialog = false
                         renameTarget = null
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRenameDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -254,11 +291,10 @@ fun ConversationHistoryScreen(
     if (showDeleteDialog && deleteTarget != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Conversation?") },
+            title = { Text(stringResource(R.string.delete_conversation)) },
             text = {
                 Text(
-                    "Are you sure you want to delete \"${deleteTarget!!.conversation.title}\"? " +
-                        "This action cannot be undone."
+                    stringResource(R.string.delete_conversation_confirm, deleteTarget?.conversation?.title ?: stringResource(R.string.unknown))
                 )
             },
             confirmButton = {
@@ -269,14 +305,15 @@ fun ConversationHistoryScreen(
                         }
                         showDeleteDialog = false
                         deleteTarget = null
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Delete", color = colorScheme.error)
+                    Text(stringResource(R.string.delete), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -288,16 +325,15 @@ fun ConversationHistoryScreen(
             onDismissRequest = { showClearAllDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.DeleteSweep,
+                    imageVector = Icons.Filled.Delete,
                     contentDescription = null,
                     tint = colorScheme.error
                 )
             },
-            title = { Text("Clear All History?") },
+            title = { Text(stringResource(R.string.clear_all_history)) },
             text = {
                 Text(
-                    "This will permanently delete ALL conversation history. " +
-                        "This action cannot be undone."
+                    stringResource(R.string.clear_history_confirm)
                 )
             },
             confirmButton = {
@@ -305,14 +341,15 @@ fun ConversationHistoryScreen(
                     onClick = {
                         viewModel.clearAllConversations()
                         showClearAllDialog = false
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Clear All", color = colorScheme.error)
+                    Text(stringResource(R.string.clear_all), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -322,23 +359,51 @@ fun ConversationHistoryScreen(
     if (exportResult != null) {
         AlertDialog(
             onDismissRequest = { viewModel.clearExportResult() },
-            title = { Text("Export Conversation") },
+            title = { Text(stringResource(R.string.export_conversation)) },
             text = {
                 Text(
-                    text = if (exportResult!!.isNotBlank()) {
-                        "Conversation exported successfully. The JSON data has been " +
-                            "generated and can be shared or saved externally."
+                    text = if (exportResult?.isNotBlank() == true) {
+                        stringResource(R.string.export_success)
                     } else {
-                        "Failed to export conversation."
+                        stringResource(R.string.export_failed)
                     }
                 )
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearExportResult() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun HistoryRow(
+    stored: StoredConversation,
+    allConversations: List<StoredConversation>,
+    isLoading: Boolean,
+    viewModel: ConversationViewModel,
+    colorScheme: androidx.compose.material3.ColorScheme,
+    onOpenConversation: (String) -> Unit
+) {
+    Column(Modifier.fillMaxWidth()) {
+        ConversationItem(
+            conversation = stored,
+            isSelected = false,
+            onClick = { if (!isLoading) onOpenConversation(stored.conversation.id) },
+            onLongClick = {},
+            onPin = { if (!isLoading) viewModel.togglePin(stored.conversation.id) },
+            onDelete = {},
+            onRename = {},
+            onExport = { if (!isLoading) viewModel.exportConversation(stored.conversation.id) }
+        )
+        if (stored != allConversations.lastOrNull()) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 68.dp),
+                color = colorScheme.outlineVariant.copy(alpha = 0.28f)
+            )
+        }
     }
 }
 
@@ -354,18 +419,18 @@ private fun EmptyConversationState() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.Chat,
+                imageVector = Icons.Filled.Message,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
             )
             Text(
-                text = "No conversations yet",
+                text = stringResource(R.string.no_conversations),
                 style = MaterialTheme.typography.titleMedium,
                 color = colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Start a new chat to begin",
+                text = stringResource(R.string.start_chat_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )

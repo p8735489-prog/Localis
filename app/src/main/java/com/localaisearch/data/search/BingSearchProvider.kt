@@ -9,6 +9,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * Bing Search API provider.
  * Uses Azure Bing Search API v7.
@@ -19,7 +20,7 @@ class BingSearchProvider : SearchProvider {
     override val type: SearchProviderType = SearchProviderType.BING
 
     private val client by lazy {
-        OkHttpClient.Builder()
+        NetworkClientFactory.builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()

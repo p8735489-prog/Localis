@@ -17,6 +17,9 @@ data class HardwareInfo(
     val gpuVendor: String?,
     val hasNpu: Boolean,
     val npuVendor: String?,
+    val chipsetFamily: String = "Generic ARM",
+    val supportsGoogleTpu: Boolean = false,
+    val supportsMediaTekApu: Boolean = false,
     val supportsVulkan: Boolean,
     val supportsOpenGLES31: Boolean,
     val buildManufacturer: String = Build.MANUFACTURER,
@@ -64,6 +67,9 @@ object HardwareDetector {
         val hasGpu = gpuVendor != null
         val npuVendor = detectNpuVendor()
         val hasNpu = npuVendor != null
+        val chipset = detectChipsetFamily()
+        val supportsGoogleTpu = chipset == "Google Tensor"
+        val supportsMediaTekApu = chipset == "MediaTek Dimensity"
         val supportsVulkan = checkVulkanSupport(context)
         val supportsOpenGLES31 = checkOpenGLES31Support(context)
 
@@ -75,6 +81,9 @@ object HardwareDetector {
             gpuVendor = gpuVendor,
             hasNpu = hasNpu,
             npuVendor = npuVendor,
+            chipsetFamily = chipset,
+            supportsGoogleTpu = supportsGoogleTpu,
+            supportsMediaTekApu = supportsMediaTekApu,
             supportsVulkan = supportsVulkan,
             supportsOpenGLES31 = supportsOpenGLES31
         )
@@ -209,36 +218,31 @@ object HardwareDetector {
      * @return NPU vendor string if detected, null otherwise.
      */
     private fun detectNpuVendor(): String? {
-        val hardwareLower = Build.HARDWARE.lowercase()
-        val boardLower = Build.BOARD.lowercase()
-
-        // Check Build.HARDWARE and Build.BOARD for known NPU vendors
-        NPU_VENDORS.forEach { vendor ->
-            if (hardwareLower.contains(vendor) || boardLower.contains(vendor)) {
-                return vendor
-            }
+        val props = listOf("ro.board.platform", "ro.hardware", "ro.soc.model", "ro.product.board", "ro.vendor.mtk_ai", "ro.vendor.qti.ai", "ro.hardware.npu", "ro.hardware.apu")
+            .mapNotNull { readSystemProperty(it)?.lowercase() }
+        val all = (props + listOf(Build.MANUFACTURER, Build.HARDWARE, Build.BOARD)).joinToString(" ").lowercase()
+        return when {
+            isGoogleTensor(all) -> "Google Tensor TPU"
+            all.contains("mtk") || all.contains("mediatek") || Regex("\\bmt\\d{4}\\b").containsMatchIn(all) -> "MediaTek APU"
+            all.contains("qualcomm") || all.contains("qcom") || all.contains("sm8") || all.contains("sm7") -> "Qualcomm AI Engine"
+            else -> null
         }
+    }
 
-        // Check system properties for NPU indicators
-        val npuProperties = listOf(
-            "ro.hardware.npu",
-            "ro.vendor.npu",
-            "ro.ai.processor",
-            "ro.vendor.ai.engine",
-            "ro.hardware.apu",
-            "ro.hardware.dsp"
-        )
+    private fun isGoogleTensor(text: String): Boolean {
+        return text.contains("tensor") || Regex("\\bgs\\d{2,4}\\b").containsMatchIn(text) || Regex("\\btensor[-_ ]?g[0-9]\\b").containsMatchIn(text)
+    }
 
-        npuProperties.forEach { prop ->
-            val value = readSystemProperty(prop)?.lowercase() ?: return@forEach
-            NPU_VENDORS.forEach { vendor ->
-                if (value.contains(vendor)) {
-                    return vendor
-                }
-            }
+    private fun detectChipsetFamily(): String {
+        val props = listOf("ro.board.platform", "ro.soc.model", "ro.product.board", "ro.hardware")
+            .mapNotNull { readSystemProperty(it)?.lowercase() }
+        val all = (props + listOf(Build.MANUFACTURER, Build.HARDWARE, Build.BOARD)).joinToString(" ").lowercase()
+        return when {
+            isGoogleTensor(all) -> "Google Tensor"
+            all.contains("mtk") || all.contains("mediatek") || Regex("\\bmt\\d{4}\\b").containsMatchIn(all) -> "MediaTek Dimensity"
+            all.contains("qualcomm") || all.contains("qcom") || all.contains("snapdragon") || Regex("\\bsm\\d{3,4}\\b").containsMatchIn(all) -> "Qualcomm Snapdragon"
+            else -> "Generic ARM"
         }
-
-        return null
     }
 
     /**

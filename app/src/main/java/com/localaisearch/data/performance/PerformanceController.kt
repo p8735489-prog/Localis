@@ -103,7 +103,7 @@ class PerformanceController(
      */
     fun getOptimalProfileForHardware(hardwareInfo: HardwareInfo): PerformanceProfile {
         return when {
-            hardwareInfo.hasNpu -> performanceProfile().copy(useNpu = true)
+            hardwareInfo.hasNpu -> performanceProfile().copy(useNpu = false) // llama.cpp bridge is CPU-first; accelerator detection is exposed separately until a native APU/TPU backend is linked
             hardwareInfo.hasGpu && hardwareInfo.totalRamBytes > 4L * 1024 * 1024 * 1024 ->
                 defaultBalancedProfile().copy(useGpu = true)
             hardwareInfo.totalRamBytes > 6L * 1024 * 1024 * 1024 ->
@@ -161,6 +161,9 @@ class PerformanceController(
             tunedProfile = tunedProfile.copy(useGpu = false)
         }
         if (!hardwareInfo.hasNpu) {
+            tunedProfile = tunedProfile.copy(useNpu = false)
+        } else {
+            // Keep the NPU/TPU capability visible without routing llama.cpp to an unsupported backend.
             tunedProfile = tunedProfile.copy(useNpu = false)
         }
 

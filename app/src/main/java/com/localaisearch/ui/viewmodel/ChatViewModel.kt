@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.agent.AgentCallback
 import com.localaisearch.data.agent.AgentEngine
 import com.localaisearch.data.llm.LLMProviderFactory
+import com.localaisearch.data.llm.GGUFEngine
+import com.localaisearch.data.llm.LlamaBridge
 import com.localaisearch.data.llm.LLMEngine
 import com.localaisearch.data.model.AgentStatus
 import com.localaisearch.data.model.AgentStatusIdle
@@ -17,6 +19,7 @@ import com.localaisearch.data.model.MessageRole
 import com.localaisearch.data.model.SearchRound
 import com.localaisearch.data.model.SearchResult
 import com.localaisearch.data.model.SearchSession
+import com.localaisearch.data.model.GGUFMetadataReader
 import com.localaisearch.data.performance.AutoModeConfig
 import com.localaisearch.data.performance.AutoModeConfigDefault
 import com.localaisearch.data.performance.AutoModeEngine
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for the chat/search screen.
@@ -67,6 +71,11 @@ class ChatViewModel(
     private var agentEngine: AgentEngine? = null
     private var currentJob: Job? = null
     private var lastModelActivityTime: Long = System.currentTimeMillis()
+    private var _lastSaveTime: Long = 0L
+    private val answerBuffer = StringBuilder()
+    private var lastAnswerUiUpdate = 0L
+    private var answerFlushJob: Job? = null
+    private var _lastSavedContentHash: Int = 0
 
     // -- UI State --
 
@@ -91,6 +100,22 @@ class ChatViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _modelLoaded = MutableStateFlow(llmEngine.isLoaded)
+    val modelLoaded: StateFlow<Boolean> = _modelLoaded.asStateFlow()
+
+    private val _loadedModelName = MutableStateFlow(llmEngine.loadedModelName ?: "")
+    val loadedModelName: StateFlow<String> = _loadedModelName.asStateFlow()
+
+    // Image input is available only when the active model is vision-capable and a
+    // matching vision projector (mmproj) is present. The chat composer uses this
+    // single capability state so UI, model selection and image processing do not
+    // drift apart.
+    private val _imageInputAvailable = MutableStateFlow(false)
+    val imageInputAvailable: StateFlow<Boolean> = _imageInputAvailable.asStateFlow()
+
+    private val _defaultSystemPrompt = MutableStateFlow("general")
+    val defaultSystemPrompt: StateFlow<String> = _defaultSystemPrompt.asStateFlow()
+
     private val _internetSearchEnabled = MutableStateFlow(false)
     val internetSearchEnabled: StateFlow<Boolean> = _internetSearchEnabled.asStateFlow()
 
@@ -112,6 +137,25 @@ class ChatViewModel(
     init {
         viewModelScope.launch {
             _internetSearchEnabled.value = settingsRepo.internetSearchEnabled.first()
+            _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
+        }
+        // Model loading is performed by the model screen's ViewModel, but the engine is shared.
+        // Poll only this tiny state so Home reflects load/unload without recreating the engine.
+        viewModelScope.launch {
+            var lastLoaded = false
+            var lastName = ""
+            while (true) {
+                val loaded = llmEngine.isLoaded
+                val name = llmEngine.loadedModelName ?: ""
+                if (loaded != lastLoaded || name != lastName) {
+                    _modelLoaded.value = loaded
+                    _loadedModelName.value = name
+                    lastLoaded = loaded
+                    lastName = name
+                }
+                _imageInputAvailable.value = if (loaded) detectVisionInputReady() else false
+                kotlinx.coroutines.delay(1000)
+            }
         }
     }
 
@@ -124,7 +168,46 @@ class ChatViewModel(
      * - Context optimization: summarize old messages if near token limit
      * - Auto-save: persist conversation after completion (non-privacy)
      */
-    fun sendQuery(query: String) {
+    private fun findVisionProjectorPath(): String? {
+        val active = modelRepo.activeModel.value ?: return null
+        return try {
+            val metadata = GGUFMetadataReader.readMetadata(active.filePath)
+            if (!metadata.hasVision) return null
+            val dir = java.io.File(active.filePath).parentFile ?: return null
+            val stem = java.io.File(active.filePath).nameWithoutExtension.lowercase()
+            dir.listFiles { file ->
+                file.isFile && file.extension.equals("gguf", ignoreCase = true) &&
+                    file.name.lowercase().contains("mmproj") &&
+                    (file.name.lowercase().contains(stem) || stem.contains(file.nameWithoutExtension.lowercase().replace("mmproj-", "")))
+            }?.sortedByDescending { it.length() }?.firstOrNull()?.absolutePath
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun detectVisionInputReady(): Boolean = findVisionProjectorPath() != null
+
+    fun setDefaultSystemPrompt(promptId: String) {
+        _defaultSystemPrompt.value = promptId
+        viewModelScope.launch { settingsRepo.setDefaultSystemPrompt(promptId) }
+    }
+
+    fun getSystemPromptText(): String = when (_defaultSystemPrompt.value) {
+        "concise" -> "你是一名简洁高效的 AI 助手。优先直接回答问题，避免无关铺垫；信息不足时明确说明。"
+        "precise" -> "你是一名严谨的 AI 助手。区分事实、推测和不确定信息；不要编造不存在的内容。"
+        "coding" -> "你是一名专业编程助手。优先给出可执行、可靠的解决方案；代码应清晰、完整，并解释关键修改。"
+        "chinese" -> "你是一名中文 AI 助手。默认使用自然、准确、易懂的简体中文回答；遇到专业术语时保留必要英文。"
+        else -> "你是一名友好、可靠、通用的 AI 助手。请准确理解用户意图，并给出有帮助、清晰的回答。"
+    }
+
+    private val _pendingImageUri = MutableStateFlow<android.net.Uri?>(null)
+    val pendingImageUri: StateFlow<android.net.Uri?> = _pendingImageUri.asStateFlow()
+
+    fun setPendingImage(uri: android.net.Uri) {
+        if (_imageInputAvailable.value) _pendingImageUri.value = uri
+    }
+
+    fun sendQuery(query: String, addUserMessage: Boolean = true) {
         if (query.isBlank() || _isProcessing.value) return
         if (!llmEngine.isLoaded) {
             _error.value = "No model loaded. Please import and load a GGUF model first."
@@ -133,6 +216,11 @@ class ChatViewModel(
 
         currentJob?.cancel()
         _error.value = null
+        synchronized(answerBuffer) { answerBuffer.setLength(0) }
+        lastAnswerUiUpdate = 0L
+        answerFlushJob?.cancel()
+        answerFlushJob?.cancel()
+        synchronized(answerBuffer) { answerBuffer.setLength(0) }
         _currentAnswer.value = ""
         _citations.value = emptyList()
         _searchResults.value = emptyList()
@@ -140,9 +228,11 @@ class ChatViewModel(
         _privacySessionEnded.value = false
         lastModelActivityTime = System.currentTimeMillis()
 
-        // Add user message
-        val userMessage = ChatMessage(role = MessageRole.USER, content = query)
-        _conversation.value = _conversation.value.addMessage(userMessage)
+        // Add user message unless this is a regeneration of an existing user turn.
+        if (addUserMessage) {
+            val userMessage = ChatMessage(role = MessageRole.USER, content = query)
+            _conversation.value = _conversation.value.addMessage(userMessage)
+        }
 
         // Add placeholder assistant message for streaming
         val assistantMessage = ChatMessage(
@@ -152,7 +242,7 @@ class ChatViewModel(
         )
         _conversation.value = _conversation.value.addMessage(assistantMessage)
 
-        viewModelScope.launch {
+        currentJob = viewModelScope.launch {
             try {
                 val inferenceConfig = settingsRepo.inferenceConfig.first()
                 val searchConfig = settingsRepo.searchConfig.first()
@@ -204,8 +294,17 @@ class ChatViewModel(
                     }
 
                     override fun onToken(token: String) {
-                        _currentAnswer.value += token
-                        updateLastMessage { it.copy(content = _currentAnswer.value) }
+                        synchronized(answerBuffer) { answerBuffer.append(token) }
+                        val now = System.currentTimeMillis()
+                        if (now - lastAnswerUiUpdate >= 50L && answerFlushJob?.isActive != true) {
+                            answerFlushJob = viewModelScope.launch {
+                                kotlinx.coroutines.delay(16L)
+                                val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
+                                _currentAnswer.value = snapshot
+                                updateLastMessage { it.copy(content = snapshot) }
+                                lastAnswerUiUpdate = System.currentTimeMillis()
+                            }
+                        }
                     }
 
                     override fun onAnswer(
@@ -213,10 +312,13 @@ class ChatViewModel(
                         citations: List<Citation>,
                         session: SearchSession
                     ) {
+                        answerFlushJob?.cancel()
+                        val finalAnswer = if (answer.isNotBlank()) answer else synchronized(answerBuffer) { answerBuffer.toString() }
+                        _currentAnswer.value = finalAnswer
                         _citations.value = citations
                         updateLastMessage {
                             it.copy(
-                                content = if (answer.isNotBlank()) answer else _currentAnswer.value,
+                                content = finalAnswer,
                                 citations = citations,
                                 isStreaming = false,
                                 searchSession = session
@@ -235,15 +337,58 @@ class ChatViewModel(
                     }
                 }
 
-                agentEngine!!.setCallback(callback)
+                agentEngine?.setCallback(callback)
 
-                agentEngine!!.execute(
-                    query = query,
-                    config = inferenceConfig,
-                    enableSearch = enableSearch,
-                    conversationHistory = history
-                ).collect { token ->
-                    // Tokens are handled by callback
+                val pendingImage = _pendingImageUri.value
+                val localEngine = llmEngine as? GGUFEngine
+                if (pendingImage != null) {
+                    // Image conversations use the real llama.cpp mtmd path. We intentionally
+                    // do not route them through AgentEngine's text-only search pipeline,
+                    // because doing so would strip the pixels before the final answer.
+                    if (localEngine == null) {
+                        throw IllegalStateException("当前引擎不支持本地视觉推理")
+                    }
+                    val projectorPath = findVisionProjectorPath()
+                        ?: throw IllegalStateException("未找到与当前语言模型匹配的 mmproj 视觉投影器，请先下载视觉模型组件")
+                    localEngine.loadVisionProjector(projectorPath, inferenceConfig).getOrThrow()
+
+                    val imageBytes = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        getApplication<Application>().contentResolver.openInputStream(pendingImage)?.use { it.readBytes() }
+                    } ?: throw IllegalStateException("无法读取所选图片")
+                    if (imageBytes.isEmpty()) throw IllegalStateException("所选图片为空")
+
+                    val multimodalMessages = buildList {
+                        if (getSystemPromptText().isNotBlank()) add("system" to getSystemPromptText())
+                        addAll(history)
+                        add("user" to "<__media__>\n$query")
+                    }
+                    val formattedPrompt = LlamaBridge.nativeFormatChat(
+                        localEngine.currentHandleForMultimodal(),
+                        multimodalMessages.map { it.first }.toTypedArray(),
+                        multimodalMessages.map { it.second }.toTypedArray()
+                    )
+                    if (formattedPrompt.isBlank()) {
+                        throw IllegalStateException("当前 GGUF 模型没有可用的视觉聊天模板")
+                    }
+                    localEngine.generateMultimodalStream(formattedPrompt, imageBytes, inferenceConfig).collect { token ->
+                        synchronized(answerBuffer) { answerBuffer.append(token) }
+                        val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
+                        _currentAnswer.value = snapshot
+                        updateLastMessage { it.copy(content = snapshot) }
+                    }
+                    val finalMultimodalAnswer = synchronized(answerBuffer) { answerBuffer.toString() }
+                    updateLastMessage { it.copy(content = finalMultimodalAnswer, isStreaming = false) }
+                    _pendingImageUri.value = null
+                } else {
+                    agentEngine?.execute(
+                        query = query,
+                        config = inferenceConfig,
+                        enableSearch = enableSearch,
+                        conversationHistory = history,
+                        systemPrompt = getSystemPromptText()
+                    )?.collect { token ->
+                        // Tokens are handled by callback
+                    }
                 }
 
                 // -- Post-completion: auto-save and memory extraction --
@@ -261,6 +406,7 @@ class ChatViewModel(
             } finally {
                 _isProcessing.value = false
                 _agentStatus.value = AgentStatusIdle
+                currentJob = null
             }
         }
     }
@@ -330,13 +476,29 @@ class ChatViewModel(
 
     /**
      * Auto-save conversation and extract memories after a successful response.
-     * Skipped entirely in privacy mode.
+     * Skipped entirely in privacy mode. Prevents duplicate saves within a short window.
      */
     private suspend fun autoSaveAndExtractMemories(userQuery: String) {
         if (!privacyManager.canSaveConversation()) return
 
-        // Auto-save conversation
         val currentConv = _conversation.value
+        val now = System.currentTimeMillis()
+        val minIntervalMs = 5000L // 5 seconds minimum between saves
+
+        // Compute a simple content hash from the last message to detect duplicate saves
+        val lastMessageContent = currentConv.messages.lastOrNull()?.content ?: ""
+        val contentHash = lastMessageContent.hashCode()
+
+        // Skip if saved recently with the same content
+        if (now - _lastSaveTime < minIntervalMs && contentHash == _lastSavedContentHash) {
+            return
+        }
+
+        // Update save tracking
+        _lastSaveTime = now
+        _lastSavedContentHash = contentHash
+
+        // Auto-save conversation
         conversationRepo.saveConversation(currentConv)
 
         // Extract and save memories if memory system is enabled
@@ -352,12 +514,27 @@ class ChatViewModel(
         }
     }
 
+
+    /** Regenerate the last assistant answer from the preceding user turn. */
+    fun regenerateMessage(messageId: String) {
+        if (_isProcessing.value) return
+        val messages = _conversation.value.messages
+        val index = messages.indexOfFirst { it.id == messageId }
+        if (index <= 0 || messages[index].role != MessageRole.ASSISTANT) return
+        val user = messages[index - 1]
+        if (user.role != MessageRole.USER || user.content.isBlank()) return
+        _conversation.value = _conversation.value.copy(messages = messages.take(index))
+        sendQuery(user.content, addUserMessage = true)
+    }
+
     /**
      * Cancel ongoing processing.
      */
     fun cancel() {
         currentJob?.cancel()
-        agentEngine?.cancel()
+        viewModelScope.launch {
+            agentEngine?.cancel()
+        }
         _isProcessing.value = false
         _agentStatus.value = AgentStatusIdle
         updateLastMessage { it.copy(isStreaming = false) }
@@ -412,7 +589,9 @@ class ChatViewModel(
      */
     fun newConversation() {
         currentJob?.cancel()
-        agentEngine?.cancel()
+        viewModelScope.launch {
+            agentEngine?.cancel()
+        }
 
         // Save current conversation if not in privacy mode and has messages
         val currentConv = _conversation.value
@@ -423,6 +602,8 @@ class ChatViewModel(
         }
 
         _conversation.value = Conversation()
+        answerFlushJob?.cancel()
+        synchronized(answerBuffer) { answerBuffer.setLength(0) }
         _currentAnswer.value = ""
         _citations.value = emptyList()
         _searchResults.value = emptyList()
@@ -443,7 +624,9 @@ class ChatViewModel(
             val conv = conversationRepo.getConversation(conversationId)
             if (conv != null) {
                 currentJob?.cancel()
-                agentEngine?.cancel()
+                agentEngine?.let { 
+                    viewModelScope.launch { it.cancel() }
+                }
                 _conversation.value = conv
                 _currentAnswer.value = ""
                 _citations.value = emptyList()
@@ -477,21 +660,23 @@ class ChatViewModel(
     }
 
     private fun updateLastMessage(transform: (ChatMessage) -> ChatMessage) {
+        val messages = _conversation.value.messages
+        if (messages.isEmpty()) return
         _conversation.value = _conversation.value.updateLastMessage(
-            transform(_conversation.value.messages.last())
+            transform(messages.last())
         )
     }
 
     override fun onCleared() {
         super.onCleared()
-        // Save current conversation if not in privacy mode
+        // Save current conversation asynchronously if not in privacy mode
         val currentConv = _conversation.value
         if (privacyManager.canSaveConversation() && currentConv.messages.isNotEmpty()) {
-            // Use a blocking scope to ensure save completes
-            kotlinx.coroutines.runBlocking {
+            viewModelScope.launch {
                 conversationRepo.saveConversation(currentConv)
             }
         }
-        llmEngine.release()
+        // The local GGUF engine is app-scoped and shared with model management.
+        // Do not release it from this ViewModel lifecycle.
     }
 }

@@ -1,12 +1,15 @@
 package com.localaisearch.data.llm
 
 import android.net.Uri
+import java.io.File
 import com.localaisearch.data.model.AdvancedInferenceConfig
 import com.localaisearch.data.model.ImageInput
 import com.localaisearch.data.model.ModelBundle
-import com.localaisearch.data.performance.HardwareBackend
+import com.localaisearch.data.model.HardwareBackend
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Abstract interface for multimodal (vision + text) model adapters.
@@ -139,11 +142,17 @@ open class GenericVisionAdapter(
     }
 
     override suspend fun loadProjector(config: AdvancedInferenceConfig): Result<Unit> {
-        return Result.success(Unit)
+        val projector = modelBundle.projectorComponent
+            ?: return Result.failure(IllegalStateException("No matching mmproj/vision projector was found"))
+        val engine = llmEngine as? GGUFEngine
+            ?: return Result.failure(IllegalStateException("The active engine does not expose the llama.cpp mtmd bridge"))
+        return engine.loadVisionProjector(projector.filePath, config.toInferenceConfig())
     }
 
-    override suspend fun processImage(imageUri: Uri): Result<String> {
-        return Result.success(imageUri.toString())
+    override suspend fun processImage(imageUri: Uri): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            imageUri.toString()
+        }
     }
 
     override fun generate(
@@ -151,7 +160,19 @@ open class GenericVisionAdapter(
         imageInput: ImageInput?,
         config: AdvancedInferenceConfig
     ): Flow<String> = flow {
-        emit("[${architectureName}] Image analysis not yet implemented for this model architecture.")
+        if (imageInput == null) {
+            llmEngine.generateStream(prompt, config.toInferenceConfig()).collect { emit(it) }
+            return@flow
+        }
+        val engine = llmEngine as? GGUFEngine
+            ?: throw UnsupportedOperationException("The active engine does not expose llama.cpp mtmd")
+        if (!engine.hasVisionRuntime()) {
+            throw IllegalStateException("${architectureName} requires a matching mmproj projector. Download and load it before sending the image.")
+        }
+        val imageFile = File(imageInput.uri)
+        if (!imageFile.isFile) throw IllegalStateException("Processed image file is not accessible: ${imageInput.uri}")
+        val imageBytes = withContext(Dispatchers.IO) { imageFile.readBytes() }
+        engine.generateMultimodalStream("<__media__>\n$prompt", imageBytes, config.toInferenceConfig()).collect { emit(it) }
     }
 
     override suspend fun unload(): Result<Unit> {

@@ -22,3 +22,6 @@ localis-release.jks
 *.pfx
 
 localis-release.jks
+
+# Never commit signing material or encoded keystores
+keystore_base64.txt

@@ -14,6 +14,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * OpenAI-compatible API provider (supports Ollama, vLLM, LM Studio, etc.)
  *
@@ -33,7 +34,7 @@ class OpenAILLMProvider(
     override var loadedModelName: String? = null
         private set
 
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClientFactory.builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
@@ -167,7 +168,6 @@ class OpenAILLMProvider(
         return response.body?.byteStream()?.bufferedReader()
     }
 
-    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     private fun buildRequestBody(
         messages: List<Pair<String, String>>,
         config: InferenceConfig,

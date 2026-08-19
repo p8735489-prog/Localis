@@ -1,0 +1,393 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Localis</string>
+
+    
+    <string name="back">戻る</string>
+    <string name="cancel">キャンセル</string>
+    <string name="save">保存</string>
+    <string name="delete">削除</string>
+    <string name="add">追加</string>
+    <string name="close">閉じる</string>
+    <string name="ok">OK</string>
+
+    
+    <string name="home_title">Localis</string>
+    <string name="search_placeholder">何でも聞いてください...</string>
+    <string name="send">送信</string>
+    <string name="searching">検索中</string>
+    <string name="done">完了</string>
+    <string name="local_ai_private">ローカルAI - 完全にプライベート、デバイス内で実行</string>
+    <string name="local_ai_search_enabled">ローカルAI + インターネット検索が有効</string>
+    <string name="ask_anything">何でも聞いてください</string>
+    <string name="new_conversation">新しい会話</string>
+    <string name="internet_search_enabled">インターネット検索が有効</string>
+    <string name="clear">クリア</string>
+    <string name="privacy_mode_on">プライバシーモードオン</string>
+    <string name="privacy_mode_off">プライバシーモードオフ</string>
+    <string name="privacy_mode_active">プライバシーモードが有効</string>
+    <string name="privacy_session">プライバシーセッション</string>
+    <string name="privacy_session_ended">プライバシーセッション終了</string>
+    <string name="privacy_session_ended_desc">プライバシーセッションが終了しました。このセッションのすべての一時データが消去されました。</string>
+    <string name="privacy_mode_desc">プライバシーモード - データは保存されません</string>
+    <string name="privacy_mode_chip">プライベートセッション</string>
+
+    
+    <string name="nav_chat">会話</string>
+    <string name="nav_models">モデル</string>
+    <string name="nav_tools">ツール</string>
+    <string name="nav_me">マイページ</string>
+
+    
+    <string name="menu">メニュー</string>
+    <string name="history">履歴</string>
+    <string name="memory_center">メモリセンター</string>
+    <string name="model_center">モデルセンター</string>
+    <string name="models">モデル</string>
+    <string name="settings">設定</string>
+    <string name="cloud">クラウド</string>
+
+    
+    <string name="auto_mode">Localis Auto</string>
+
+    
+    <string name="agent_thinking">質問を分析しています...</string>
+    <string name="agent_searching">ウェブを検索しています...</string>
+    <string name="agent_reading">ソースを読んでいます...</string>
+    <string name="agent_analyzing">結果を分析しています...</string>
+    <string name="agent_validating">情報を検証しています...</string>
+    <string name="agent_answering">回答を生成しています...</string>
+    <string name="agent_complete">完了</string>
+    <string name="search_round">検索ラウンド %1$d/%2$d</string>
+
+    
+    <string name="sources">ソース (%1$d)</string>
+    <string name="open_source">ソースを開く</string>
+    <string name="sources_label">ソース:</string>
+
+    
+    <string name="model_manager">モデルマネージャー</string>
+    <string name="import_gguf">GGUFモデルをインポート</string>
+    <string name="only_gguf_supported">GGUF形式のモデルファイルのみサポートされています。ONNX、QNN、MLXはサポートされていません。</string>
+    <string name="no_models">まだモデルがインポートされていません。\n"GGUFモデルをインポート"をタップして開始してください。</string>
+    <string name="load">ロード</string>
+    <string name="unload">アンロード</string>
+    <string name="active">アクティブ</string>
+    <string name="importing_model">モデルをインポートしています...</string>
+    <string name="loading_model">モデルをロードしています...</string>
+    <string name="model_ready">モデルがロードされ、準備ができました。</string>
+    <string name="import_failed">インポート失敗: %1$s</string>
+    <string name="load_failed">ロード失敗: %1$s</string>
+    <string name="size_label">サイズ: %1$s</string>
+    <string name="quantization_label">量子化: %1$s</string>
+    <string name="imported">インポート済み: %1$s</string>
+
+    
+    <string name="trending">トレンド</string>
+    <string name="search_results">検索結果</string>
+    <string name="downloaded">ダウンロード済み</string>
+    <string name="search_models_hint">モデルを検索</string>
+    <string name="search">検索</string>
+    <string name="dismiss">閉じる</string>
+    <string name="gguf_files">GGUFファイル</string>
+    <string name="no_gguf_files">このリポジトリに.ggufファイルが見つかりません。</string>
+    <string name="loading_trending">トレンドモデルをロード中...</string>
+    <string name="search_to_start">GGUFモデルを検索して開始</string>
+    <string name="no_downloaded">まだモデルがダウンロードされていません。\nトレンドまたは検索タブから検索してダウンロードしてください。</string>
+    <string name="downloads_count">%1$dk</string>
+    <string name="download">ダウンロード</string>
+    <string name="pause">一時停止</string>
+    <string name="resume">再開</string>
+    <string name="retry">再試行</string>
+    <string name="downloaded_status">ダウンロード済み</string>
+    <string name="error_status">エラー</string>
+    <string name="hf_source">HF</string>
+    <string name="mirror_source">ミラー</string>
+    <string name="eta_format">残り時間: %1$s</string>
+
+    
+    <string name="search_engine">検索エンジン</string>
+    <string name="search_provider">検索プロバイダー</string>
+    <string name="api_url">API URL</string>
+    <string name="api_key">APIキー</string>
+    <string name="search_language">検索言語</string>
+    <string name="search_region">検索地域</string>
+    <string name="max_results">最大結果数</string>
+    <string name="max_search_rounds">最大検索ラウンド</string>
+    <string name="safe_search">セーフサーチ</string>
+    <string name="model_parameters">モデルパラメータ</string>
+    <string name="temperature">温度</string>
+    <string name="top_p">Top-P</string>
+    <string name="top_k">Top-K</string>
+    <string name="context_length">コンテキスト長</string>
+    <string name="max_tokens">最大トークン数</string>
+    <string name="gpu_acceleration">GPUアクセラレーション</string>
+    <string name="gpu_layers">GPUレイヤー</string>
+    <string name="threads">スレッド</string>
+    <string name="appearance">外観</string>
+    <string name="dark_mode">ダークモード</string>
+    <string name="dynamic_color">ダイナミックカラー (Monet)</string>
+    <string name="privacy_data">プライバシーとデータ</string>
+    <string name="enable_internet_search">インターネット検索を有効にする</string>
+    <string name="privacy_warning">警告: 有効にすると、検索クエリが設定された検索APIに送信されます。GGUF推論は完全にデバイス内で実行されます。</string>
+    <string name="privacy_default">GGUFモデルは完全にデバイス内で実行されます。データはアップロードされません。リアルタイム情報が必要な場合のみインターネット検索を有効にしてください。</string>
+    <string name="data_security">データとセキュリティ</string>
+    <string name="data_security_desc">プライバシーモード、メモリシステム、データ削除</string>
+    <string name="general_settings">一般設定</string>
+    <string name="language">言語</string>
+    <string name="language_desc">インターフェース言語とRTLサポート</string>
+    <string name="animation">アニメーション</string>
+    <string name="animation_level">アニメーションレベル</string>
+    <string name="animation_desc">視覚効果とモーション強度</string>
+
+    
+    <string name="privacy_session_title">プライバシーセッション</string>
+    <string name="privacy_mode">プライバシーモード</string>
+    <string name="privacy_on_warning">プライバシーモードがオンです。会話、検索履歴、画像キャッシュは保存されません。メモリ生成が無効になっています。</string>
+    <string name="privacy_off_info">プライバシーモードがオフです。通常のデータ保存が有効です。機密性の高いクエリを行う前にプライバシーモードを有効にしてください。</string>
+    <string name="memory_system">メモリシステム</string>
+    <string name="enable_memory">メモリシステムを有効にする</string>
+    <string name="memory_desc">有効にすると、AIが会話から重要な事実と好みを記憶し、よりパーソナライズされた回答を提供します。プライバシーモードが有効な場合、メモリは自動的に無効になります。</string>
+    <string name="storage_usage">ストレージ使用量</string>
+    <string name="conversations">会話</string>
+    <string name="memories">メモリ</string>
+    <string name="image_cache">画像キャッシュ</string>
+    <string name="estimated_total">推定合計</string>
+    <string name="data_management">データ管理</string>
+    <string name="delete_all_conversations">すべての会話を削除</string>
+    <string name="delete_all_memories">すべてのメモリを削除</string>
+    <string name="clear_image_cache">画像キャッシュをクリア</string>
+    <string name="danger_zone">危険ゾーン</string>
+    <string name="delete_all_local_data">すべてのローカルデータを削除</string>
+    <string name="delete_conversations_confirm">すべての会話履歴が永久に削除されます。この操作は元に戻せません。</string>
+    <string name="delete_memories_confirm">すべての保存されたメモリと好みが永久に削除されます。AIは過去のコンテキストを覚えなくなります。この操作は元に戻せません。</string>
+    <string name="clear_cache_confirm">すべてのキャッシュされた画像が削除されます。必要に応じて再ダウンロードされます。この操作は元に戻せません。</string>
+    <string name="delete_all_confirm">これは不可逆な操作です。すべての会話、メモリ、設定、およびキャッシュされたデータが永久に削除されます。</string>
+    <string name="delete_confirm_hint">"DELETE"と入力して確認してください:</string>
+    <string name="nuclear_delete">完全削除</string>
+    <string name="delete_all">すべて削除</string>
+    <string name="clear_all">すべてクリア</string>
+    <string name="clear_cache">キャッシュをクリア</string>
+
+    
+    <string name="conversations_title">会話</string>
+    <string name="new_chat">新しいチャット</string>
+    <string name="clear_all_history">すべての履歴をクリアしますか?</string>
+    <string name="clear_history_confirm">すべての会話履歴が永久に削除されます。この操作は元に戻せません。</string>
+    <string name="clear_all_history_action">すべてクリア</string>
+    <string name="rename_conversation">会話名を変更</string>
+    <string name="title">タイトル</string>
+    <string name="delete_conversation">会話を削除しますか?</string>
+    <string name="delete_conversation_confirm">"%1$s"を削除してもよろしいですか? この操作は元に戻せません。</string>
+    <string name="export_conversation">会話をエクスポート</string>
+    <string name="export_success">会話が正常にエクスポートされました。JSONデータが生成され、外部と共有または保存できます。</string>
+    <string name="export_failed">会話のエクスポートに失敗しました。</string>
+    <string name="search_conversations">会話を検索...</string>
+    <string name="no_conversations">会話がありません</string>
+    <string name="start_chat_hint">新しいチャットを開始</string>
+
+    
+    <string name="memory_center_title">メモリセンター</string>
+    <string name="search_memories">メモリを検索...</string>
+    <string name="no_memories">メモリがありません</string>
+    <string name="memory_hint">AIは会話から重要な事実と好みを覚えます</string>
+    <string name="add_memory">メモリを追加</string>
+    <string name="content">内容</string>
+    <string name="topic">トピック</string>
+    <string name="edit_memory">メモリを編集</string>
+    <string name="delete_memory">メモリを削除しますか?</string>
+    <string name="delete_memory_confirm">このメモリは永久に削除されます。この操作は元に戻せません。</string>
+    <string name="clear_all_memories">すべてのメモリをクリアしますか?</string>
+    <string name="clear_memories_confirm">すべての保存されたメモリと好みが永久に削除されます。AIは過去のコンテキストを覚えなくなります。この操作は元に戻せません。</string>
+    <string name="clear_all_memories_action">すべてクリア</string>
+    <string name="source">ソース: %1$s...</string>
+
+    
+    <string name="language_settings">言語設定</string>
+    <string name="system_default">システムデフォルト</string>
+    <string name="restart_required">再起動が必要</string>
+    <string name="restart_message">言語変更を完全に適用するには、アプリを再起動してください。</string>
+    <string name="language_english">English</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="language_traditional_chinese">繁體中文</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_japanese">日本語</string>
+    <string name="language_arabic">العربية</string>
+
+    
+    <string name="user">ユーザー</string>
+    <string name="assistant">AIアシスタント</string>
+    <string name="streaming">...</string>
+
+    
+    <string name="error_generic">エラーが発生しました</string>
+    <string name="error_network">ネットワークエラー。接続を確認してください。</string>
+    <string name="error_model_load">モデルのロードに失敗しました</string>
+    <string name="error_search">検索に失敗しました</string>
+
+    
+    <string name="version">バージョン</string>
+    <string name="about">アプリ情報</string>
+<string name="settings_search">Search settings</string><string name="settings_general">General</string><string name="settings_ai">AI</string><string name="settings_network">Network</string><string name="settings_privacy">Privacy</string><string name="settings_appearance_group">Appearance</string><string name="settings_data">Data</string><string name="settings_about">About</string><string name="settings_language">Language</string><string name="settings_language_desc">Interface language and layout</string><string name="settings_data_security">Data &amp; Security</string><string name="settings_data_security_desc">Privacy and local data controls</string><string name="settings_ai_models">AI &amp; Models</string><string name="settings_ai_models_desc">Models and inference parameters</string><string name="settings_chat">Chat</string><string name="settings_chat_desc">Chat behavior and response display</string><string name="settings_performance">Performance</string><string name="settings_performance_desc">Acceleration, threads and memory</string><string name="settings_network_search">Network &amp; Search</string><string name="settings_network_search_desc">Search engine and internet search</string><string name="settings_privacy_security">Privacy &amp; Security</string><string name="settings_privacy_security_desc">Privacy mode and data protection</string><string name="settings_appearance">Appearance</string><string name="settings_appearance_desc">Theme, colors, glass and animation</string><string name="settings_data_desc">Chat history, import/export and local data</string><string name="settings_about_desc">Version, open source and licenses</string><string name="language_system">System default</string><string name="language_portuguese">Portuguese</string><string name="language_french">French</string><string name="language_german">German</string><string name="language_restart_message">The app will restart to apply the new language.</string><string name="appearance_theme">Theme</string><string name="appearance_dark_mode">Dark mode</string><string name="appearance_system">System default</string><string name="appearance_light">Light</string><string name="appearance_dark">Dark</string><string name="appearance_dynamic_color">Dynamic color</string><string name="appearance_dynamic_color_desc">Use Android Monet colors when available</string><string name="appearance_ai_core">AI Core</string><string name="appearance_animation_level">Animation level</string><string name="appearance_animation_desc">Visual effects and motion intensity</string><string name="appearance_animation_off">Off</string><string name="appearance_animation_low">Low</string><string name="appearance_animation_standard">Standard</string><string name="appearance_animation_high">High</string>
+    <string name="settings_search_engine">検索エンジン</string>
+    <string name="settings_search_provider">検索プロバイダー</string>
+    <string name="settings_api_url">API URL</string>
+    <string name="settings_api_url_placeholder">https://your-searxng-instance.com</string>
+    <string name="settings_api_key">API キー</string>
+    <string name="settings_api_key_placeholder">必要な場合は API キーを入力</string>
+    <string name="settings_search_language">検索言語</string>
+    <string name="settings_search_region">検索地域</string>
+    <string name="settings_max_results">最大結果数</string>
+    <string name="settings_max_rounds">最大検索回数</string>
+    <string name="settings_safe_search">セーフサーチ</string>
+    <string name="settings_model_parameters">モデルパラメータ</string>
+    <string name="settings_temperature">Temperature</string>
+    <string name="settings_top_p">Top-P</string>
+    <string name="settings_top_k">Top-K</string>
+    <string name="settings_context_length">コンテキスト長</string>
+    <string name="settings_max_tokens">最大トークン数</string>
+    <string name="settings_gpu_acceleration">GPU アクセラレーション</string>
+    <string name="settings_gpu_layers">GPU レイヤー</string>
+    <string name="settings_threads">スレッド数</string>
+    <string name="settings_appearance_section">外観</string>
+    <string name="settings_privacy_data">プライバシーとデータ</string>
+    <string name="settings_enable_internet_search">インターネット検索を有効化</string>
+    <string name="settings_search_warning">有効にすると検索リクエストが設定した検索 API に送信されます。GGUF 推論は端末上で実行されます。</string>
+    <string name="settings_gguf_privacy_note">GGUF モデルは端末上で実行され、データはアップロードされません。リアルタイム情報が必要な場合のみ検索を有効にしてください。</string>
+    <string name="settings_data_security_desc_short">プライバシー、メモリ、データ削除</string>
+    <string name="language_search">言語を検索</string>
+    <string name="appearance_forced_font">Google Sans / 苹方 を強制使用</string>
+    <string name="appearance_forced_font_desc">内蔵 Google Sans CN Flex を優先し、CJK 文字をフォールバックします。オフにするとシステムフォントを使用します。</string>
+    <string name="appearance_monet">Monet 動的カラー</string>
+    <string name="appearance_monet_desc">対応する Android 端末で壁紙からシステムカラーを生成</string>
+    <string name="appearance_presets">Monet 風カラーのプリセット</string>
+    <string name="appearance_presets_desc">Monet をオフにしたときの固定アクセントカラー</string>
+    <string name="appearance_blue">青</string>
+    <string name="appearance_red">赤</string>
+    <string name="appearance_yellow">黄</string>
+    <string name="appearance_green">緑</string>
+
+    <string name="settings_inference_parameters">Inference Parameters</string>
+    <string name="settings_hardware">Hardware</string>
+    <string name="settings_message_display">Message display</string>
+    <string name="settings_auto_scroll">Auto-scroll to new messages</string>
+    <string name="settings_markdown">Show Markdown formatting</string>
+    <string name="settings_code_highlighting">Show code highlighting</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_enter_sends">Enter key sends message</string>
+    <string name="settings_auto_copy">Auto-copy last response</string>
+    <string name="settings_hardware_acceleration">Hardware Acceleration</string>
+    <string name="settings_optimization">Optimization</string>
+    <string name="settings_memory_optimization">Memory Optimization</string>
+    <string name="settings_background_inference">Background Inference</string>
+    <string name="settings_temperature_protection">Temperature Protection</string>
+    <string name="settings_privacy_mode">Privacy Mode</string>
+    <string name="settings_privacy_conversation">Privacy Conversation</string>
+    <string name="settings_data_management">Data Management</string>
+    <string name="settings_chat_history">Chat History</string>
+    <string name="settings_import_history">Import Chat History</string>
+    <string name="settings_export_history">Export Chat History</string>
+    <string name="settings_clear_history">Clear All Chat History</string>
+    <string name="settings_cache">Cache</string>
+    <string name="settings_clear_cache">Clear Cache</string>
+    <string name="settings_danger_zone">Danger Zone</string>
+    <string name="settings_reset_data">Reset All App Data</string>
+    <string name="settings_clear_history_q">Clear Chat History?</string>
+    <string name="settings_clear_history_desc">This will permanently delete all your chat conversations. This action cannot be undone.</string>
+    <string name="settings_clear">Clear</string>
+    <string name="settings_clear_cache_q">Clear Cache?</string>
+    <string name="settings_clear_cache_desc">This will clear all cached data including temporary files.</string>
+    <string name="settings_reset_q">Reset App?</string>
+    <string name="settings_reset_desc">This will reset all settings and delete all data. The app will restart.</string>
+    <string name="settings_reset">Reset</string>
+    <string name="settings_model_center">Model Center</string>
+    <string name="settings_model_source">Model source</string>
+    <string name="optional">Optional</string>
+    <string name="settings_tor_routing">Tor / Private Routing</string>
+    <string name="settings_custom_bridges">Custom bridge addresses</string>
+    <string name="settings_bridge_placeholder">Optional • one Bridge line per row</string>
+    <string name="settings_tor_official">Tor Project official website</string>
+    <string name="settings_manual_proxy">Manual Proxy</string>
+    <string name="settings_proxy_type">Proxy type</string>
+    <string name="settings_proxy_host">Proxy host</string>
+    <string name="settings_proxy_port">Proxy port</string>
+    <string name="settings_tor_active_note">Tor routing is active. Manual proxy routing is temporarily ignored until Tor is turned off.</string>
+    <string name="settings_privacy_mode_desc">When enabled, no chat history will be saved. All data is temporary.</string>
+
+    <string name="settings_model_source_desc">Select the API and download source used by Model Center. If one source times out or returns an empty list, the other source is tried automatically.</string>
+    <string name="settings_current_source">Current source</string>
+    <string name="settings_hf_mirror">Domestic mirror · hf-mirror.com</string>
+    <string name="settings_hf_official">Hugging Face official source</string>
+    <string name="settings_model_source_note">Note: the domestic mirror is not an official Hugging Face service. Automatic fallback helps avoid an empty model list when one source is unavailable.</string>
+    <string name="settings_tor_route_title">Route network requests through Tor</string>
+    <string name="settings_tor_route_desc">Uses an embedded Tor SOCKS proxy on this device</string>
+    <string name="settings_bridge_note">A bridge is optional. Bridge addresses are private configuration supplied by you; the app does not generate or hard-code bridge credentials. Pluggable transports such as obfs4 may require a compatible transport binary.</string>
+    <string name="settings_use_saved_bridges">Use saved custom bridges</string>
+    <string name="settings_add_bridges_first">Add your bridge lines above first</string>
+    <string name="settings_bridge_saved_note">Your bridge configuration will be written to Tor configuration</string>
+    <string name="settings_use_app_proxy">Use app proxy</string>
+    <string name="settings_app_proxy_desc">HTTP or SOCKS proxy for app network requests</string>
+
+    <string name="no_results">結果がありません</string>
+    <string name="about_heading">概要</string>
+    <string name="about_info">情報</string>
+    <string name="about_author">作者</string>
+    <string name="about_author_desc">Shirakawa · 個人開発者</string>
+    <string name="about_version">バージョン</string>
+    <string name="about_open_source">オープンソース</string>
+    <string name="about_source">ソースコード</string>
+    <string name="about_tor">Tor サポート</string>
+    <string name="about_tor_desc">Guardian Project の tor-android を使用。ネットワーク設定から Tor ルーティングを設定できます。</string>
+    <string name="about_privacy">プライバシー</string>
+    <string name="about_privacy_desc">ローカル GGUF 推論はデフォルトで端末上で実行されます。検索またはネットワークルーティングを有効にした場合のみ通信が端末外へ送信されます。</string>
+
+    <string name="settings_tor_connecting">Tor に接続中…</string>
+    <string name="settings_tor_connected">Tor に接続しました</string>
+    <string name="settings_tor_failed">Tor 接続に失敗しました</string>
+<string name="model_card_info">Size: %1$s  Quant: %2$s</string><string name="select_model">Select Model</string><string name="reload">Reload</string><string name="no_model_loaded">No model loaded</string><string name="loading_named_model">Loading %1$s...</string><string name="model_error">Model error</string><string name="pinned">Pinned</string><string name="rename">Rename</string><string name="pin">Pin</string><string name="unpin">Unpin</string><string name="export">Export</string><string name="message_count_single">%1$d message</string><string name="message_count_plural">%1$d messages</string><string name="load_model">Load Model</string><string name="inference_parameters">Inference Parameters</string><string name="hardware">Hardware</string><string name="ai_and_models">AI &amp; Models</string><string name="network_and_search">Network &amp; Search</string><string name="search_options">Search Options</string><string name="theme">Theme</string><string name="ai_core">AI Core</string><string name="local_ai_search">Local AI Search</string><string name="community">Community</string><string name="legal">Legal</string><string name="privacy_policy_full">Privacy Policy: All AI inference runs locally on your device. No data is sent to external servers unless you explicitly enable internet search.</string><string name="version_format">Version %1$s</string><string name="downloads_count_label">%1$s downloads</string><string name="likes_count_label">%1$s likes</string><string name="gguf_tag">GGUF</string><string name="unknown">Unknown</string><string name="drawer_title">LocalAISearch</string><string name="app_tagline">Local AI, Private &amp; Powerful</string><string name="open_menu">Open menu</string><string name="privacy_on">Privacy on</string><string name="privacy_off">Privacy off</string><string name="more_options">More options</string><string name="private_mode_active_no_data">Private mode active - no data saved</string><string name="local_ai_realtime_search">Local AI with real-time search</string><string name="ai_on_device">Your AI runs entirely on-device</string><string name="delete_all_conversations_title">Delete All Conversations?</string><string name="delete_all_memories_title">Delete All Memories?</string><string name="clear_image_cache_title">Clear Image Cache?</string><string name="delete_all_local_data_title">Delete ALL Local Data?</string><string name="clear_all_history_desc">Clear all history</string><string name="clear_all_memories_desc">Clear all memories</string><string name="add_memory_desc">Add memory</string><string name="about_technology">Technology</string><string name="about_technology_desc">Jetpack Compose + Material 3, llama.cpp / GGUF, OkHttp and DataStore.</string><string name="onboarding_welcome">Welcome to Localis</string><string name="onboarding_desc">On-device GGUF inference, privacy-first controls, and flexible network tools.</string><string name="onboarding_language">Choose language</string><string name="onboarding_source">Source code</string><string name="onboarding_enter">Enter app</string><string name="settings_threads_original">Original</string><string name="settings_threads_4">4 threads</string><string name="settings_threads_6">6 threads</string><string name="settings_threads_12">12 threads</string><string name="settings_threads_fast">Faster inference</string><string name="settings_thinking_depth">Thinking depth</string><string name="settings_thinking_fast">Fast</string><string name="settings_thinking_balanced">Balanced</string><string name="settings_thinking_deep">Deep</string><string name="settings_thinking_max">Maximum</string><string name="settings_compute_backend">Compute backend</string><string name="settings_backend_cpu">CPU</string><string name="settings_backend_gpu">GPU</string><string name="settings_backend_npu">NPU</string><string name="settings_backend_note">CPU is always available. GPU/NPU depend on the device and compiled backend support and fall back to CPU when unavailable.</string><string name="settings_penalties">Penalties</string><string name="settings_frequency_penalty">Frequency penalty</string><string name="settings_repeat_token_penalty">Penalize repeated tokens</string><string name="settings_presence_penalty">Presence penalty</string><string name="settings_topic_diversity">Encourage topic diversity</string><string name="settings_penalty_unspecified">Unspecified</string><string name="no_history">No conversations yet</string><string name="onboarding_next">Next</string><string name="onboarding_language_desc">Choose the language you want to use in Localis.</string><string name="onboarding_about_title">Private by design</string><string name="onboarding_about_desc">Local-first AI with privacy controls, memory controls, and open source code.</string><string name="onboarding_security_title">Security &amp; privacy</string><string name="onboarding_security_desc">Your local models and data stay under your control. Privacy mode can disable storage.</string><string name="onboarding_memory_title">Memory</string><string name="onboarding_memory_desc">Optional memory helps the assistant remember useful preferences. You can manage or delete it anytime.</string><string name="onboarding_qq">QQ community: see the project community page for the latest group information.</string><string name="onboarding_final_desc">Everything is ready. Load a GGUF model and start chatting.</string><string name="onboarding_ready">Welcome. Your local AI workspace is ready.</string><string name="appearance_font_family">Font</string><string name="appearance_font_system">Follow system</string><string name="appearance_font_google">Google Sans</string><string name="appearance_font_pingfang">苹方</string><string name="settings_vision_models">Vision recognition</string><string name="settings_vision_models_desc">Use a vision model to describe the image, then combine that description with your prompt for the current language model.</string><string name="settings_vision_source">Vision model catalog</string><string name="settings_vision_manage">Manage vision models</string><string name="settings_vision_ready">Vision recognition ready</string><string name="settings_vision_unavailable">Vision recognition not installed</string><string name="settings_hardware_detected">Device hardware</string><string name="settings_hardware_summary">Automatically detects CPU, GPU and NPU capabilities</string><string name="performance_recommended">Ready</string><string name="performance_possible">Check device memory</string><string name="performance_insufficient">Not enough memory</string><string name="settings_threads_desc">Controls local generation speed. More threads can be faster, but may increase power and memory pressure.</string><string name="settings_thread_auto">自动线程</string><string name="settings_thread_4">4 threads</string><string name="settings_thread_6">6 threads</string><string name="settings_thread_12">12 threads</string><string name="settings_tor_retry">Reconnect</string><string name="settings_tor_service_error">Tor service could not start. Please try again later.</string><string name="memory_preset_all">All</string><string name="memory_preset_preferences">Preferences</string><string name="memory_preset_projects">Projects</string><string name="memory_preset_device">Device</string><string name="memory_preset_recent">Recent</string><string name="system_prompt">System prompt</string><string name="enable_web_search">Enable web search</string><string name="disable_web_search">Disable web search</string><string name="enable_private_mode">Enable private mode</string><string name="disable_private_mode">Disable private mode</string><string name="default_ai_system_prompt">Default AI system prompt</string><string name="hardware_tpu_status">Google TPU available (Tensor devices only)</string><string name="hardware_mediatek_status">MediaTek APU detected (llama.cpp currently uses CPU)</string><string name="hardware_npu_status">AI accelerator detected (native backend currently uses CPU)</string><string name="hardware_cpu_status">CPU inference · automatically uses available instruction sets</string><string name="model_source_settings_hint">Change model source in Settings → Network</string><string name="downloads_suffix">downloads</string><string name="performance_downloads">%1$s downloads</string>
+    <string name="refresh_models">モデルを更新</string>
+    <string name="open_data_security_center">データとセキュリティセンターを開く</string>
+    <string name="hf_official_source">Hugging Face 公式ソース</string>
+    <string name="hf_domestic_mirror">国内ミラー · hf-mirror.com</string>
+    <string name="imported_model">インポート済み：%1$s</string>
+    <string name="gpu_label">GPU —</string>
+    <string name="memory_tight">メモリに余裕がありません</string>
+    <string name="memory_insufficient">メモリ不足</string>
+    <string name="performance_likes">%1$d 件のいいね</string>
+    <string name="refresh">Refresh</string>
+    <string name="model_error_status">Model error</string>
+    <string name="model_loaded_ready">Model loaded and ready</string>
+    <string name="settings_download_threads">ダウンロードスレッド</string>
+    <string name="settings_download_threads_desc">モデルのダウンロードに使うスレッド数です。増やすと高速化できますが、通信量と電力消費が増える場合があります。</string>
+    <string name="tor_input_disabled">Tor ルーティング中は一時的に入力できません。Tor をオフにすると入力できます。</string>
+    <string name="settings_tor_typing_disabled">Tor 接続中は入力できません。Tor をオフにすると通常どおり入力できます。</string>
+    <string name="settings_bridge_disabled_note">Tor が有効です。ブリッジ設定を変更する前に Tor をオフにしてください。</string>
+    <string name="model_not_loaded_input">モデルを読み込んでからメッセージを送信してください。</string>
+
+    <string name="image_input_unavailable_title">画像入力を利用できません</string>
+    <string name="image_input_unavailable_desc">画像をアップロードする前に、必要なビジョンプロジェクターを含む画像対応モデルをダウンロードして読み込んでください。</string>
+    <string name="download_model">Download model</string>
+    <string name="settings_memory">Memory</string>
+    <string name="settings_memory_desc">Manage long-term memory and context retrieval</string>
+    <string name="settings_export_success">チャット履歴をエクスポートしました。</string>
+    <string name="settings_export_failed">チャット履歴をエクスポートできませんでした。</string>
+    <string name="settings_import_success">%1$d 件の会話をインポートしました。</string>
+    <string name="settings_import_failed">チャット履歴をインポートできませんでした。</string>
+    <string name="settings_tor_app_only_note">Tor はこのアプリの通信だけをプロキシします。検索とモデルセンターも Tor 経由になります。</string>
+    <string name="settings_tor_hf_pinned_note">Tor 接続中はモデルセンターを Hugging Face 公式ソースに固定し、ミラー切り替えを無効にします。</string>
+    <string name="model_center_tor_status">Tor 接続済み・アプリのみ</string>
+    <string name="model_center_tor_hf_fixed">Hugging Face 公式ソース・Tor 固定</string>
+    <string name="settings_tor_security_note">Tor 接続時、検索とモデルセンターは Tor 経由になり、このアプリの通信プライバシーを高めます。</string>
+
+    <string name="settings_tor_proxy">Tor とプロキシ</string>
+    <string name="settings_tor_proxy_desc">このアプリだけに適用する Tor ルートとプロキシ設定</string>
+    <string name="settings_tor_connecting_desc">Tor ネットワークに接続中です。まだ接続は完了していません。</string>
+    <string name="settings_tor_scope_detail">Tor はこのアプリだけをプロキシします。Android 全体の VPN は作成しません。Web 検索とモデルセンターの通信はこの Tor ルートを使用します。</string>
+    <string name="settings_tor_connection_method">接続方法</string>
+    <string name="settings_proxy_disabled_by_tor">Tor 接続中は手動プロキシを無効にします。</string>
+    <string name="chat_copied">コピーしました</string>
+    <string name="chat_regenerate">回答を再生成</string>
+    <string name="chat_other_ai">別のAIに回答させる</string>
+    <string name="chat_scroll_to_bottom">最新へ移動</string>
+</resources>

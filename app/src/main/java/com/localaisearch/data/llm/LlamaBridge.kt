@@ -1,98 +1,67 @@
 package com.localaisearch.data.llm
 
-/**
- * JNI bridge to llama.cpp native library.
- *
- * This object provides the native method declarations that link to
- * the C++ implementation in cpp/llama_bridge.cpp.
- *
- * The actual llama.cpp library must be built and linked via CMake.
- * See README.md for build instructions.
- *
- * Thread-safety: All native calls are synchronized at the GGUFEngine level.
- */
+/** Thin JNI bridge to the app-scoped llama.cpp engine. */
 object LlamaBridge {
+    fun interface TokenCallback { fun onToken(token: String) }
 
-    // -- Model lifecycle --
+    external fun nativeInitialize(): Boolean
+    external fun nativeShutdown(): Boolean
+    external fun nativeGetLastError(): String
+    external fun nativeSupportsGpu(): Boolean
+    external fun nativeLoadModel(filePath: String, contextLength: Int, threads: Int, useGpu: Boolean, gpuLayers: Int): Long
+    external fun nativeUnloadModel(handle: Long): Boolean
 
-    /** Load a GGUF model from the given file path. Returns a model handle ( > 0 on success). */
-    external fun nativeLoadModel(
-        filePath: String,
-        contextLength: Int,
-        threads: Int,
-        useGpu: Boolean,
-        gpuLayers: Int
-    ): Long
+    /** Load the llama.cpp libmtmd/mmproj vision runtime for an already-loaded GGUF model. */
+    external fun nativeLoadVisionProjector(handle: Long, mmprojPath: String, threads: Int, useGpu: Boolean): Boolean
 
-    /** Free the model and all associated resources. */
-    external fun nativeFreeModel(modelHandle: Long)
+    /** True when libmtmd has been attached to the loaded model. */
+    external fun nativeHasVision(handle: Long): Boolean
 
-    // -- Inference --
+    /** Stream a response after encoding an image through mtmd + mmproj. */
+    external fun nativeGenerateMultimodalStream(
+        handle: Long, promptWithMediaMarker: String, imageBytes: ByteArray,
+        temperature: Float, maxTokens: Int, topK: Int, topP: Float,
+        repeatPenalty: Float, frequencyPenalty: Float, presencePenalty: Float,
+        callback: TokenCallback
+    ): Boolean
 
-    /**
-     * Initialize a generation context.
-     * Returns a context handle ( > 0 on success).
-     */
-    external fun nativeInitContext(
-        modelHandle: Long,
-        temperature: Float,
-        topP: Float,
-        topK: Int,
-        repeatPenalty: Float,
-        maxTokens: Int,
-        seed: Int
-    ): Long
+    /** True token streaming. The native side invokes [callback] once per decoded piece. */
+    external fun nativeGenerateStream(
+        handle: Long, prompt: String, temperature: Float, maxTokens: Int, topK: Int, topP: Float, repeatPenalty: Float, frequencyPenalty: Float, presencePenalty: Float, callback: TokenCallback
+    ): Boolean
 
-    /** Feed a prompt into the context and prepare for generation. */
-    external fun nativePrompt(contextHandle: Long, prompt: String): Boolean
+    /** Format chat messages using the model's GGUF chat-template metadata. */
+    external fun nativeFormatChat(handle: Long, roles: Array<String>, contents: Array<String>): String
 
-    /**
-     * Generate the next token. Returns the token string, or null if generation is complete.
-     * Called repeatedly to achieve streaming.
-     */
-    external fun nativeGenerateNext(contextHandle: Long): String?
-
-    /** Stop ongoing generation. */
-    external fun nativeStopGeneration(contextHandle: Long)
-
-    /** Free a generation context. */
-    external fun nativeFreeContext(contextHandle: Long)
-
-    // -- Utilities --
-
-    /** Get current memory usage in bytes. */
-    external fun nativeGetMemoryUsage(modelHandle: Long): Long
-
-    /** Check if GPU (Vulkan/OpenCL) is available. */
-    external fun nativeIsGpuAvailable(): Boolean
-
-    /** Get the llama.cpp version string. */
+    external fun nativeStopGeneration(): Boolean
+    external fun nativeTokenize(handle: Long, text: String, tokens: IntArray): Long
+    external fun nativeDetokenize(handle: Long, tokens: IntArray): String
+    external fun nativeGetMemoryUsage(handle: Long): Long
+    external fun nativeGetModelContextSize(handle: Long): Long
+    external fun nativeGetModelInfo(handle: Long): String
     external fun nativeGetVersion(): String
 
-    /** Check if the native library is loaded. */
     val isLoaded: Boolean
-        get() = try {
-            nativeGetVersion()
-            true
-        } catch (_: UnsatisfiedLinkError) {
-            false
-        }
+        get() = initialized
 
     private const val LIBRARY_NAME = "llama_bridge"
+    @Volatile private var initialized = false
 
-    private var initialized = false
-
-    /**
-     * Load the native library. Called once at app startup.
-     * Returns true if the library was loaded successfully.
-     */
+    @Synchronized
     fun initialize(): Boolean {
         if (initialized) return true
         return try {
             System.loadLibrary(LIBRARY_NAME)
-            initialized = true
-            true
-        } catch (_: UnsatisfiedLinkError) {
+            val ok = nativeInitialize()
+            initialized = ok
+            ok
+        } catch (e: UnsatisfiedLinkError) {
+            android.util.Log.e("LlamaBridge", "Unable to load lib$LIBRARY_NAME.so. Check APK jniLibs and ABI: ${android.os.Build.SUPPORTED_ABIS.joinToString()}", e)
+            initialized = false
+            false
+        } catch (e: Throwable) {
+            android.util.Log.e("LlamaBridge", "Native llama.cpp initialization failed", e)
+            initialized = false
             false
         }
     }

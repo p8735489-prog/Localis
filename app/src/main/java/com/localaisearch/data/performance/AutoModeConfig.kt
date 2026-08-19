@@ -89,14 +89,14 @@ class AutoModeEngine {
             ModelRouter.TaskType.MULTIMODAL -> {
                 availableBundles.firstOrNull { bundle ->
                     bundle.capabilities.contains(ModelCapability.VISION)
-                } ?: availableBundles.first()
+                } ?: availableBundles.firstOrNull()
             }
 
             ModelRouter.TaskType.WEB_SEARCH,
             ModelRouter.TaskType.TEXT_CHAT -> {
                 availableBundles.firstOrNull { bundle ->
                     bundle.capabilities.contains(ModelCapability.TEXT)
-                } ?: availableBundles.first()
+                } ?: availableBundles.firstOrNull()
             }
         }
     }

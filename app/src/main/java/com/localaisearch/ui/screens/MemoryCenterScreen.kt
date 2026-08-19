@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.localaisearch.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -22,13 +24,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,13 +57,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localaisearch.data.repository.MemoryEntry
+import com.localaisearch.data.repository.MemorySearchPreset
+import androidx.compose.material3.FilterChip
 import com.localaisearch.ui.animation.SpringSpecs
 import com.localaisearch.ui.viewmodel.MemoryViewModel
+import com.localaisearch.R
+import androidx.compose.ui.res.stringResource
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,8 +91,11 @@ fun MemoryCenterScreen(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val memories by viewModel.memories.collectAsState()
+    val visibleMemories by viewModel.visibleMemories.collectAsState()
+    val searchPreset by viewModel.searchPreset.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedTopic by viewModel.selectedTopic.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -99,35 +110,32 @@ fun MemoryCenterScreen(
         (memories.map { it.topic }.distinct() + listOf("all")).sorted()
     }
 
-    val filteredMemories = remember(memories, searchQuery, selectedTopic) {
-        memories.filter { memory ->
-            val matchesSearch = searchQuery.isBlank() ||
-                memory.content.contains(searchQuery, ignoreCase = true) ||
-                memory.topic.contains(searchQuery, ignoreCase = true)
-            val matchesTopic = selectedTopic == "all" || memory.topic == selectedTopic
-            matchesSearch && matchesTopic
-        }
+    val filteredMemories = remember(visibleMemories, selectedTopic) {
+        visibleMemories.filter { memory -> selectedTopic == "all" || memory.topic == selectedTopic }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Memory Center") },
+                title = { Text(stringResource(R.string.memory_center_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
                 actions = {
                     if (memories.isNotEmpty()) {
-                        IconButton(onClick = { showClearAllDialog = true }) {
+                        IconButton(
+                            onClick = { showClearAllDialog = true },
+                            enabled = !isLoading
+                        ) {
                             Icon(
-                                imageVector = Icons.Filled.DeleteSweep,
-                                contentDescription = "Clear all memories",
-                                tint = colorScheme.error
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.clear_all_memories_desc),
+                                tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.error
                             )
                         }
                     }
@@ -140,11 +148,16 @@ fun MemoryCenterScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = { if (!isLoading) showAddDialog = true },
                 containerColor = colorScheme.primary,
-                contentColor = colorScheme.onPrimary
+                contentColor = colorScheme.onPrimary,
+                modifier = Modifier.alpha(if (isLoading) 0.5f else 1f)
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add memory")
+                if (isLoading) {
+                    LoadingIndicator(modifier = Modifier.size(24.dp))
+                } else {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_memory_desc))
+                }
             }
         }
     ) { innerPadding ->
@@ -160,7 +173,7 @@ fun MemoryCenterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search memories...") },
+                placeholder = { Text(stringResource(R.string.search_memories)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Search,
@@ -169,7 +182,7 @@ fun MemoryCenterScreen(
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = androidx.compose.material3.TextFieldDefaults.colors(
                     focusedContainerColor = colorScheme.surfaceContainerHigh,
                     unfocusedContainerColor = colorScheme.surfaceContainerHigh,
@@ -177,6 +190,25 @@ fun MemoryCenterScreen(
                     unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
                 )
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    MemorySearchPreset.ALL to R.string.memory_preset_all,
+                    MemorySearchPreset.PREFERENCES to R.string.memory_preset_preferences,
+                    MemorySearchPreset.PROJECTS to R.string.memory_preset_projects,
+                    MemorySearchPreset.DEVICE to R.string.memory_preset_device,
+                    MemorySearchPreset.RECENT to R.string.memory_preset_recent
+                ).forEach { (preset, label) ->
+                    FilterChip(
+                        selected = searchPreset == preset,
+                        onClick = { viewModel.setSearchPreset(preset) },
+                        label = { Text(stringResource(label)) }
+                    )
+                }
+            }
 
             // Topic filter chips
             if (topics.size > 1) {
@@ -223,14 +255,19 @@ fun MemoryCenterScreen(
                     items(filteredMemories, key = { it.id }) { memory ->
                         MemoryItemCard(
                             memory = memory,
+                            isLoading = isLoading,
                             onEdit = {
-                                editTarget = memory
-                                editText = memory.content
-                                showEditDialog = true
+                                if (!isLoading) {
+                                    editTarget = memory
+                                    editText = memory.content
+                                    showEditDialog = true
+                                }
                             },
                             onDelete = {
-                                deleteTarget = memory
-                                showDeleteDialog = true
+                                if (!isLoading) {
+                                    deleteTarget = memory
+                                    showDeleteDialog = true
+                                }
                             }
                         )
                     }
@@ -246,7 +283,8 @@ fun MemoryCenterScreen(
             onConfirm = { content, topic ->
                 viewModel.addMemory(content, topic)
                 showAddDialog = false
-            }
+            },
+            isLoading = isLoading
         )
     }
 
@@ -254,12 +292,12 @@ fun MemoryCenterScreen(
     if (showEditDialog && editTarget != null) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Edit Memory") },
+            title = { Text(stringResource(R.string.edit_memory)) },
             text = {
                 OutlinedTextField(
                     value = editText,
                     onValueChange = { editText = it },
-                    label = { Text("Content") },
+                    label = { Text(stringResource(R.string.content)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -269,14 +307,15 @@ fun MemoryCenterScreen(
                         editTarget?.let { viewModel.updateMemory(it.id, editText) }
                         showEditDialog = false
                         editTarget = null
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -286,22 +325,23 @@ fun MemoryCenterScreen(
     if (showDeleteDialog && deleteTarget != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Memory?") },
-            text = { Text("This memory will be permanently removed. This action cannot be undone.") },
+            title = { Text(stringResource(R.string.delete_memory)) },
+            text = { Text(stringResource(R.string.delete_memory_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         deleteTarget?.let { viewModel.deleteMemory(it.id) }
                         showDeleteDialog = false
                         deleteTarget = null
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Delete", color = colorScheme.error)
+                    Text(stringResource(R.string.delete), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -313,16 +353,15 @@ fun MemoryCenterScreen(
             onDismissRequest = { showClearAllDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.DeleteSweep,
+                    imageVector = Icons.Filled.Message,
                     contentDescription = null,
                     tint = colorScheme.error
                 )
             },
-            title = { Text("Clear All Memories?") },
+            title = { Text(stringResource(R.string.clear_all_memories)) },
             text = {
                 Text(
-                    "This will permanently delete ALL stored memories and preferences. " +
-                        "The AI will no longer remember past context. This action cannot be undone."
+                    stringResource(R.string.clear_memories_confirm)
                 )
             },
             confirmButton = {
@@ -330,14 +369,15 @@ fun MemoryCenterScreen(
                     onClick = {
                         viewModel.clearAllMemories()
                         showClearAllDialog = false
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Clear All", color = colorScheme.error)
+                    Text(stringResource(R.string.clear_all_memories_action), color = colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -347,6 +387,7 @@ fun MemoryCenterScreen(
 @Composable
 private fun MemoryItemCard(
     memory: MemoryEntry,
+    isLoading: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
@@ -391,19 +432,27 @@ private fun MemoryItemCard(
 
                 // Actions
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    IconButton(
+                        onClick = onEdit,
+                        enabled = !isLoading,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Edit,
-                            contentDescription = "Edit",
-                            tint = colorScheme.primary,
+                            contentDescription = stringResource(R.string.edit_memory),
+                            tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    IconButton(
+                        onClick = onDelete,
+                        enabled = !isLoading,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Delete,
-                            contentDescription = "Delete",
-                            tint = colorScheme.error,
+                            contentDescription = stringResource(R.string.delete_memory),
+                            tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.error,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -424,7 +473,7 @@ private fun MemoryItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Source: ${memory.sourceConversationId.take(8)}...",
+                    text = stringResource(R.string.source, memory.sourceConversationId.take(8)),
                     style = MaterialTheme.typography.labelSmall,
                     color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
@@ -450,18 +499,18 @@ private fun EmptyMemoryState() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.Memory,
+                imageVector = Icons.Filled.Save,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
             )
             Text(
-                text = "No memories yet",
+                text = stringResource(R.string.no_memories),
                 style = MaterialTheme.typography.titleMedium,
                 color = colorScheme.onSurfaceVariant
             )
             Text(
-                text = "The AI will remember important facts and preferences from your conversations",
+                text = stringResource(R.string.memory_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.padding(horizontal = 40.dp)
@@ -473,26 +522,27 @@ private fun EmptyMemoryState() {
 @Composable
 private fun AddMemoryDialog(
     onDismiss: () -> Unit,
-    onConfirm: (content: String, topic: String) -> Unit
+    onConfirm: (content: String, topic: String) -> Unit,
+    isLoading: Boolean
 ) {
     var content by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("general") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Memory") },
+        title = { Text(stringResource(R.string.add_memory)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text("Content") },
+                    label = { Text(stringResource(R.string.content)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = topic,
                     onValueChange = { topic = it },
-                    label = { Text("Topic") },
+                    label = { Text(stringResource(R.string.topic)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -505,14 +555,14 @@ private fun AddMemoryDialog(
                         onConfirm(content, topic.ifBlank { "general" })
                     }
                 },
-                enabled = content.isNotBlank()
+                enabled = content.isNotBlank() && !isLoading
             ) {
-                Text("Add")
+                Text(stringResource(R.string.add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

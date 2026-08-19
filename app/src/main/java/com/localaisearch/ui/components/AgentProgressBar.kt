@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.localaisearch.R
 import com.localaisearch.data.model.AgentState
 import com.localaisearch.data.model.AgentStatus
 import com.localaisearch.ui.animation.InfiniteAnimations
@@ -122,7 +124,7 @@ fun AgentProgressBar(
                 }
 
                 // Arrow between dots
-                if (step != steps.last()) {
+                if (steps.isNotEmpty() && step != steps.last()) {
                     Spacer(modifier = Modifier.width(2.dp))
                 }
             }
@@ -131,7 +133,7 @@ fun AgentProgressBar(
         // Round indicator
         if (status.currentRound > 0) {
             Text(
-                text = "Search round ${status.currentRound}/${status.maxRounds}",
+                text = stringResource(R.string.search_round, status.currentRound, status.maxRounds),
                 style = MaterialTheme.typography.labelSmall,
                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )

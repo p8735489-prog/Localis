@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -22,10 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.localaisearch.ui.animation.SpringSpecs
+import com.localaisearch.R
 
 /**
  * Toggle switch for "Auto Mode" (Localis Auto).
@@ -43,6 +46,7 @@ fun AutoModeToggle(
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val hapticView = LocalView.current
 
     val iconScale by animateFloatAsState(
         targetValue = if (enabled) 1.2f else 1f,
@@ -59,7 +63,7 @@ fun AutoModeToggle(
     )
 
     Card(
-        onClick = { onToggle(!enabled) },
+        onClick = { AppHaptics.tap(hapticView); onToggle(!enabled) },
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
@@ -77,8 +81,8 @@ fun AutoModeToggle(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.AutoAwesome,
-                    contentDescription = "Auto Mode",
+                        imageVector = Icons.Filled.Star,
+                    contentDescription = stringResource(com.localaisearch.R.string.auto_mode),
                     tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
@@ -94,7 +98,7 @@ fun AutoModeToggle(
 
             Switch(
                 checked = enabled,
-                onCheckedChange = onToggle
+                onCheckedChange = { AppHaptics.tap(hapticView); onToggle(it) }
             )
         }
     }

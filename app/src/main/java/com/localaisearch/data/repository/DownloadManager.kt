@@ -14,12 +14,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.appendingSink
+import okio.buffer
 import java.io.File
 import java.io.RandomAccessFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.Semaphore
 
+import com.localaisearch.data.repository.NetworkClientFactory
 /**
  * Download state for a single model file.
  */
@@ -55,7 +58,7 @@ sealed class DownloadState {
  */
 class DownloadManager(
     private val context: Context,
-    private val maxConcurrent: Int = 2,
+    private val maxConcurrent: Int = 3,
     private val onComplete: (GGUFModel) -> Unit = {}
 ) {
     companion object {
@@ -64,7 +67,7 @@ class DownloadManager(
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClientFactory.builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
@@ -75,12 +78,14 @@ class DownloadManager(
 
     // Active download coroutines
     private val activeDownloads = ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+    private val downloadGuard = Any()
     private val downloadQueue = ArrayDeque<String>()
     private val pausedDownloads = mutableSetOf<String>()
     private val cancelledDownloads = mutableSetOf<String>()
 
-    // Concurrency control
-    private val activeCount = AtomicLong(0)
+    // Concurrency control. Queued downloads wait for a permit instead of being
+    // silently dropped when all slots are occupied.
+    private val concurrency = Semaphore(maxConcurrent, true)
 
     /**
      * Start downloading a GGUF model file.
@@ -103,17 +108,15 @@ class DownloadManager(
             return
         }
 
-        // If already downloading, don't restart
-        if (activeDownloads.containsKey(modelId)) {
-            return
+        synchronized(downloadGuard) {
+            // Reserve the model ID before launching the coroutine so two rapid taps
+            // cannot create duplicate download jobs.
+            if (activeDownloads.containsKey(modelId)) return
+            cancelledDownloads.remove(modelId)
+            pausedDownloads.remove(modelId)
+            updateState(modelId, DownloadState.Queued(modelId))
+            processQueue(modelId, downloadUrl, fileName, totalSize, downloadSource)
         }
-
-        cancelledDownloads.remove(modelId)
-        pausedDownloads.remove(modelId)
-
-        updateState(modelId, DownloadState.Queued(modelId))
-        downloadQueue.add(modelId)
-        processQueue(modelId, downloadUrl, fileName, totalSize, downloadSource)
     }
 
     /**
@@ -184,31 +187,37 @@ class DownloadManager(
         downloadSource: String,
         resumeFrom: Long = 0
     ) {
-        if (activeCount.get() >= maxConcurrent) {
-            // Will be picked up when a slot frees
-            return
-        }
-
-        activeCount.incrementAndGet()
-
         val job = scope.launch {
+            var permitAcquired = false
             try {
+                concurrency.acquire()
+                permitAcquired = true
                 val modelsDir = File(context.filesDir, "models").apply { mkdirs() }
                 val targetFile = File(modelsDir, fileName)
 
-                // Verify file doesn't exist or is partial
+                // Never assume an existing .gguf is complete. Only skip the
+                // network request when its size matches the expected size and the
+                // GGUF magic header is valid.
                 if (targetFile.exists() && targetFile.length() > 0 && resumeFrom == 0L) {
-                    // File already exists and is complete
-                    updateState(modelId, DownloadState.Completed(modelId, targetFile.absolutePath))
-                    onComplete(
-                        GGUFModel(
-                            id = targetFile.absolutePath,
-                            name = targetFile.nameWithoutExtension,
-                            filePath = targetFile.absolutePath,
-                            fileSizeBytes = targetFile.length()
+                    val expected = totalSize
+                    val looksComplete = expected > 0L &&
+                        targetFile.length() == expected &&
+                        isValidGguf(targetFile)
+                    if (looksComplete) {
+                        updateState(modelId, DownloadState.Completed(modelId, targetFile.absolutePath))
+                        onComplete(
+                            GGUFModel(
+                                id = targetFile.absolutePath,
+                                name = targetFile.nameWithoutExtension,
+                                filePath = targetFile.absolutePath,
+                                fileSizeBytes = targetFile.length()
+                            )
                         )
-                    )
-                    return@launch
+                        return@launch
+                    }
+                    if (expected > 0L && targetFile.length() > expected) {
+                        targetFile.delete()
+                    }
                 }
 
                 val requestBuilder = Request.Builder().url(downloadUrl)
@@ -228,32 +237,65 @@ class DownloadManager(
                 val request = requestBuilder.build()
                 val response = client.newCall(request).execute()
 
-                if (!response.isSuccessful && response.code != 206) {
-                    throw IllegalStateException("HTTP ${response.code}")
+                // A mirror/CDN is allowed to ignore Range and return 200. In that
+                // case appending to the partial file would corrupt the GGUF.
+                val effectiveResume = if (resumePosition > 0 && response.code != 206) {
+                    if (response.code != 200) {
+                        response.close()
+                        throw IllegalStateException("HTTP ${response.code}")
+                    }
+                    targetFile.delete()
+                    0L
+                } else {
+                    if (!response.isSuccessful && response.code != 206) {
+                        response.close()
+                        throw IllegalStateException("HTTP ${response.code}")
+                    }
+                    resumePosition
+                }
+
+                val contentType = response.header("Content-Type")?.lowercase().orEmpty()
+                if (contentType.contains("text/html") || contentType.contains("text/plain")) {
+                    response.close()
+                    throw IllegalStateException("Mirror returned a text/HTML response instead of a GGUF file")
                 }
 
                 val contentLength = response.header("Content-Length")?.toLongOrNull()
                     ?: totalSize
                 val totalBytes = if (response.code == 206 && contentLength > 0) {
-                    resumePosition + contentLength
+                    effectiveResume + contentLength
                 } else {
                     contentLength
                 }
 
-                val body = response.body ?: throw IllegalStateException("Empty response body")
+                val body = response.body ?: run {
+                    response.close()
+                    throw IllegalStateException("Empty response body")
+                }
                 val inputStream = body.byteStream()
 
                 val startTime = System.currentTimeMillis()
-                var bytesRead = resumePosition
+                var bytesRead = effectiveResume
                 var lastUpdate = startTime
-                var lastBytes = resumePosition
+                var lastBytes = effectiveResume
+                updateState(
+                    modelId,
+                    DownloadState.Downloading(
+                        modelId = modelId,
+                        bytesDownloaded = bytesRead,
+                        totalBytes = totalBytes,
+                        bytesPerSecond = 0,
+                        progress = if (totalBytes > 0) (bytesRead.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
+                    )
+                )
                 val buffer = ByteArray(CHUNK_SIZE)
 
                 // Append mode for resume support
-                val fileMode = if (resumePosition > 0) "rws" else "rw"
-                val raf = RandomAccessFile(targetFile, fileMode)
-                if (resumePosition > 0) {
-                    raf.seek(resumePosition)
+                val raf = RandomAccessFile(targetFile, "rws")
+                if (effectiveResume > 0) {
+                    raf.seek(effectiveResume)
+                } else {
+                    raf.setLength(0L)
                 }
 
                 try {
@@ -271,9 +313,9 @@ class DownloadManager(
                         raf.write(buffer, 0, read)
                         bytesRead += read
 
-                        // Update progress every 500ms
+                        // Update progress frequently enough for smooth UI feedback
                         val now = System.currentTimeMillis()
-                        if (now - lastUpdate >= 500) {
+                        if (now - lastUpdate >= 100) {
                             val elapsed = (now - lastUpdate) / 1000f
                             val bytesPerSecond = ((bytesRead - lastBytes) / elapsed).toLong()
                             val progress = if (totalBytes > 0) bytesRead.toFloat() / totalBytes else 0f
@@ -308,11 +350,16 @@ class DownloadManager(
                     return@launch
                 }
 
-                // Verify file size
+                // Verify exact size when known and validate the GGUF magic header.
                 val finalSize = targetFile.length()
-                if (totalBytes > 0 && finalSize < totalBytes * 0.99) {
+                if (totalBytes > 0 && finalSize != totalBytes) {
                     throw IllegalStateException(
                         "File incomplete: $finalSize / $totalBytes bytes"
+                    )
+                }
+                if (!isValidGguf(targetFile)) {
+                    throw IllegalStateException(
+                        "Downloaded file is not a valid GGUF file. The mirror may have returned an HTML/error page."
                     )
                 }
 
@@ -344,17 +391,30 @@ class DownloadManager(
                 }
             } finally {
                 activeDownloads.remove(modelId)
-                activeCount.decrementAndGet()
-                // Process next in queue
-                processNextInQueue()
+                if (permitAcquired) {
+                    concurrency.release()
+                }
+                // Waiting queued coroutines automatically acquire the next slot.
             }
         }
 
         activeDownloads[modelId] = job
     }
 
-    private fun processNextInQueue() {
-        // Stub: would process next queued download
+    private fun isValidGguf(file: File): Boolean {
+        if (!file.isFile || file.length() < 4) return false
+        return try {
+            file.inputStream().use { input ->
+                val header = ByteArray(4)
+                input.read(header) == 4 &&
+                    header[0] == 0x47.toByte() &&
+                    header[1] == 0x47.toByte() &&
+                    header[2] == 0x55.toByte() &&
+                    header[3] == 0x46.toByte()
+            }
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun updateState(modelId: String, state: DownloadState) {

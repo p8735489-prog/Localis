@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.localaisearch.ui.screens
 
 import android.net.Uri
@@ -21,14 +23,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -39,17 +41,29 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.localaisearch.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localaisearch.data.model.GGUFModel
+import com.localaisearch.data.model.displaySize
 import com.localaisearch.ui.viewmodel.ImportStatus
 import com.localaisearch.ui.viewmodel.LoadStatus
 import com.localaisearch.ui.viewmodel.ModelViewModel
@@ -80,12 +94,12 @@ fun ModelManagerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Model Manager") },
+                title = { Text(stringResource(R.string.model_manager)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -108,20 +122,19 @@ fun ModelManagerScreen(
             ) {
                 Icon(imageVector = Icons.Filled.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Import GGUF Model")
+                Text(stringResource(R.string.import_gguf))
             }
 
             // Format note
             Text(
-                text = "Only GGUF format model files are supported. ONNX, QNN, MLX are not supported.",
+                text = stringResource(R.string.only_gguf_supported),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            // Status indicators
-            ImportStatusIndicator(importStatus)
-            LoadStatusIndicator(loadStatus)
+            // One unified status area. Import and model loading never render two progress indicators at once.
+            ModelOperationStatus(importStatus, loadStatus)
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
@@ -138,13 +151,13 @@ fun ModelManagerScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Memory,
+                            imageVector = Icons.Filled.Save,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "No models imported yet.\nTap \"Import GGUF Model\" to get started.",
+                            text = stringResource(R.string.no_models),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -178,45 +191,83 @@ fun ModelManagerScreen(
 }
 
 @Composable
-private fun ImportStatusIndicator(importStatus: ImportStatus) {
-    when (importStatus) {
-        is ImportStatus.Idle -> {}
-        is ImportStatus.Importing -> {
+private fun ModelOperationStatus(importStatus: ImportStatus, loadStatus: LoadStatus) {
+    when {
+        loadStatus is LoadStatus.Loading -> {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
+                LoadingIndicator(modifier = Modifier.size(22.dp))
                 Text(
-                    text = "Importing model...",
+                    text = stringResource(R.string.loading_model),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
         }
-        is ImportStatus.Success -> {
-            Text(
-                text = "Imported: ${importStatus.model.name}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-            )
+        importStatus is ImportStatus.Importing -> {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                LoadingIndicator(modifier = Modifier.size(22.dp))
+                Text(stringResource(R.string.importing_model), style = MaterialTheme.typography.bodyMedium)
+            }
         }
-        is ImportStatus.Error -> {
-            Text(
-                text = "Import failed: ${importStatus.message}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-            )
+        importStatus is ImportStatus.Success -> Text(
+            text = stringResource(R.string.imported_model, importStatus.model.name),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        )
+        importStatus is ImportStatus.Error -> Text(
+            text = stringResource(R.string.import_failed, importStatus.message),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        )
+        loadStatus is LoadStatus.Error -> Text(
+            text = loadStatus.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        )
+    }
+}
+
+@Composable
+private fun LoadingTypewriterText(base: String, modifier: Modifier = Modifier) {
+    var visibleCount by remember(base) { mutableStateOf(0) }
+    val fullText = base
+
+    LaunchedEffect(fullText) {
+        visibleCount = 0
+        while (visibleCount < fullText.length) {
+            visibleCount++
+            kotlinx.coroutines.delay(32)
         }
     }
+
+    val transition = rememberInfiniteTransition(label = "model-loading-pulse")
+    val alpha by transition.animateFloat(
+        initialValue = 0.62f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "loading-alpha"
+    )
+
+    Text(
+        text = fullText.take(visibleCount) + if (visibleCount >= fullText.length) "…" else "▌",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -224,27 +275,46 @@ private fun LoadStatusIndicator(loadStatus: LoadStatus) {
     when (loadStatus) {
         is LoadStatus.Idle -> {}
         is LoadStatus.Loading -> {
-            Row(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
+                ),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
-                Text(
-                    text = "Loading model...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        LoadingIndicator(modifier = Modifier.size(22.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            LoadingTypewriterText(
+                                base = stringResource(R.string.loading_model).removeSuffix("...").removeSuffix("…")
+                            )
+                            Text(
+                                text = loadStatus.model.name,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
         is LoadStatus.Loaded -> {
             Text(
-                text = "Model loaded and ready.",
+                text = stringResource(R.string.model_loaded_ready),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
@@ -252,7 +322,7 @@ private fun LoadStatusIndicator(loadStatus: LoadStatus) {
         }
         is LoadStatus.Error -> {
             Text(
-                text = "Load failed: ${loadStatus.message}",
+                text = stringResource(R.string.load_failed, loadStatus.message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
@@ -304,7 +374,7 @@ private fun ModelCard(
                 )
                 if (isActive) {
                     BadgedBox(
-                        badge = { Badge { Text("Active") } }
+                        badge = { Badge { Text(stringResource(R.string.active)) } }
                     ) {
                         Spacer(modifier = Modifier.width(4.dp))
                     }
@@ -334,14 +404,22 @@ private fun ModelCard(
                         onClick = onUnloadClick,
                         enabled = loadStatus !is LoadStatus.Loading
                     ) {
-                        Text("Unload")
+                        Text(stringResource(R.string.unload))
                     }
                 } else {
+                    val isLoadingThisModel =
+                        loadStatus is LoadStatus.Loading && loadStatus.model.id == model.id
                     Button(
                         onClick = onLoadClick,
                         enabled = loadStatus !is LoadStatus.Loading
                     ) {
-                        Text("Load")
+                        if (isLoadingThisModel) {
+                            LoadingIndicator(modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.loading_model).removeSuffix("...").removeSuffix("…"))
+                        } else {
+                            Text(stringResource(R.string.load))
+                        }
                     }
                 }
 
@@ -355,11 +433,11 @@ private fun ModelCard(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(R.string.delete),
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             }
         }

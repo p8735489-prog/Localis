@@ -14,19 +14,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.math.ln
 
 private val Context.memoriesDataStore: DataStore<Preferences> by preferencesDataStore(name = "memories")
 
-/**
- * A single long-term memory entry extracted from conversations.
- *
- * @property id Unique identifier for this memory entry.
- * @property content The fact or preference being remembered.
- * @property topic Optional topic/category for grouping (e.g., "preferences", "personal_info").
- * @property sourceConversationId The ID of the conversation this memory was extracted from.
- * @property createdAt Timestamp when the memory was first extracted.
- * @property lastAccessedAt Timestamp when the memory was last read or referenced.
- */
+/** Lightweight presets for fast, predictable memory retrieval. */
+enum class MemorySearchPreset {
+    ALL, PREFERENCES, PROJECTS, DEVICE, RECENT
+}
+
 @Serializable
 data class MemoryEntry(
     val id: String = java.util.UUID.randomUUID().toString(),
@@ -34,313 +30,204 @@ data class MemoryEntry(
     val topic: String = "general",
     val sourceConversationId: String,
     val createdAt: Long = System.currentTimeMillis(),
-    val lastAccessedAt: Long = System.currentTimeMillis()
+    val lastAccessedAt: Long = System.currentTimeMillis(),
+    val lastUpdatedAt: Long = System.currentTimeMillis(),
+    val accessCount: Int = 0,
+    val importance: Float = 0.6f,
+    val pinned: Boolean = false,
+    val tags: List<String> = emptyList()
 )
 
 /**
- * Repository for managing long-term memory entries extracted from conversations.
- *
- * Memory entries are stored as a JSON-serialized list under a single DataStore
- * string key. They represent facts, preferences, and important information the
- * user has shared that the AI should remember across sessions.
+ * Long-term memory store with lightweight relevance ranking.
+ * The ranking is intentionally local and deterministic: exact phrase matches,
+ * token overlap, topic/tag matches, recency, importance and access frequency
+ * are combined without sending memory contents to a remote service.
  */
 class MemoryRepository(private val context: Context) {
-
     private val dataStore = context.memoriesDataStore
-    private val json = Json {
-        prettyPrint = false
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json = Json { prettyPrint = false; ignoreUnknownKeys = true; encodeDefaults = true }
 
     companion object {
         private val MEMORIES_JSON = stringPreferencesKey("memories_json")
-
-        /** Keywords that indicate a sentence contains something worth remembering. */
+        private const val MAX_MEMORY_LENGTH = 500
+        private const val MAX_MEMORY_COUNT = 2000
         private val MEMORY_KEYWORDS = listOf(
-            "记住", "重要", "我的", "我喜欢", "我讨厌", "我是", "我在",
+            "记住", "重要", "我的", "我喜欢", "我讨厌", "我是", "我在", "以后", "偏好",
             "remember", "important", "my ", "i like", "i hate", "i am ", "i live",
             "always", "never", "usually", "prefer", "name is", "called"
         )
-
-        /** Maximum length of a single memory entry in characters. */
-        private const val MAX_MEMORY_LENGTH = 500
     }
 
-    /**
-     * Load the list of memory entries from the current preferences snapshot.
-     */
     private fun loadMemories(prefs: Preferences): List<MemoryEntry> {
-        val jsonStr = prefs[MEMORIES_JSON] ?: return emptyList()
-        return try {
-            json.decodeFromString(jsonStr)
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val raw = prefs[MEMORIES_JSON] ?: return emptyList()
+        return runCatching { json.decodeFromString<List<MemoryEntry>>(raw) }.getOrDefault(emptyList())
     }
 
-    /**
-     * Persist the given list of memory entries to DataStore.
-     */
-    private suspend fun saveMemories(list: List<MemoryEntry>) {
-        dataStore.edit { prefs ->
-            prefs[MEMORIES_JSON] = json.encodeToString(list)
-        }
-    }
+    private fun normalize(text: String): String = text.trim().lowercase()
 
-    /**
-     * Add a new memory entry.
-     *
-     * @param content The fact or preference to remember.
-     * @param topic Topic/category for grouping.
-     * @param sourceConversationId The originating conversation ID.
-     * @return [Result.success] with the created [MemoryEntry], or [Result.failure] on error.
-     */
-    suspend fun addMemory(
-        content: String,
-        topic: String,
-        sourceConversationId: String
-    ): Result<MemoryEntry> {
-        return try {
-            val trimmed = content.trim().take(MAX_MEMORY_LENGTH)
-            if (trimmed.isBlank()) {
-                return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
-            }
-            val entry = MemoryEntry(
-                content = trimmed,
-                topic = topic,
-                sourceConversationId = sourceConversationId
-            )
-            val current = dataStore.data.map { loadMemories(it) }.first().toMutableList()
-            current.add(entry)
-            saveMemories(current)
-            Result.success(entry)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Get all memory entries as a Flow, ordered by creation time descending.
-     */
-    fun getMemories(): Flow<List<MemoryEntry>> {
-        return dataStore.data.map { prefs ->
-            loadMemories(prefs).sortedByDescending { it.createdAt }
-        }
-    }
-
-    /**
-     * Simple text search across memory contents and topics.
-     *
-     * @param query Case-insensitive search string.
-     * @return Matching entries ordered by recency.
-     */
-    suspend fun searchMemories(query: String): List<MemoryEntry> {
-        val normalized = query.trim().lowercase()
-        if (normalized.isBlank()) return emptyList()
-        return dataStore.data.map { prefs ->
-            loadMemories(prefs).filter { entry ->
-                entry.content.lowercase().contains(normalized) ||
-                    entry.topic.lowercase().contains(normalized)
-            }.sortedByDescending { it.createdAt }
-        }.first()
-    }
-
-    /**
-     * Get memories that share keywords with the given query.
-     *
-     * Splits the query into words and returns entries whose content contains
-     * at least one of those words.
-     *
-     * @param query The user query to match against.
-     * @param maxResults Maximum number of entries to return.
-     * @return Relevant memory entries.
-     */
-    suspend fun getRelevantMemories(
-        query: String,
-        maxResults: Int = 5
-    ): List<MemoryEntry> {
-        val words = query.trim().lowercase()
-            .split(Regex("[\\s,;.!?，。！？]"))
+    /** Tokenizer that works for both CJK text and whitespace-delimited languages. */
+    private fun tokenize(text: String): Set<String> {
+        val normalized = normalize(text)
+        val words = normalized.split(Regex("[\\s,;.!?，。！？、:：/\\\\|()\\[\\]{}]+"))
             .filter { it.length >= 2 }
-            .toSet()
-        if (words.isEmpty()) return emptyList()
-
-        return dataStore.data.map { prefs ->
-            loadMemories(prefs)
-                .filter { entry ->
-                    val contentLower = entry.content.lowercase()
-                    words.any { contentLower.contains(it) }
-                }
-                .sortedByDescending { it.lastAccessedAt }
-                .take(maxResults)
-        }.first()
+            .toMutableSet()
+        // CJK bigrams make short Chinese queries useful without an embedding model.
+        val cjk = normalized.filter { it.code in 0x4E00..0x9FFF }
+        for (i in 0 until (cjk.length - 1).coerceAtLeast(0)) words += cjk.substring(i, i + 2)
+        return words
     }
 
-    /**
-     * Update the content of an existing memory entry.
-     *
-     * @param id The memory entry UUID.
-     * @param newContent The updated content.
-     * @return [Result.success] if found and updated, [Result.failure] on error.
-     */
-    suspend fun updateMemory(id: String, newContent: String): Result<Unit> {
-        return try {
-            val trimmed = newContent.trim().take(MAX_MEMORY_LENGTH)
-            if (trimmed.isBlank()) {
-                return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
+    private fun matchesPreset(entry: MemoryEntry, preset: MemorySearchPreset): Boolean = when (preset) {
+        MemorySearchPreset.ALL -> true
+        MemorySearchPreset.PREFERENCES -> entry.topic in setOf("preferences", "preference") ||
+            entry.tags.any { it in setOf("preference", "preferences", "偏好") }
+        MemorySearchPreset.PROJECTS -> entry.topic in setOf("project", "projects", "work", "项目") ||
+            entry.tags.any { it in setOf("project", "projects", "项目", "work") }
+        MemorySearchPreset.DEVICE -> entry.topic in setOf("device", "devices", "设备", "technology", "tech") ||
+            entry.tags.any { it in setOf("device", "devices", "设备", "tech") }
+        MemorySearchPreset.RECENT -> entry.createdAt >= System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
+    }
+
+    private fun relevance(entry: MemoryEntry, query: String, now: Long): Float {
+        if (query.isBlank()) return entry.importance + if (entry.pinned) 2f else 0f
+        val q = normalize(query)
+        val content = normalize(entry.content)
+        val topic = normalize(entry.topic)
+        val tags = entry.tags.map(::normalize)
+        val tokens = tokenize(query)
+        val overlap = if (tokens.isEmpty()) 0f else tokens.count { token ->
+            content.contains(token) || topic.contains(token) || tags.any { it.contains(token) }
+        }.toFloat() / tokens.size
+        val exact = if (content.contains(q)) 1f else 0f
+        val phraseStart = if (content.startsWith(q)) 0.35f else 0f
+        val recencyDays = ((now - entry.lastAccessedAt).coerceAtLeast(0L) / 86_400_000f)
+        val recency = 1f / (1f + recencyDays / 14f)
+        val accessBoost = (ln((entry.accessCount + 1).toDouble()) / 5.0).toFloat().coerceIn(0f, 0.7f)
+        val importance = entry.importance.coerceIn(0f, 1f)
+        return exact * 2.4f + phraseStart + overlap * 1.8f + recency * 0.8f + accessBoost + importance * 0.7f + if (entry.pinned) 2f else 0f
+    }
+
+    suspend fun addMemory(content: String, topic: String, sourceConversationId: String): Result<MemoryEntry> = try {
+        val trimmed = content.trim().take(MAX_MEMORY_LENGTH)
+        if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
+        val now = System.currentTimeMillis()
+        var result: MemoryEntry? = null
+        dataStore.edit { prefs ->
+            val current = loadMemories(prefs).toMutableList()
+            val index = current.indexOfFirst { normalize(it.content) == normalize(trimmed) }
+            if (index >= 0) {
+                val old = current[index]
+                result = old.copy(
+                    topic = topic.ifBlank { old.topic },
+                    lastAccessedAt = now,
+                    lastUpdatedAt = now,
+                    accessCount = old.accessCount + 1,
+                    importance = maxOf(old.importance, 0.7f)
+                )
+                current[index] = result!!
+            } else {
+                result = MemoryEntry(content = trimmed, topic = topic.ifBlank { "general" }, sourceConversationId = sourceConversationId, createdAt = now, lastAccessedAt = now, lastUpdatedAt = now)
+                current.add(result!!)
             }
-            dataStore.edit { prefs ->
-                val current = loadMemories(prefs).toMutableList()
-                val index = current.indexOfFirst { it.id == id }
-                if (index >= 0) {
-                    val entry = current[index]
-                    current[index] = entry.copy(
-                        content = trimmed,
-                        lastAccessedAt = System.currentTimeMillis()
-                    )
-                    prefs[MEMORIES_JSON] = json.encodeToString(current)
-                }
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+            prefs[MEMORIES_JSON] = json.encodeToString(current.takeLast(MAX_MEMORY_COUNT))
         }
+        Result.success(result!!)
+    } catch (e: Exception) { Result.failure(e) }
+
+    fun getMemories(): Flow<List<MemoryEntry>> = dataStore.data.map { prefs -> loadMemories(prefs).sortedWith(compareByDescending<MemoryEntry> { it.pinned }.thenByDescending { it.createdAt }) }
+
+    /** Fast local search. Results are ranked like a memory retriever rather than simple substring filtering. */
+    suspend fun searchMemories(query: String, preset: MemorySearchPreset = MemorySearchPreset.ALL, maxResults: Int = 50): List<MemoryEntry> {
+        val now = System.currentTimeMillis()
+        val snapshot = dataStore.data.map { prefs -> loadMemories(prefs) }.first()
+        val ranked = snapshot.asSequence()
+            .filter { matchesPreset(it, preset) }
+            .map { it to relevance(it, query, now) }
+            .filter { query.isBlank() || it.second > 0.0f }
+            .sortedByDescending { it.second }
+            .take(maxResults)
+            .map { it.first }
+            .toList()
+        if (ranked.isNotEmpty()) {
+            val ids = ranked.take(8).map { it.id }.toSet()
+            dataStore.edit { prefs ->
+                val current = loadMemories(prefs)
+                prefs[MEMORIES_JSON] = json.encodeToString(current.map { if (it.id in ids) it.copy(lastAccessedAt = now, accessCount = it.accessCount + 1) else it })
+            }
+        }
+        return ranked
     }
 
-    /**
-     * Delete a single memory entry by ID.
-     *
-     * @param id The memory entry UUID.
-     * @return [Result.success] on success, [Result.failure] on error.
-     */
-    suspend fun deleteMemory(id: String): Result<Unit> {
-        return try {
-            dataStore.edit { prefs ->
-                val current = loadMemories(prefs).filter { it.id != id }
+    suspend fun getRelevantMemories(query: String, maxResults: Int = 5): List<MemoryEntry> =
+        searchMemories(query, MemorySearchPreset.ALL, maxResults)
+
+    suspend fun updateMemory(id: String, newContent: String): Result<Unit> = try {
+        val trimmed = newContent.trim().take(MAX_MEMORY_LENGTH)
+        if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
+        dataStore.edit { prefs ->
+            val current = loadMemories(prefs).toMutableList()
+            val index = current.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                val old = current[index]
+                current[index] = old.copy(content = trimmed, lastUpdatedAt = System.currentTimeMillis())
                 prefs[MEMORIES_JSON] = json.encodeToString(current)
             }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
-    }
+        Result.success(Unit)
+    } catch (e: Exception) { Result.failure(e) }
 
-    /**
-     * Remove all memory entries.
-     *
-     * @return [Result.success] on success, [Result.failure] on error.
-     */
-    suspend fun clearAllMemories(): Result<Unit> {
-        return try {
-            dataStore.edit { prefs ->
-                prefs[MEMORIES_JSON] = json.encodeToString(emptyList<MemoryEntry>())
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend fun setPinned(id: String, pinned: Boolean): Result<Unit> = try {
+        dataStore.edit { prefs ->
+            prefs[MEMORIES_JSON] = json.encodeToString(loadMemories(prefs).map { if (it.id == id) it.copy(pinned = pinned, lastUpdatedAt = System.currentTimeMillis()) else it })
         }
-    }
+        Result.success(Unit)
+    } catch (e: Exception) { Result.failure(e) }
 
-    /**
-     * Delete all memories associated with a specific conversation.
-     *
-     * @param conversationId The conversation UUID.
-     * @return [Result.success] on success, [Result.failure] on error.
-     */
-    suspend fun deleteMemoriesByConversation(conversationId: String): Result<Unit> {
-        return try {
-            dataStore.edit { prefs ->
-                val current = loadMemories(prefs).filter { it.sourceConversationId != conversationId }
-                prefs[MEMORIES_JSON] = json.encodeToString(current)
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend fun deleteMemory(id: String): Result<Unit> = try {
+        dataStore.edit { prefs -> prefs[MEMORIES_JSON] = json.encodeToString(loadMemories(prefs).filter { it.id != id }) }
+        Result.success(Unit)
+    } catch (e: Exception) { Result.failure(e) }
 
-    /**
-     * Extract potential memory entries from a conversation using simple heuristics.
-     *
-     * Looks for sentences containing memory-indicating keywords (e.g., "记住",
-     * "important", "my name") or user messages that appear to contain personal
-     * information.
-     *
-     * @param conversation The conversation to analyze.
-     * @return A list of newly extracted [MemoryEntry] objects (not yet persisted).
-     */
+    suspend fun clearAllMemories(): Result<Unit> = try {
+        dataStore.edit { prefs -> prefs[MEMORIES_JSON] = json.encodeToString(emptyList<MemoryEntry>()) }
+        Result.success(Unit)
+    } catch (e: Exception) { Result.failure(e) }
+
     fun extractMemoriesFromConversation(conversation: Conversation): List<MemoryEntry> {
-        val memories = mutableListOf<MemoryEntry>()
-        val userMessages = conversation.messages.filter { it.role == MessageRole.USER }
-
-        for (message in userMessages) {
-            val sentences = splitIntoSentences(message.content)
-            for (sentence in sentences) {
+        val result = mutableListOf<MemoryEntry>()
+        for (message in conversation.messages.filter { it.role == MessageRole.USER }) {
+            for (sentence in splitIntoSentences(message.content)) {
                 val trimmed = sentence.trim()
                 if (trimmed.length < 5) continue
-
-                // Heuristic 1: contains explicit memory keywords
-                val hasKeyword = MEMORY_KEYWORDS.any { keyword ->
-                    trimmed.lowercase().contains(keyword.lowercase())
+                val lower = trimmed.lowercase()
+                val hasKeyword = MEMORY_KEYWORDS.any { lower.contains(it.lowercase()) }
+                if (!hasKeyword && !containsPersonalInfo(trimmed)) continue
+                val topic = when {
+                    lower.contains("like") || lower.contains("喜欢") || lower.contains("prefer") || lower.contains("偏好") -> "preferences"
+                    lower.contains("project") || lower.contains("项目") || lower.contains("work") || lower.contains("工作") -> "projects"
+                    lower.contains("phone") || lower.contains("手机") || lower.contains("computer") || lower.contains("设备") -> "device"
+                    lower.contains("name") || lower.contains("叫") || lower.contains("live") || lower.contains("住在") -> "personal_info"
+                    else -> "general"
                 }
-
-                // Heuristic 2: looks like personal info (simple patterns)
-                val looksLikePersonalInfo = containsPersonalInfo(trimmed)
-
-                if (hasKeyword || looksLikePersonalInfo) {
-                    val topic = when {
-                        trimmed.lowercase().contains("name") -> "personal_info"
-                        trimmed.lowercase().contains("like") || trimmed.lowercase().contains("喜欢") -> "preferences"
-                        trimmed.lowercase().contains("hate") || trimmed.lowercase().contains("讨厌") -> "preferences"
-                        trimmed.lowercase().contains("live") || trimmed.lowercase().contains("住在") -> "personal_info"
-                        trimmed.lowercase().contains("work") || trimmed.lowercase().contains("工作") -> "personal_info"
-                        else -> "general"
-                    }
-
-                    memories.add(
-                        MemoryEntry(
-                            content = trimmed.take(MAX_MEMORY_LENGTH),
-                            topic = topic,
-                            sourceConversationId = conversation.id
-                        )
-                    )
+                val tags = buildList {
+                    if (topic == "preferences") add("preference")
+                    if (topic == "projects") add("project")
+                    if (topic == "device") add("device")
                 }
+                result += MemoryEntry(content = trimmed.take(MAX_MEMORY_LENGTH), topic = topic, sourceConversationId = conversation.id, importance = if (lower.contains("记住") || lower.contains("remember")) 0.9f else 0.65f, tags = tags)
             }
         }
-
-        // Deduplicate by content similarity (exact match)
-        return memories.distinctBy { it.content.lowercase() }
+        return result.distinctBy { normalize(it.content) }
     }
 
-    // --- Private helpers ---
+    private fun splitIntoSentences(text: String): List<String> = text.split(Regex("(?<=[。！？.!?])\\s*")).map { it.trim() }.filter { it.isNotBlank() }
 
-    /**
-     * Split text into sentences using common delimiters.
-     */
-    private fun splitIntoSentences(text: String): List<String> {
-        return text.split(Regex("(?<=[。！？.!?])\\s*"))
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-    }
-
-    /**
-     * Simple heuristic to detect if a sentence likely contains personal information.
-     */
     private fun containsPersonalInfo(text: String): Boolean {
         val lower = text.lowercase()
-        val patterns = listOf(
-            Regex("my name is "),
-            Regex("i am a "),
-            Regex("i work at "),
-            Regex("i live in "),
-            Regex("i'm from "),
-            Regex("\\b\\d{1,2} years old\\b"),
-            Regex("我叫"),
-            Regex("我是"),
-            Regex("我住在"),
-            Regex("我在.*工作")
-        )
-        return patterns.any { it.containsMatchIn(lower) }
+        return listOf(
+            Regex("my name is "), Regex("i am a "), Regex("i work at "), Regex("i live in "),
+            Regex("i'm from "), Regex("\\b\\d{1,2} years old\\b"), Regex("我叫"), Regex("我是"), Regex("我住在"), Regex("我在.*工作")
+        ).any { it.containsMatchIn(lower) }
     }
 }

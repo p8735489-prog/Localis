@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localaisearch.data.search.SearchProviderType
 import com.localaisearch.ui.viewmodel.SettingsViewModel
+import androidx.compose.ui.res.stringResource
+import com.localaisearch.R
 
 /**
  * Settings screen - search API, model parameters, appearance, privacy.
@@ -56,6 +58,7 @@ import com.localaisearch.ui.viewmodel.SettingsViewModel
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDataSecurity: () -> Unit = {},
+    onNavigateToLanguage: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel()
 ) {
     val searchConfig by viewModel.searchConfig.collectAsState()
@@ -64,15 +67,18 @@ fun SettingsScreen(
     val dynamicColor by viewModel.dynamicColor.collectAsState()
     val internetSearch by viewModel.internetSearchEnabled.collectAsState()
 
+    val language by viewModel.language.collectAsState()
+    val animationLevel by viewModel.animationLevel.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -88,31 +94,31 @@ fun SettingsScreen(
         ) {
             // ── Search Engine ──
             item {
-                SectionCard(title = "Search Engine") {
+                SectionCard(title = stringResource(R.string.settings_search_engine)) {
                     DropdownRow(
-                        label = "Search Provider",
+                        label = stringResource(R.string.settings_search_provider),
                         selectedValue = searchConfig.providerType.displayName,
                         options = SearchProviderType.entries.map { it.displayName to it },
                         onSelect = { viewModel.updateSearchProvider(it) }
                     )
 
                     OutlinedTextFieldRow(
-                        label = "API URL",
+                        label = stringResource(R.string.settings_api_url),
                         value = searchConfig.apiUrl,
                         onValueChange = { viewModel.updateApiUrl(it) },
-                        placeholder = "https://your-searxng-instance.com"
+                        placeholder = stringResource(R.string.settings_api_url_placeholder)
                     )
 
                     OutlinedTextFieldRow(
-                        label = "API Key",
+                        label = stringResource(R.string.settings_api_key),
                         value = searchConfig.apiKey,
                         onValueChange = { viewModel.updateApiKey(it) },
-                        placeholder = "Enter API key (if required)",
+                        placeholder = stringResource(R.string.settings_api_key_placeholder),
                         password = true
                     )
 
                     DropdownRow(
-                        label = "Search Language",
+                        label = stringResource(R.string.settings_search_language),
                         selectedValue = searchConfig.searchLanguage,
                         options = listOf(
                             "auto" to "auto", "en" to "en", "zh" to "zh",
@@ -123,7 +129,7 @@ fun SettingsScreen(
                     )
 
                     DropdownRow(
-                        label = "Search Region",
+                        label = stringResource(R.string.settings_search_region),
                         selectedValue = searchConfig.searchRegion,
                         options = listOf(
                             "global" to "global", "us" to "us", "cn" to "cn",
@@ -133,7 +139,7 @@ fun SettingsScreen(
                     )
 
                     SliderRow(
-                        label = "Max Results",
+                        label = stringResource(R.string.settings_max_results),
                         value = searchConfig.maxResults.toFloat(),
                         range = 5f..20f,
                         steps = 14,
@@ -142,7 +148,7 @@ fun SettingsScreen(
                     )
 
                     SliderRow(
-                        label = "Max Search Rounds",
+                        label = stringResource(R.string.settings_max_rounds),
                         value = searchConfig.maxSearchRounds.toFloat(),
                         range = 1f..3f,
                         steps = 1,
@@ -151,7 +157,7 @@ fun SettingsScreen(
                     )
 
                     SwitchRow(
-                        label = "Safe Search",
+                        label = stringResource(R.string.settings_safe_search),
                         checked = searchConfig.enableSafeSearch,
                         onCheckedChange = { viewModel.updateSafeSearch(it) }
                     )
@@ -160,9 +166,9 @@ fun SettingsScreen(
 
             // ── Model Parameters ──
             item {
-                SectionCard(title = "Model Parameters") {
+                SectionCard(title = stringResource(R.string.settings_model_parameters)) {
                     SliderRow(
-                        label = "Temperature",
+                        label = stringResource(R.string.settings_temperature),
                         value = inferenceConfig.temperature,
                         range = 0f..2f,
                         steps = 39,
@@ -171,7 +177,7 @@ fun SettingsScreen(
                     )
 
                     SliderRow(
-                        label = "Top-P",
+                        label = stringResource(R.string.settings_top_p),
                         value = inferenceConfig.topP,
                         range = 0f..1f,
                         steps = 19,
@@ -180,7 +186,7 @@ fun SettingsScreen(
                     )
 
                     SliderRow(
-                        label = "Top-K",
+                        label = stringResource(R.string.settings_top_k),
                         value = inferenceConfig.topK.toFloat(),
                         range = 1f..100f,
                         steps = 98,
@@ -189,7 +195,7 @@ fun SettingsScreen(
                     )
 
                     SliderRow(
-                        label = "Context Length",
+                        label = stringResource(R.string.settings_context_length),
                         value = inferenceConfig.contextLength.toFloat(),
                         range = 512f..32768f,
                         steps = 50,
@@ -198,7 +204,7 @@ fun SettingsScreen(
                     )
 
                     SliderRow(
-                        label = "Max Tokens",
+                        label = stringResource(R.string.settings_max_tokens),
                         value = inferenceConfig.maxTokens.toFloat(),
                         range = 128f..8192f,
                         steps = 50,
@@ -207,14 +213,14 @@ fun SettingsScreen(
                     )
 
                     SwitchRow(
-                        label = "GPU Acceleration",
+                        label = stringResource(R.string.settings_gpu_acceleration),
                         checked = inferenceConfig.useGpu,
                         onCheckedChange = { viewModel.updateUseGpu(it) }
                     )
 
                     if (inferenceConfig.useGpu) {
                         SliderRow(
-                            label = "GPU Layers",
+                            label = stringResource(R.string.settings_gpu_layers),
                             value = inferenceConfig.gpuLayers.toFloat(),
                             range = 0f..100f,
                             steps = 99,
@@ -224,7 +230,7 @@ fun SettingsScreen(
                     }
 
                     SliderRow(
-                        label = "Threads",
+                        label = stringResource(R.string.settings_download_threads),
                         value = inferenceConfig.threads.toFloat(),
                         range = 1f..8f,
                         steps = 6,
@@ -236,9 +242,9 @@ fun SettingsScreen(
 
             // ── Appearance ──
             item {
-                SectionCard(title = "Appearance") {
+                SectionCard(title = stringResource(R.string.settings_appearance_section)) {
                     DropdownRow(
-                        label = "Dark Mode",
+                        label = stringResource(R.string.appearance_dark_mode),
                         selectedValue = darkMode,
                         options = listOf(
                             "system" to "system",
@@ -249,7 +255,7 @@ fun SettingsScreen(
                     )
 
                     SwitchRow(
-                        label = "Dynamic Color (Monet)",
+                        label = stringResource(R.string.appearance_monet),
                         checked = dynamicColor,
                         onCheckedChange = { viewModel.updateDynamicColor(it) }
                     )
@@ -258,25 +264,23 @@ fun SettingsScreen(
 
             // ── Privacy & Data ──
             item {
-                SectionCard(title = "Privacy & Data") {
+                SectionCard(title = stringResource(R.string.settings_privacy_data)) {
                     SwitchRow(
-                        label = "Enable Internet Search",
+                        label = stringResource(R.string.settings_enable_internet_search),
                         checked = internetSearch,
                         onCheckedChange = { viewModel.updateInternetSearch(it) }
                     )
 
                     if (internetSearch) {
                         Text(
-                            text = "Warning: When enabled, search queries will be sent to the configured search API. " +
-                                    "GGUF inference remains fully on-device.",
+                            text = stringResource(R.string.settings_search_warning),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     } else {
                         Text(
-                            text = "GGUF model runs entirely on-device. No data is uploaded. " +
-                                    "Enable internet search only if you need real-time information.",
+                            text = stringResource(R.string.settings_gguf_privacy_note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -311,12 +315,12 @@ fun SettingsScreen(
                                 )
                                 Column {
                                     Text(
-                                        text = "Data & Security",
+                                        text = stringResource(R.string.settings_data_security),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Privacy mode, memory system, delete data",
+                                        text = stringResource(R.string.settings_data_security_desc_short),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -335,146 +339,30 @@ fun SettingsScreen(
     }
 }
 
-// ── Reusable Components ──
-
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+private fun SectionCard(
+    title: String,
+    content: @Composable () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            HorizontalDivider()
-            content()
-        }
-    }
-}
-
-@Composable
-private fun SliderRow(
-    label: String,
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    steps: Int,
-    valueText: String,
-    onValueChange: (Float) -> Unit
-) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Text(
-                text = valueText,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = range,
-            steps = steps
-        )
-    }
-}
-
-@Composable
-private fun SwitchRow(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun OutlinedTextFieldRow(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String = "",
-    password: Boolean = false
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        placeholder = { Text(placeholder) },
-        visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true
-    )
-}
-
-@Composable
-private fun <T> DropdownRow(
-    label: String,
-    selectedValue: String,
-    options: List<Pair<String, T>>,
-    onSelect: (T) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        TextButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = selectedValue,
-                modifier = Modifier.weight(1f)
-            )
-            Text("\u25BE")
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            options.forEach { (display, value) ->
-                DropdownMenuItem(
-                    text = { Text(display) },
-                    onClick = {
-                        onSelect(value)
-                        expanded = false
-                    }
-                )
-            }
+            content()
         }
     }
 }

@@ -10,6 +10,7 @@ import com.localaisearch.data.model.SearchResult
 import com.localaisearch.data.model.SearchRound
 import com.localaisearch.data.model.SearchSession
 import com.localaisearch.data.model.toCitation
+import com.localaisearch.data.model.totalResults
 import com.localaisearch.data.search.SearchConfig
 import com.localaisearch.data.search.SearchConfigDefault
 import com.localaisearch.data.search.SearchProvider
@@ -90,7 +91,8 @@ class AgentEngine(
         query: String,
         config: InferenceConfig,
         enableSearch: Boolean,
-        conversationHistory: List<Pair<String, String>> = emptyList()
+        conversationHistory: List<Pair<String, String>> = emptyList(),
+        systemPrompt: String = ""
     ): Flow<String> = flow {
         isCancelled = false
         var searchSession = SearchSession()
@@ -109,7 +111,11 @@ class AgentEngine(
                 // -- Direct local answer --
                 updateState(AgentState.ANSWERING, "Generating answer locally...")
 
-                val fullHistory = conversationHistory + ("user" to query)
+                val fullHistory = buildList {
+                    if (systemPrompt.isNotBlank()) add("system" to systemPrompt)
+                    addAll(conversationHistory)
+                    add("user" to query)
+                }
                 llmEngine.chatStream(fullHistory, config).collect { token ->
                     if (isCancelled) return@collect
                     emit(token)
@@ -221,11 +227,20 @@ class AgentEngine(
             )
 
             val contextText = SearchResultProcessor.buildContextText(finalResults)
-            val answerPrompt = buildAnswerPrompt(query, contextText, conversationHistory)
+            val answerPrompt = buildAnswerPrompt(query, contextText, conversationHistory, systemPrompt)
 
             val answerBuilder = StringBuilder()
 
-            llmEngine.generateStream(answerPrompt, config).collect { token ->
+            // Use the model's native GGUF chat template for the final answer too.
+            // Feeding a hand-built prompt here bypassed Qwen/Llama/Gemma templates
+            // and could make the model echo control markers.
+            llmEngine.chatStream(
+                listOf(
+                    "system" to (systemPrompt.ifBlank { "You are a helpful AI assistant." }),
+                    "user" to answerPrompt
+                ),
+                config
+            ).collect { token ->
                 if (isCancelled) return@collect
                 emit(token)
                 answerBuilder.append(token)
@@ -252,9 +267,14 @@ class AgentEngine(
     /**
      * Cancel ongoing execution.
      */
-    fun cancel() {
+    /**
+     * Cancel ongoing execution.
+     * Non-blocking — the caller is responsible for launching this in a
+     * coroutine if needed (e.g. from the UI layer via viewModelScope).
+     */
+    suspend fun cancel() {
         isCancelled = true
-        kotlinx.coroutines.runBlocking { llmEngine.stopGeneration() }
+        llmEngine.stopGeneration()
         updateState(AgentState.IDLE, "Cancelled")
     }
 
@@ -351,9 +371,11 @@ class AgentEngine(
     private fun buildAnswerPrompt(
         query: String,
         contextText: String,
-        history: List<Pair<String, String>>
+        history: List<Pair<String, String>>,
+        systemPrompt: String
     ): String {
         return buildString {
+            if (systemPrompt.isNotBlank()) append("System instructions:\n$systemPrompt\n\n")
             append("You are a knowledgeable AI assistant. Answer the user's question using the provided search results.")
             append("\n\nImportant rules:")
             append("\n1. Use [1], [2], [3], etc. to cite sources in your answer.")

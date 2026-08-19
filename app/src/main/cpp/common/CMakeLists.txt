@@ -33,6 +33,47 @@ else()
     message(WARNING "Git repository not found; to enable automatic generation of build info, make sure Git is installed and the project is a Git repository.")
 endif()
 
+# The app can be built from a source archive without a complete .git metadata
+# directory. Upstream build-info.cmake normally defines these values, but this
+# project intentionally builds the bundled llama/common tree directly.
+# Always provide valid fallback values so configure_file() cannot generate
+# invalid C++ such as: int LLAMA_BUILD_NUMBER = ;
+if(NOT DEFINED LLAMA_BUILD_NUMBER OR "${LLAMA_BUILD_NUMBER}" STREQUAL "")
+    execute_process(
+        COMMAND git rev-list --count HEAD
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        OUTPUT_VARIABLE _LOCALIS_BUILD_NUMBER
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if("${_LOCALIS_BUILD_NUMBER}" STREQUAL "")
+        set(_LOCALIS_BUILD_NUMBER 0)
+    endif()
+    set(LLAMA_BUILD_NUMBER "${_LOCALIS_BUILD_NUMBER}")
+endif()
+
+if(NOT DEFINED LLAMA_BUILD_COMMIT OR "${LLAMA_BUILD_COMMIT}" STREQUAL "")
+    execute_process(
+        COMMAND git rev-parse --short HEAD
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        OUTPUT_VARIABLE _LOCALIS_BUILD_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if("${_LOCALIS_BUILD_COMMIT}" STREQUAL "")
+        set(_LOCALIS_BUILD_COMMIT "unknown")
+    endif()
+    set(LLAMA_BUILD_COMMIT "${_LOCALIS_BUILD_COMMIT}")
+endif()
+
+if(NOT DEFINED BUILD_COMPILER OR "${BUILD_COMPILER}" STREQUAL "")
+    set(BUILD_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+endif()
+
+if(NOT DEFINED BUILD_TARGET OR "${BUILD_TARGET}" STREQUAL "")
+    set(BUILD_TARGET "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
 set(TEMPLATE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/build-info.cpp.in")
 set(OUTPUT_FILE   "${CMAKE_CURRENT_BINARY_DIR}/build-info.cpp")
 

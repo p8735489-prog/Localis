@@ -12,18 +12,20 @@ import kotlinx.coroutines.flow.flow
 class StubLLMProvider : LLMEngine {
     override val providerName: String = "Stub"
     override val providerType: LLMProviderType = LLMProviderType.STUB
-    override val isAvailable: Boolean = true
-    override val isLoaded: Boolean = true
-    override val loadedModelName: String? = "Stub Provider"
+    override val isAvailable: Boolean = false
+    override val isLoaded: Boolean = false
+    override val loadedModelName: String? = null
 
     private var stopRequested = false
 
     override suspend fun loadModel(filePath: String, config: InferenceConfig): Result<Unit> =
-        Result.success(Unit)
+        Result.failure(IllegalStateException("Stub LLM provider is test-only and cannot be used for real inference."))
 
     override suspend fun unloadModel(): Result<Unit> = Result.success(Unit)
 
     override fun generateStream(prompt: String, config: InferenceConfig): Flow<String> = flow {
+        throw IllegalStateException("No real local AI engine is loaded. Load a GGUF model before generating.")
+        @Suppress("UNREACHABLE_CODE")
         val response = buildResponse(prompt)
         val words = response.split(" ")
         for (word in words) {
@@ -35,7 +37,7 @@ class StubLLMProvider : LLMEngine {
     }
 
     override suspend fun generate(prompt: String, config: InferenceConfig): Result<String> =
-        Result.success(buildResponse(prompt))
+        Result.failure(IllegalStateException("No real local AI engine is loaded. Load a GGUF model before generating."))
 
     override fun chatStream(messages: List<Pair<String, String>>, config: InferenceConfig): Flow<String> =
         generateStream(messages.lastOrNull()?.second ?: "", config)

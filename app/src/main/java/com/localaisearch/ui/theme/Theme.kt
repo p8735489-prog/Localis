@@ -4,8 +4,6 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.unit.dp
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -101,20 +99,14 @@ fun LocalAISearchTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = appTypography(fontMode),
-        shapes = PixelShapes,
+        // Use the library's canonical Material 3 shape tokens instead of a
+        // custom "Pixel" shape system so surfaces, dialogs and controls remain
+        // visually consistent with Google Material 3.
+        shapes = Shapes(),
         content = content
     )
 }
 
-
-private val PixelShapes = Shapes(
-    // Keep Material 3 expressive, but avoid oversized radii that can crowd CJK glyphs.
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(20.dp)
-)
 
 private fun presetColorScheme(preset: String, dark: Boolean) = when (preset) {
     "red" -> if (dark) darkColorScheme(

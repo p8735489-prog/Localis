@@ -270,6 +270,9 @@ fun AppNavigation() {
             ConversationHistoryScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNewConversation = {
+                    // Navigation alone does not reset the shared ChatViewModel.
+                    // Explicitly create a fresh conversation before returning home.
+                    chatViewModel.newConversation()
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.HOME) { inclusive = true }
                         launchSingleTop = true

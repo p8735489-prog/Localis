@@ -291,8 +291,7 @@ class SettingsViewModel(
             val result = TorManager.start(_torBridges.value)
             if (result.isSuccess && TorManager.status == TorManager.Status.ON) {
                 _torEnabled.value = true
-                _modelSource.value = "hugging_face"
-                settingsRepo.setModelSource("hugging_face")
+                // Tor routing must not silently change the user's model source.
                 settingsRepo.setTorEnabled(true)
             } else {
                 _torEnabled.value = false

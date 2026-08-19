@@ -15,10 +15,13 @@ local.properties
 # Signing keys -- NEVER commit
 *.jks
 *.keystore
+*.jks
+*.keystore
 *.p12
 *.pfx
 
 
+# In-repo release keystore (used by CI signing step)
 
 # Never commit signing material or encoded keystores
 keystore_base64.txt

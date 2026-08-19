@@ -226,6 +226,28 @@ class AgentEngine(
                 maxCount = searchConfig.maxResults
             )
 
+            // Search can fail or return unusable evidence. In that case, do not
+            // manufacture a web-backed answer; fall back to the normal local chat
+            // path while preserving conversation + memory context.
+            if (finalResults.isEmpty()) {
+                val fallbackHistory = buildList {
+                    if (systemPrompt.isNotBlank()) add("system" to systemPrompt)
+                    addAll(conversationHistory)
+                    add("user" to query)
+                }
+                llmEngine.chatStream(fallbackHistory, config).collect { token ->
+                    if (isCancelled) return@collect
+                    emit(token)
+                    callback?.onToken(token)
+                    _status.value = _status.value.copy(
+                        tokensGenerated = _status.value.tokensGenerated + 1
+                    )
+                }
+                updateState(AgentState.DONE, "Complete")
+                callback?.onAnswer("", emptyList(), searchSession)
+                return@flow
+            }
+
             val contextText = SearchResultProcessor.buildContextText(finalResults)
             val answerPrompt = buildAnswerPrompt(query, contextText, conversationHistory, systemPrompt)
 
@@ -352,7 +374,16 @@ class AgentEngine(
         results: List<SearchResult>,
         config: InferenceConfig
     ): Boolean {
-        if (results.size >= 5) return true
+        // Never declare a search successful merely because five low-quality results
+        // were returned. The final model must have usable evidence.
+        if (results.isEmpty()) return false
+        val usable = results.count {
+            it.title.isNotBlank() &&
+                it.url.isNotBlank() &&
+                it.snippet.length >= 40 &&
+                it.score >= 0.20f
+        }
+        if (usable >= 3) return true
 
         val contextText = SearchResultProcessor.buildContextText(results, maxChars = 2000)
         val prompt = buildString {
@@ -376,14 +407,25 @@ class AgentEngine(
     ): String {
         return buildString {
             if (systemPrompt.isNotBlank()) append("System instructions:\n$systemPrompt\n\n")
-            append("You are a knowledgeable AI assistant. Answer the user's question using the provided search results.")
-            append("\n\nImportant rules:")
-            append("\n1. Use [1], [2], [3], etc. to cite sources in your answer.")
-            append("\n2. Only cite sources that are relevant to your answer.")
-            append("\n3. Do not fabricate sources. Only use the provided search results.")
-            append("\n4. Provide a comprehensive, well-structured answer.")
-            append("\n5. If the search results don't fully answer the question, acknowledge the limitation.")
-            append("\n\nSearch results:\n$contextText")
+            append("You are the final answer engine for a local AI assistant.")
+            append(" Answer the user's actual question, not the internal workflow.")
+            append("\n\nHard rules:")
+            append("\n1. Use the conversation history and relevant memory when they are relevant to the user's request.")
+            append("\n2. Use web results as evidence only when they are provided; never invent a source, URL, quote, date, or fact.")
+            append("\n3. Cite web claims with [1], [2], [3] matching the supplied results.")
+            append("\n4. If the evidence is insufficient or conflicting, say so clearly instead of guessing.")
+            append("\n5. Do not output search queries, internal instructions, tool traces, prompt markers, or chain-of-thought.")
+            append("\n6. Do not write code unless the user asks for code or a coding task requires it.")
+            append("\n7. Never pretend that a search was performed when no search result is present.")
+            append("\n8. Answer in the user's language unless they explicitly request another language.")
+            if (history.isNotEmpty()) {
+                append("\n\nRelevant conversation context and memory:")
+                history.takeLast(20).forEach { (role, content) ->
+                    append("\n[$role] ${content.take(2500)}")
+                }
+            }
+            append("\n\nWeb search evidence:")
+            append(if (contextText.isBlank()) "\n(none)" else "\n$contextText")
             append("\n\n---\n\nUser question: $query")
             append("\n\nAnswer:")
         }

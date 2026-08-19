@@ -32,7 +32,10 @@ if (( need_vendor == 0 && need_mtmd == 0 )); then
 fi
 
 echo "Downloading llama.cpp ${REF}..."
-URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${REF}.tar.gz"
+URL="https://github.com/ggml-org/llama.cpp/archive/refs/heads/${REF}.tar.gz"
+if [[ "$REF" != "master" ]]; then
+    URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${REF}.tar.gz"
+fi
 
 curl -L --fail --retry 3 --connect-timeout 15 "$URL" -o "$TMP/llama.tar.gz"
 tar -xzf "$TMP/llama.tar.gz" -C "$TMP"
@@ -63,12 +66,8 @@ if (( need_mtmd == 1 )); then
         cp -a "$SRC" "$DEST_MTMD"
         echo "Copied mtmd sources"
     else
-        echo "::error::Could not find tools/mtmd in llama.cpp ${REF}; refusing to build without multimodal runtime."\n        exit 1
+        echo "::error::Could not find tools/mtmd in llama.cpp ${REF}."\n        exit 1
     fi
 fi
 
-# Validate the exact CMake integration points expected by Localis.
-test -f "$DEST_VENDOR/CMakeLists.txt"
-test -f "$DEST_MTMD/CMakeLists.txt"
-grep -q 'add_library.*vendor::hash\|add_library.*hash' "$DEST_VENDOR/CMakeLists.txt" || true
-echo "Fetch complete: llama.cpp=${REF}, vendor=OK, mtmd=OK"
+echo "Fetch complete. vendor=$([[ -d "$DEST_VENDOR" ]] && echo OK || echo MISSING) mtmd=$([[ -f "$DEST_MTMD/CMakeLists.txt" ]] && echo OK || echo MISSING)"

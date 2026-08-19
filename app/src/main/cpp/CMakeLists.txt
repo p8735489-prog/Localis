@@ -100,28 +100,30 @@ add_subdirectory(common)
 # so the build can still succeed; the Kotlin layer falls back to text-only mode.
 set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(MTMD_AVAILABLE OFF)
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd/CMakeLists.txt)
-    set(MTMD_AVAILABLE ON)
-    if(NOT DEFINED LLAMA_VERSION_BASE)
-        set(LLAMA_VERSION_BASE 0)
-    endif()
-    if(NOT DEFINED LLAMA_VERSION_MAJOR)
-        set(LLAMA_VERSION_MAJOR 0)
-    endif()
-    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/CMakeLists.txt)
-        message(FATAL_ERROR
-            "llama.cpp vendor CMakeLists.txt is missing. "
-            "Run tools/fetch_mtmd.sh before configuring the native build."
-        )
-    endif()
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor ${CMAKE_CURRENT_BINARY_DIR}/vendor)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd ${CMAKE_CURRENT_BINARY_DIR}/mtmd)
-else()
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd/CMakeLists.txt)
     message(FATAL_ERROR
-        "Multimodal runtime is required for Localis release builds, but "
-        "llama_src/tools/mtmd/CMakeLists.txt is missing. Run tools/fetch_mtmd.sh."
+        "Required llama.cpp MTMD sources are missing. "
+        "Run tools/fetch_mtmd.sh before configuring the native build. "
+        "A successful Localis build must include the real multimodal runtime."
     )
 endif()
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/CMakeLists.txt)
+    message(FATAL_ERROR
+        "Required llama.cpp vendor CMakeLists.txt is missing. "
+        "Run tools/fetch_mtmd.sh before configuring the native build."
+    )
+endif()
+
+set(MTMD_AVAILABLE ON)
+if(NOT DEFINED LLAMA_VERSION_BASE)
+    set(LLAMA_VERSION_BASE 0)
+endif()
+if(NOT DEFINED LLAMA_VERSION_MAJOR)
+    set(LLAMA_VERSION_MAJOR 0)
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor ${CMAKE_CURRENT_BINARY_DIR}/vendor)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd ${CMAKE_CURRENT_BINARY_DIR}/mtmd)
 
 add_library(llama_bridge SHARED llama_bridge.cpp)
 target_include_directories(llama_bridge PRIVATE

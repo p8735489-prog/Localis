@@ -320,8 +320,6 @@
     <string name="settings_gguf_privacy_note">GGUF model runs entirely on-device. No data is uploaded. Enable internet search only if you need real-time information.</string>
     <string name="settings_data_security_desc_short">Privacy mode, memory system, delete data</string>
     <string name="language_search">Search languages</string>
-    <string name="appearance_forced_font">Force Google Sans / 苹方</string>
-    <string name="appearance_forced_font_desc">Use bundled Google Sans CN Flex first, with CJK glyph fallback. Turn off to follow the system font.</string>
 
     <string name="settings_inference_parameters">Inference Parameters</string>
     <string name="settings_hardware">Hardware</string>
@@ -448,7 +446,6 @@
     <string name="appearance_font_family">Font</string>
     <string name="appearance_font_system">Follow system</string>
     <string name="appearance_font_google">Google Sans</string>
-    <string name="appearance_font_pingfang">苹方</string>
     <string name="settings_vision_models">Vision recognition</string>
     <string name="settings_vision_models_desc">Use a vision model to describe the image, then combine that description with your prompt for the current language model.</string>
     <string name="settings_vision_source">Vision model catalog</string>

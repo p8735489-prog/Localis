@@ -30,7 +30,6 @@ fun appTypography(fontMode: String): Typography {
     // the fallback for glyphs that are not present (emoji, symbols, etc.).
     val family = when (fontMode) {
         "google_sans" -> bundledVariableFamily(R.font.google_sans_cn_flex)
-        "pingfang" -> bundledVariableFamily(R.font.pingfang)
         else -> FontFamily.SansSerif
     }
     return Typography(

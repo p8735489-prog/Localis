@@ -78,13 +78,11 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
                     title = stringResource(R.string.appearance_font_family),
                     value = when (fontMode) {
                         "google_sans" -> stringResource(R.string.appearance_font_google)
-                        "pingfang" -> stringResource(R.string.appearance_font_pingfang)
                         else -> stringResource(R.string.appearance_font_system)
                     },
                     options = listOf(
                         stringResource(R.string.appearance_font_system) to "system",
-                        stringResource(R.string.appearance_font_google) to "google_sans",
-                        stringResource(R.string.appearance_font_pingfang) to "pingfang"
+                        stringResource(R.string.appearance_font_google) to "google_sans"
                     ),
                     onSelect = { mode ->
                         viewModel.updateFontMode(mode)

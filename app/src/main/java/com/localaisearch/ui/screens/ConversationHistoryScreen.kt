@@ -219,7 +219,18 @@ fun ConversationHistoryScreen(
                             )
                         }
                         items(pinnedConversations, key = { it.conversation.id }) { stored ->
-                            HistoryRow(stored, conversations, isLoading, viewModel, colorScheme, onOpenConversation)
+                            HistoryRow(
+                                stored, conversations, isLoading, viewModel, colorScheme, onOpenConversation,
+                                onRenameRequest = {
+                                    renameTarget = stored
+                                    renameText = stored.conversation.title
+                                    showRenameDialog = true
+                                },
+                                onDeleteRequest = {
+                                    deleteTarget = stored
+                                    showDeleteDialog = true
+                                }
+                            )
                         }
                         if (recentConversations.isNotEmpty()) {
                             item {
@@ -241,7 +252,18 @@ fun ConversationHistoryScreen(
                             )
                         }
                         items(recentConversations, key = { it.conversation.id }) { stored ->
-                            HistoryRow(stored, conversations, isLoading, viewModel, colorScheme, onOpenConversation)
+                            HistoryRow(
+                                stored, conversations, isLoading, viewModel, colorScheme, onOpenConversation,
+                                onRenameRequest = {
+                                    renameTarget = stored
+                                    renameText = stored.conversation.title
+                                    showRenameDialog = true
+                                },
+                                onDeleteRequest = {
+                                    deleteTarget = stored
+                                    showDeleteDialog = true
+                                }
+                            )
                         }
                     }
                 }
@@ -384,7 +406,9 @@ private fun HistoryRow(
     isLoading: Boolean,
     viewModel: ConversationViewModel,
     colorScheme: androidx.compose.material3.ColorScheme,
-    onOpenConversation: (String) -> Unit
+    onOpenConversation: (String) -> Unit,
+    onRenameRequest: () -> Unit,
+    onDeleteRequest: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth()) {
         ConversationItem(
@@ -393,8 +417,8 @@ private fun HistoryRow(
             onClick = { if (!isLoading) onOpenConversation(stored.conversation.id) },
             onLongClick = {},
             onPin = { if (!isLoading) viewModel.togglePin(stored.conversation.id) },
-            onDelete = {},
-            onRename = {},
+            onDelete = { if (!isLoading) onDeleteRequest() },
+            onRename = { if (!isLoading) onRenameRequest() },
             onExport = { if (!isLoading) viewModel.exportConversation(stored.conversation.id) }
         )
         if (stored != allConversations.lastOrNull()) {

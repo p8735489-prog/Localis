@@ -59,7 +59,7 @@ class SettingsRepository(private val context: Context) {
         val THEME_PRESET = stringPreferencesKey("theme_preset")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
         val ANIMATION_LEVEL = stringPreferencesKey("animation_level") // "off", "low", "standard", "high"
-        val FONT_MODE = stringPreferencesKey("font_mode") // "system", "google_sans", or "pingfang"
+        val FONT_MODE = stringPreferencesKey("font_mode") // "system" or "google_sans"
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val MODEL_SOURCE = stringPreferencesKey("model_source") // "hugging_face" or "tsinghua_mirror"
 

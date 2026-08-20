@@ -326,8 +326,6 @@
     <string name="settings_gguf_privacy_note">GGUF 模型完全在设备本地运行，不会上传数据。只有需要实时信息时才建议开启联网搜索。</string>
     <string name="settings_data_security_desc_short">隐私模式、记忆系统和数据删除</string>
     <string name="language_search">搜索语言</string>
-    <string name="appearance_forced_font">强制使用 Google Sans / 苹方</string>
-    <string name="appearance_forced_font_desc">优先使用内置 Google Sans CN Flex，中文使用 CJK 字形回退；关闭后跟随系统字体。</string>
 
     <string name="settings_inference_parameters">推理参数</string>
     <string name="settings_hardware">硬件</string>
@@ -442,7 +440,6 @@
     <string name="appearance_font_family">字体</string>
     <string name="appearance_font_system">跟随系统</string>
     <string name="appearance_font_google">Google Sans</string>
-    <string name="appearance_font_pingfang">苹方</string>
     <string name="settings_vision_models">视觉识别模型</string>
     <string name="settings_vision_models_desc">先用识别模型理解图片，再把识别结果与您的提示词交给当前语言模型。</string>
     <string name="settings_vision_source">识别模型下载站</string>

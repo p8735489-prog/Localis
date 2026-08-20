@@ -26,8 +26,8 @@ if missing:
     sys.exit(1)
 
 cmake = (cpp / "CMakeLists.txt").read_text(errors="ignore")
-if "LLAMA_BUILD_MTMD ON" not in cmake:
-    print("ERROR: LLAMA_BUILD_MTMD is not enabled")
+if "add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd" not in cmake:
+    print("ERROR: pinned llama.cpp MTMD target is not added")
     sys.exit(1)
 
 print("NATIVE TREE OK: vendor + mtmd present")

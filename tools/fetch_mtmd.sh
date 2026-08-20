@@ -43,17 +43,32 @@ test -s "$ARCHIVE"
 tar -tzf "$ARCHIVE" >/dev/null
 
 # Refuse unexpected/incomplete archives before touching the project tree.
-# Under "set -o pipefail", piping tar into grep -q is unsafe: grep may exit
-# after the first match, tar gets SIGPIPE, and the successful check becomes
-# exit code 2. Keep the archive listing in a file instead.
-ARCHIVE_LIST="$TMP/archive.list"
-tar -tzf "$ARCHIVE" > "$ARCHIVE_LIST"
-grep -q "/vendor/cpp-httplib/CMakeLists.txt$" "$ARCHIVE_LIST"
-grep -q "/vendor/cpp-httplib/httplib.h$" "$ARCHIVE_LIST"
-grep -q "/tools/mtmd/CMakeLists.txt$" "$ARCHIVE_LIST"
+python3 - "$ARCHIVE" <<'PY'
+import sys, tarfile
+archive=sys.argv[1]
+with tarfile.open(archive, "r:gz") as tf:
+    names=set(tf.getnames())
+checks=(
+    "/vendor/cpp-httplib/CMakeLists.txt",
+    "/vendor/cpp-httplib/httplib.h",
+    "/tools/mtmd/CMakeLists.txt",
+)
+for suffix in checks:
+    if not any(name.endswith(suffix) for name in names):
+        raise SystemExit(f"missing archive member: {suffix}")
+PY
 
 tar -xzf "$ARCHIVE" -C "$TMP"
-UPROOT="$(find "$TMP" -mindepth 1 -maxdepth 1 -type d -print -quit)"
+UPROOT="$(python3 - "$TMP" <<'PY'
+import sys
+from pathlib import Path
+base=Path(sys.argv[1])
+dirs=sorted(p for p in base.iterdir() if p.is_dir())
+if not dirs:
+    raise SystemExit(1)
+print(dirs[0])
+PY
+)"
 test -n "$UPROOT"
 
 if (( need_vendor == 1 )); then

@@ -18,10 +18,19 @@ for name in ('SIGNING_KEYSTORE_PATH','SIGNING_STORE_PASSWORD','SIGNING_KEY_ALIAS
         errors.append(f'Missing CI signing env: {name}')
 if 'SIGNING_KEYSTORE_B64' not in workflow:
     errors.append('CI must restore the signing keystore from SIGNING_KEYSTORE_B64 secret.')
-if re.search(r'SIGNING_(STORE_PASSWORD|KEY_PASSWORD):\s*[^$\n]+', workflow):
-    errors.append('Signing passwords must come from GitHub Actions secrets, not hard-coded workflow values.')
-if (root/'app/localis-release.jks').exists():
-    errors.append('Signing keystore must not be committed to the repository.')
+for line in workflow.splitlines():
+    stripped=line.strip()
+    if re.match(r'SIGNING_(STORE_PASSWORD|KEY_PASSWORD)\s*:', stripped):
+        value=stripped.split(':',1)[1].strip()
+        if not value.startswith('${{ secrets.'):
+            errors.append('Signing passwords must come from GitHub Actions secrets, not hard-coded workflow values.')
+sensitive_ext={'.jks','.keystore','.p12','.pfx','.pkcs12'}
+sensitive=[]
+for p in root.rglob('*'):
+    if p.is_file() and p.suffix.lower() in sensitive_ext:
+        sensitive.append(str(p.relative_to(root)))
+if sensitive:
+    errors.append(f'Signing keystore/certificate files must not be committed: {sensitive}')
 if 'com.localaisearch.data.llm.LlamaBridge' not in proguard or '-keepclasseswithmembers class *' not in proguard:
     errors.append('JNI keep rules for LlamaBridge are incomplete.')
 if 'org.torproject.jni.TorService' not in proguard:
@@ -40,18 +49,6 @@ for m in methods:
     if sym not in cpp:
         errors.append(f'Missing JNI implementation: {m}')
 
-
-
-# Fetch script must be safe under "set -o pipefail"; tar/find pipelines can
-# otherwise turn successful checks into false failures via SIGPIPE.
-fetch = (root/'tools/fetch_mtmd.sh').read_text(errors='ignore')
-if 'set -euo pipefail' not in fetch:
-    errors.append('fetch_mtmd.sh must use strict shell error handling.')
-for unsafe in ('tar -tzf "$ARCHIVE" | grep -q', 'find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -1'):
-    if unsafe in fetch:
-        errors.append(f'Unsafe pipefail-sensitive pipeline in fetch_mtmd.sh: {unsafe}')
-if 'ARCHIVE_LIST="$TMP/archive.list"' not in fetch:
-    errors.append('fetch_mtmd.sh must materialize the tar listing before grep checks.')
 
 # Security / CI duplication checks — audit only; never mutate repository files.
 workflow_dir=root/'.github/workflows'

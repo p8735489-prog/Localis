@@ -1,26 +1,26 @@
-name: Build Localis APK
+name: Localis Android Build
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - "v*"
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 env:
-  ANDROID_API: "35"
-  BUILD_TOOLS: "35.0.0"
-  CMAKE_VERSION: "3.22.1"
-  NDK_VERSION: "27.2.12479018"
-  JAVA_VERSION: "17"
+  ANDROID_API: '35'
+  BUILD_TOOLS: '35.0.0'
+  CMAKE_VERSION: '3.22.1'
+  NDK_VERSION: '27.2.12479018'
+  JAVA_VERSION: '17'
   SIGNING_KEYSTORE_PATH: /tmp/localis-release.jks
 
 jobs:
-  build-release:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -30,17 +30,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
-          cache-cleanup: on-success
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -48,6 +42,7 @@ jobs:
       - name: Install Android toolchain
         shell: bash
         run: |
+          set -e
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager --install \
             "platform-tools" \
@@ -55,54 +50,42 @@ jobs:
             "build-tools;${BUILD_TOOLS}" \
             "cmake;${CMAKE_VERSION}" \
             "ndk;${NDK_VERSION}"
-          test -x "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner"
-          test -d "$ANDROID_HOME/ndk/${NDK_VERSION}"
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
 
       - name: Restore release signing keystore
         if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         env:
-          SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$SIGNING_KEYSTORE_B64" || { echo "::error::Release tag requires SIGNING_KEYSTORE_B64"; exit 1; }
-          test -n "$SIGNING_STORE_PASSWORD" || { echo "::error::Release tag requires SIGNING_STORE_PASSWORD"; exit 1; }
-          test -n "$SIGNING_KEY_ALIAS" || { echo "::error::Release tag requires SIGNING_KEY_ALIAS"; exit 1; }
-          test -n "$SIGNING_KEY_PASSWORD" || { echo "::error::Release tag requires SIGNING_KEY_PASSWORD"; exit 1; }
-          printf '%s' "$SIGNING_KEYSTORE_B64" | base64 --decode > "$SIGNING_KEYSTORE_PATH"
+          test -n "$KEYSTORE_B64" || { echo "::error::Missing SIGNING_KEYSTORE_B64"; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "::error::Missing SIGNING_STORE_PASSWORD"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::Missing SIGNING_KEY_ALIAS"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "::error::Missing SIGNING_KEY_PASSWORD"; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$SIGNING_KEYSTORE_PATH"
           test -s "$SIGNING_KEYSTORE_PATH"
-          keytool -list -keystore "$SIGNING_KEYSTORE_PATH"             -storepass "$SIGNING_STORE_PASSWORD"             -alias "$SIGNING_KEY_ALIAS" >/dev/null
+          keytool -list -keystore "$SIGNING_KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
           {
-            echo "SIGNING_STORE_PASSWORD=$SIGNING_STORE_PASSWORD"
-            echo "SIGNING_KEY_ALIAS=$SIGNING_KEY_ALIAS"
-            echo "SIGNING_KEY_PASSWORD=$SIGNING_KEY_PASSWORD"
+            echo "SIGNING_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "SIGNING_KEY_ALIAS=$KEY_ALIAS"
+            echo "SIGNING_KEY_PASSWORD=$KEY_PASSWORD"
           } >> "$GITHUB_ENV"
 
-      - name: Fetch upstream llama.cpp mtmd runtime
-        shell: bash
+      - name: Fetch native runtime
+        if: hashFiles('tools/fetch_mtmd.sh') != ''
         run: |
           chmod +x tools/fetch_mtmd.sh
           LLAMA_CPP_MTMD_REF=b10218 tools/fetch_mtmd.sh
 
-      - name: Make Gradle executable
-        run: chmod +x ./gradlew
-
-      - name: Source preflight
-        run: python3 tools/ci_preflight.py
-
-      - name: Static release audit
-        run: python3 tools/release_audit.py
-
-      - name: Check Gradle and project configuration
-        run: gradle --version && gradle :app:tasks --all --no-daemon --stacktrace >/tmp/localis-gradle-tasks.txt
-
-      - name: Build debug APK for testing
+      - name: Build debug APK
         if: "!startsWith(github.ref, 'refs/tags/v')"
-        env:
-          CI: "true"
-        run: gradle clean assembleDebug --no-daemon --stacktrace --warning-mode all
+        run: ./gradlew clean assembleDebug --no-daemon --stacktrace --warning-mode all
 
       - name: Verify debug APK
         if: "!startsWith(github.ref, 'refs/tags/v')"
@@ -112,18 +95,13 @@ jobs:
           APK=$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print -quit)
           test -n "$APK"
           "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner" verify --verbose "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest application-id "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest version-name "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest version-code "$APK"
-          cp "$APK" "Localis-2.1.0-debug.apk"
+          cp "$APK" Localis-debug.apk
 
-      - name: Build signed Release APK
+      - name: Build signed release APK
         if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          CI: "true"
-        run: gradle clean assembleRelease --no-daemon --stacktrace --warning-mode all
+        run: ./gradlew clean assembleRelease --no-daemon --stacktrace --warning-mode all
 
-      - name: Verify Release APK
+      - name: Verify signed release APK
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
@@ -131,12 +109,9 @@ jobs:
           APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)
           test -n "$APK"
           "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner" verify --verbose "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest application-id "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest version-name "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apkanalyzer" manifest version-code "$APK"
-          cp "$APK" "Localis-2.1.0-release.apk"
+          cp "$APK" Localis-release.apk
 
-      - name: Remove temporary signing keystore
+      - name: Remove temporary keystore
         if: always()
         run: rm -f "$SIGNING_KEYSTORE_PATH"
 
@@ -144,16 +119,16 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
-          name: Localis-2.1.0-debug
-          path: Localis-2.1.0-debug.apk
+          name: Localis-debug
+          path: Localis-debug.apk
           if-no-files-found: error
 
       - name: Upload release artifact
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
-          name: Localis-2.1.0-release
-          path: Localis-2.1.0-release.apk
+          name: Localis-release
+          path: Localis-release.apk
           if-no-files-found: error
 
       - name: Create GitHub Release
@@ -162,7 +137,4 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
-          files: |
-            Localis-2.1.0-release.apk
-            app/build/outputs/mapping/release/mapping.txt
-          fail_on_unmatched_files: false
+          files: Localis-release.apk

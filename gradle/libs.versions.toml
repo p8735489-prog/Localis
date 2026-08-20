@@ -16,7 +16,7 @@ browser = "1.8.0"
 junit = "4.13.2"
 junitExt = "1.2.1"
 espresso = "3.6.1"
-torAndroid = "0.4.9.9.1"
+torAndroid = "0.4.8.21.1"
 
 [libraries]
 guardianproject-tor-android = { group = "info.guardianproject", name = "tor-android", version.ref = "torAndroid" }

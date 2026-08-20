@@ -120,14 +120,23 @@ dependencies {
     // Tor support (app-scoped SOCKS proxy via Guardian Project's embedded
     // TorService — this is a plain Service + SOCKS port, NOT a VpnService,
     // so only this app's OkHttp traffic is routed through Tor; other apps
-    // are unaffected). Earlier 0.4.9.x releases shipped Java 24 class files
-    // that AGP 8.7's D8 couldn't dex, so the dependency was previously
-    // stripped out entirely and TorManager silently degraded to
-    // "unavailable" (the empty-shell status UI). 0.4.9.9.1 is a newer
-    // release; re-verify it dexes cleanly with `./gradlew :app:assembleDebug`
-    // in CI. If it still fails to dex, pin to the newest 0.4.8.x release
-    // instead (older toolchain, same TorService API) or file an issue
-    // upstream at https://github.com/guardianproject/tor-android/issues.
+    // are unaffected).
+    //
+    // Pinned to 0.4.8.21.1, NOT the newer 0.4.9.x line. 0.4.9.9.1 was tried
+    // first and failed CI's :app:checkDebugAarMetadata with:
+    //   "Dependency 'info.guardianproject:tor-android:0.4.9.9.1' requires
+    //    libraries and applications that depend on it to compile against
+    //    version 37 or later of the Android APIs. :app is currently
+    //    compiled against android-35. Also, the maximum recommended compile
+    //    SDK version for Android Gradle plugin 8.7.3 is 35."
+    // That is an AAR-metadata compileSdk gate, not a dexing/Java-version
+    // issue — no amount of D8/desugaring config fixes it. The two real
+    // options are (a) bump compileSdk to 37+ together with a newer AGP that
+    // supports it, or (b) stay on this project's current compileSdk/AGP and
+    // use a tor-android release built against it. 0.4.8.21.1 uses the same
+    // TorService action-string API this app talks to (see TorManager.kt),
+    // so (b) was the lower-risk fix. If bumping compileSdk/AGP later,
+    // re-verify whether a newer tor-android is needed/available first.
     implementation(libs.guardianproject.tor.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

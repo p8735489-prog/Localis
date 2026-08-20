@@ -54,6 +54,17 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Restore native src symlink
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd app/src/main/cpp
+          rm -rf src
+          ln -sfn llama_src src
+          test -L src
+          test -e src
+          echo "src -> $(readlink src)"
+
       - name: Restore release signing keystore
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash

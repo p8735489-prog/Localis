@@ -511,6 +511,8 @@
     <string name="settings_tor_proxy">Tor &amp; Proxy</string>
     <string name="settings_tor_proxy_desc">App-only Tor routing and proxy connection settings</string>
     <string name="settings_tor_connecting_desc">Connecting to the Tor network. The app is not connected yet.</string>
+    <string name="settings_tor_off">Tor is off</string>
+    <string name="settings_tor_off_desc">Turn on the switch above to route this app\'s network requests through Tor.</string>
     <string name="settings_tor_scope_detail">Tor only proxies this app. It does not create an Android system-wide VPN. Web search and Model Center requests use the app-only Tor route.</string>
     <string name="settings_tor_connection_method">Connection method</string>
     <string name="settings_proxy_disabled_by_tor">Manual proxy is disabled while Tor is connected.</string>

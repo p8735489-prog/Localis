@@ -106,7 +106,15 @@ fun SettingsTorProxyScreen(
                                 Text(TorManager.lastError ?: stringResource(R.string.settings_tor_service_error), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 TextButton(onClick = { viewModel.setTorEnabled(false); viewModel.setTorEnabled(true) }) { Text(stringResource(R.string.settings_tor_retry)) }
                             }
-                            TorManager.Status.OFF -> Unit
+                            TorManager.Status.OFF -> {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Icon(Icons.Filled.VpnKey, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+                                    Column {
+                                        Text(stringResource(R.string.settings_tor_off), style = MaterialTheme.typography.titleMedium)
+                                        Text(stringResource(R.string.settings_tor_off_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
                         }
 
                         Text(stringResource(R.string.settings_tor_scope_detail), style = MaterialTheme.typography.bodyMedium)

@@ -7,7 +7,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Language
@@ -95,7 +95,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                         onClick = { page-- },
                         modifier = Modifier.height(52.dp),
                         shape = RoundedCornerShape(20.dp)
-                    ) { Icon(Icons.Filled.ArrowBack, null) }
+                    ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
                 }
                 Button(
                     onClick = {

@@ -10,6 +10,11 @@
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
+    <!-- Guardian Project's embedded Tor daemon. This is a plain bound/started
+         Service, not a VpnService: it only opens a local SOCKS port that this
+         app's own OkHttp client opts into via NetworkClientFactory. It never
+         intercepts traffic from other apps and requests no VPN permission. -->
+
     <application
         android:name=".LocalAISearchApp"
         android:allowBackup="false"
@@ -35,6 +40,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="org.torproject.jni.TorService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="true" />
     </application>
 
 </manifest>

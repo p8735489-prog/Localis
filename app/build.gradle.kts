@@ -117,9 +117,18 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
     implementation(libs.kotlinx.coroutines.android)
-    // Tor support removed: tor-android 0.4.9.x ships Java 24 bytecode that cannot
-    // be dexed with AGP 8.x. TorManager uses reflection and degrades gracefully
-    // to "unavailable" at runtime when the TorService class is absent.
+    // Tor support (app-scoped SOCKS proxy via Guardian Project's embedded
+    // TorService — this is a plain Service + SOCKS port, NOT a VpnService,
+    // so only this app's OkHttp traffic is routed through Tor; other apps
+    // are unaffected). Earlier 0.4.9.x releases shipped Java 24 class files
+    // that AGP 8.7's D8 couldn't dex, so the dependency was previously
+    // stripped out entirely and TorManager silently degraded to
+    // "unavailable" (the empty-shell status UI). 0.4.9.9.1 is a newer
+    // release; re-verify it dexes cleanly with `./gradlew :app:assembleDebug`
+    // in CI. If it still fails to dex, pin to the newest 0.4.8.x release
+    // instead (older toolchain, same TorService API) or file an issue
+    // upstream at https://github.com/guardianproject/tor-android/issues.
+    implementation(libs.guardianproject.tor.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)

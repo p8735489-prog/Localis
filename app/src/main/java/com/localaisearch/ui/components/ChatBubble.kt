@@ -187,8 +187,9 @@ fun ChatBubble(
             }
 
             // Momentary elastic "Copied" confirmation badge, anchored above the bubble.
-            AnimatedVisibility(
-                visible = showCopiedBadge,
+            Box(modifier = Modifier.fillMaxWidth()) {
+                AnimatedVisibility(
+                    visible = showCopiedBadge,
                 enter = fadeIn(SpringSpecs.fadeIn) + scaleIn(initialScale = 0.6f, animationSpec = SpringSpecs.elastic),
                 exit = fadeOut(SpringSpecs.fadeOut) + scaleOut(targetScale = 0.6f, animationSpec = SpringSpecs.snappy),
                 modifier = Modifier
@@ -218,6 +219,7 @@ fun ChatBubble(
                         )
                     }
                 }
+            }
             }
         }
     }

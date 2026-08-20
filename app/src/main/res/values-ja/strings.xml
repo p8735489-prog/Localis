@@ -384,6 +384,13 @@
     <string name="settings_tor_off">Tor はオフです</string>
     <string name="settings_tor_off_desc">上のスイッチをオンにすると、このアプリの通信が Tor 経由になります。</string>
     <string name="settings_tor_scope_detail">Tor はこのアプリだけをプロキシします。Android 全体の VPN は作成しません。Web 検索とモデルセンターの通信はこの Tor ルートを使用します。</string>
+    <string name="settings_tor_exit_country">出口国</string>
+    <string name="settings_tor_exit_country_desc">Tor の出口国を選択します。AUTO は Tor に自動選択させます。</string>
+    <string name="settings_tor_custom_config">カスタム Tor 設定</string>
+    <string name="settings_tor_custom_config_label">Tor 設定行</string>
+    <string name="settings_tor_custom_config_placeholder">任意の torrc 設定を 1 行ずつ入力します。保護された SOCKS/制御ポート設定は無視されます。</string>
+    <string name="settings_tor_custom_config_desc">任意の torrc 設定を 1 行ずつ入力します。保護された SOCKS/制御ポート設定は無視されます。</string>
+    <string name="settings_tor_exit_status">出口：%1$s · IP：%2$s</string>
     <string name="settings_tor_connection_method">接続方法</string>
     <string name="settings_proxy_disabled_by_tor">Tor 接続中は手動プロキシを無効にします。</string>
     <string name="chat_copied">コピーしました</string>

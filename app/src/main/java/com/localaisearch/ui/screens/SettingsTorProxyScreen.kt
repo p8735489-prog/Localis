@@ -49,6 +49,8 @@ fun SettingsTorProxyScreen(
 ) {
     val torStatus by viewModel.torStatus.collectAsState()
     val torBridges by viewModel.torBridges.collectAsState()
+    val torExitCountry by viewModel.torExitCountry.collectAsState()
+    val torCustomConfig by viewModel.torCustomConfig.collectAsState()
     val proxy by viewModel.proxyConfig.collectAsState()
     val torConnected = torStatus == TorManager.Status.ON
     val uriHandler = LocalUriHandler.current
@@ -100,6 +102,15 @@ fun SettingsTorProxyScreen(
                             TorManager.Status.ON -> {
                                 Text(stringResource(R.string.settings_tor_connected), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                                 Text(stringResource(R.string.settings_tor_security_note), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    text = stringResource(
+                                        R.string.settings_tor_exit_status,
+                                        torExitCountry.uppercase(),
+                                        TorManager.verifiedExitIp ?: stringResource(R.string.unknown)
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                             }
                             TorManager.Status.ERROR -> {
                                 Text(stringResource(R.string.settings_tor_failed), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
@@ -117,6 +128,29 @@ fun SettingsTorProxyScreen(
                             }
                         }
 
+                        val exitOptions = listOf(
+                            "auto" to "AUTO", "us" to "US", "ca" to "CA", "gb" to "GB",
+                            "de" to "DE", "fr" to "FR", "nl" to "NL", "se" to "SE",
+                            "ch" to "CH", "jp" to "JP", "sg" to "SG", "au" to "AU"
+                        )
+                        DropdownRow(
+                            label = stringResource(R.string.settings_tor_exit_country),
+                            selectedValue = exitOptions.firstOrNull { it.first == torExitCountry }?.second ?: torExitCountry.uppercase(),
+                            options = exitOptions,
+                            onSelect = { viewModel.updateTorExitCountry(it) }
+                        )
+                        Text(stringResource(R.string.settings_tor_exit_country_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_tor_custom_config), style = MaterialTheme.typography.titleMedium)
+                        OutlinedTextField(
+                            value = torCustomConfig,
+                            onValueChange = viewModel::updateTorCustomConfig,
+                            enabled = torStatus == TorManager.Status.OFF,
+                            label = { Text(stringResource(R.string.settings_tor_custom_config_label)) },
+                            placeholder = { Text(stringResource(R.string.settings_tor_custom_config_placeholder)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3, maxLines = 7
+                        )
+                        Text(stringResource(R.string.settings_tor_custom_config_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(stringResource(R.string.settings_tor_scope_detail), style = MaterialTheme.typography.bodyMedium)
                     }
                 }

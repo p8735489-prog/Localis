@@ -70,6 +70,10 @@ class SettingsViewModel(
     val torEnabled: StateFlow<Boolean> = _torEnabled.asStateFlow()
     private val _torBridges = MutableStateFlow("")
     val torBridges: StateFlow<String> = _torBridges.asStateFlow()
+    private val _torExitCountry = MutableStateFlow("auto")
+    val torExitCountry: StateFlow<String> = _torExitCountry.asStateFlow()
+    private val _torCustomConfig = MutableStateFlow("")
+    val torCustomConfig: StateFlow<String> = _torCustomConfig.asStateFlow()
     val torStatus: StateFlow<TorManager.Status> = TorManager.statusFlow
     val proxyConfig: StateFlow<com.localaisearch.data.repository.ProxyConfig> = _proxyConfig.asStateFlow()
     val privacyMode: StateFlow<Boolean> = _privacyMode.asStateFlow()
@@ -91,13 +95,16 @@ class SettingsViewModel(
             _proxyConfig.value = settingsRepo.proxyConfig.first()
             _torEnabled.value = settingsRepo.torEnabled.first()
             _torBridges.value = settingsRepo.torBridges.first()
+            _torExitCountry.value = settingsRepo.torExitCountry.first()
+            _torCustomConfig.value = settingsRepo.torCustomConfig.first()
             if (_torEnabled.value) {
                 // A persisted toggle is not proof that Tor is connected. Reconnect and let
                 // TorManager report STARTING/ON/ERROR. Never restore a fake ON state.
-                val result = TorManager.start(_torBridges.value)
+                val result = TorManager.start(_torBridges.value, _torExitCountry.value, _torCustomConfig.value)
                 if (result.isFailure) {
                     _torEnabled.value = false
                     settingsRepo.setTorEnabled(false)
+                    com.localaisearch.data.repository.NetworkClientFactory.updateProxy(_proxyConfig.value)
                 }
             } else {
                 com.localaisearch.data.repository.NetworkClientFactory.updateProxy(_proxyConfig.value)
@@ -273,6 +280,16 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepo.setTorBridges(value) }
     }
 
+    fun updateTorExitCountry(value: String) {
+        _torExitCountry.value = value.lowercase().ifBlank { "auto" }
+        viewModelScope.launch { settingsRepo.setTorExitCountry(_torExitCountry.value) }
+    }
+
+    fun updateTorCustomConfig(value: String) {
+        _torCustomConfig.value = value
+        viewModelScope.launch { settingsRepo.setTorCustomConfig(value) }
+    }
+
     fun setTorEnabled(enabled: Boolean) {
         if (!enabled) {
             _torEnabled.value = false
@@ -288,7 +305,7 @@ class SettingsViewModel(
         // STARTING is a connection state, not an enabled/connected state.
         _torEnabled.value = false
         viewModelScope.launch {
-            val result = TorManager.start(_torBridges.value)
+            val result = TorManager.start(_torBridges.value, _torExitCountry.value, _torCustomConfig.value)
             if (result.isSuccess && TorManager.status == TorManager.Status.ON) {
                 _torEnabled.value = true
                 // Tor routing must not silently change the user's model source.
@@ -296,6 +313,7 @@ class SettingsViewModel(
             } else {
                 _torEnabled.value = false
                 settingsRepo.setTorEnabled(false)
+                com.localaisearch.data.repository.NetworkClientFactory.updateProxy(_proxyConfig.value)
             }
         }
     }

@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +50,11 @@ fun AgentProgressBar(
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val progress by animateFloatAsState(
+        targetValue = status.state.progress.coerceIn(0f, 1f),
+        animationSpec = androidx.compose.animation.core.tween(280),
+        label = "agentProgress"
+    )
     val steps = AgentState.entries.filter { it.isActive && it != AgentState.ERROR }
 
     Column(
@@ -70,6 +76,12 @@ fun AgentProgressBar(
                 color = colorScheme.onSurfaceVariant
             )
         }
+
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth(),
+            trackColor = colorScheme.surfaceContainerHighest
+        )
 
         // Step indicators
         Row(

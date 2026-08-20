@@ -51,6 +51,19 @@ object NetworkClientFactory {
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        // When Tor/manual proxy routing is enabled, close each proxied response
+        // connection so a pre-Tor pooled direct socket cannot be reused after a
+        // routing transition. This trades a little connection reuse for strict
+        // app-scoped routing correctness.
+        .addInterceptor { chain ->
+            val config = proxyRef.get()
+            val request = if (config.enabled && config.isValid) {
+                chain.request().newBuilder().header("Connection", "close").build()
+            } else {
+                chain.request()
+            }
+            chain.proceed(request)
+        }
         .proxySelector(dynamicProxySelector)
         .authenticator(object : Authenticator {
             override fun authenticate(route: Route?, response: Response): okhttp3.Request? {

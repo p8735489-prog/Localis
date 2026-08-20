@@ -191,6 +191,9 @@ private fun SettingsCategoryRow(category: SettingsCategory) {
                 maxLines = 2
             )
         },
+        headlineContent = {
+            Text(category.label, fontWeight = FontWeight.Medium)
+        },
         trailingContent = {
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -198,7 +201,5 @@ private fun SettingsCategoryRow(category: SettingsCategory) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    ) {
-        Text(category.label, fontWeight = FontWeight.Medium)
-    }
+    )
 }

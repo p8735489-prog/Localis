@@ -439,6 +439,13 @@
     <string name="settings_tor_off">Tor est désactivé</string>
     <string name="settings_tor_off_desc">Activez le commutateur ci-dessus pour acheminer les requêtes réseau de cette application via Tor.</string>
     <string name="settings_tor_scope_detail">Tor ne proxyifie que cette application. Aucun VPN Android global n’est créé. La recherche Web et le centre de modèles utilisent le routage Tor de cette application.</string>
+    <string name="settings_tor_exit_country">Pays de sortie</string>
+    <string name="settings_tor_exit_country_desc">Choisissez le pays de sortie Tor. AUTO laisse Tor choisir automatiquement.</string>
+    <string name="settings_tor_custom_config">Configuration Tor personnalisée</string>
+    <string name="settings_tor_custom_config_label">Lignes de configuration Tor</string>
+    <string name="settings_tor_custom_config_placeholder">Directives torrc facultatives, une par ligne. Les paramètres SOCKS/contrôle protégés sont ignorés.</string>
+    <string name="settings_tor_custom_config_desc">Directives torrc facultatives, une par ligne. Les paramètres SOCKS/contrôle protégés sont ignorés.</string>
+    <string name="settings_tor_exit_status">Sortie : %1$s · IP : %2$s</string>
     <string name="settings_tor_connection_method">Méthode de connexion</string>
     <string name="settings_proxy_disabled_by_tor">Le proxy manuel est désactivé lorsque Tor est connecté.</string>
     <string name="chat_copied">Copié</string>

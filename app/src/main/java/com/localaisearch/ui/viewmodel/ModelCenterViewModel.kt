@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 
 /**
  * ViewModel for the Model Center - discovering and downloading GGUF models
@@ -88,7 +89,7 @@ class ModelCenterViewModel(
             loadTrending()
         }
 
-        // Load already downloaded models
+        // Scan model storage off the main thread.
         refreshDownloadedModels()
     }
 
@@ -286,8 +287,10 @@ class ModelCenterViewModel(
      * Refresh the list of downloaded models.
      */
     fun refreshDownloadedModels() {
-        _modelRepo.refreshModels()
-        _downloadedModels.value = _modelRepo.models.value
+        viewModelScope.launch(Dispatchers.IO) {
+            _modelRepo.refreshModels()
+            _downloadedModels.value = _modelRepo.models.value
+        }
     }
 
     /**

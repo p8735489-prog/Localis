@@ -101,9 +101,9 @@ add_subdirectory(vendor)
 add_subdirectory(common)
 
 # libmtmd is the upstream llama.cpp multimodal runtime. The repository checkout
-# is populated by tools/fetch_mtmd.sh before Android builds. If the fetch failed
-# (upstream restructure, network issue), build without mtmd and emit a warning
-# so the build can still succeed; the Kotlin layer falls back to text-only mode.
+# is populated by tools/fetch_mtmd.sh before Android builds. Vision builds are
+# intentionally fail-closed when the pinned MTMD source tree is incomplete so a
+# release cannot silently ship a text-only native runtime.
 set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(MTMD_AVAILABLE OFF)
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd/CMakeLists.txt)

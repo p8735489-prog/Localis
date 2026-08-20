@@ -86,6 +86,8 @@ class SettingsRepository(private val context: Context) {
         val PROXY_PASSWORD = stringPreferencesKey("proxy_password")
         val TOR_ENABLED = booleanPreferencesKey("tor_enabled")
         val TOR_BRIDGES = stringPreferencesKey("tor_bridges")
+        val TOR_EXIT_COUNTRY = stringPreferencesKey("tor_exit_country")
+        val TOR_CUSTOM_CONFIG = stringPreferencesKey("tor_custom_config")
     }
 
     val searchConfig: Flow<SearchConfig> = context.settingsDataStore.data.map { prefs ->
@@ -288,6 +290,13 @@ class SettingsRepository(private val context: Context) {
         prefs[Keys.TOR_BRIDGES] ?: ""
     }
 
+    val torExitCountry: Flow<String> = context.settingsDataStore.data.map { prefs ->
+        prefs[Keys.TOR_EXIT_COUNTRY] ?: "auto"
+    }
+
+    val torCustomConfig: Flow<String> = context.settingsDataStore.data.map { prefs ->
+        prefs[Keys.TOR_CUSTOM_CONFIG] ?: ""
+    }
 
     suspend fun setTorEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[Keys.TOR_ENABLED] = enabled }
@@ -295,6 +304,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setTorBridges(bridges: String) {
         context.settingsDataStore.edit { prefs -> prefs[Keys.TOR_BRIDGES] = bridges }
+    }
+
+    suspend fun setTorExitCountry(country: String) {
+        context.settingsDataStore.edit { prefs -> prefs[Keys.TOR_EXIT_COUNTRY] = country.lowercase().ifBlank { "auto" } }
+    }
+
+    suspend fun setTorCustomConfig(config: String) {
+        context.settingsDataStore.edit { prefs -> prefs[Keys.TOR_CUSTOM_CONFIG] = config }
     }
 
 

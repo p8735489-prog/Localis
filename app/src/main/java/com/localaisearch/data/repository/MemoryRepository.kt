@@ -108,7 +108,8 @@ class MemoryRepository(private val context: Context) {
         return exact * 2.4f + phraseStart + overlap * 1.8f + recency * 0.8f + accessBoost + importance * 0.7f + if (entry.pinned) 2f else 0f
     }
 
-    suspend fun addMemory(content: String, topic: String, sourceConversationId: String): Result<MemoryEntry> = try {
+    suspend fun addMemory(content: String, topic: String, sourceConversationId: String): Result<MemoryEntry> {
+        return try {
         val trimmed = content.trim().take(MAX_MEMORY_LENGTH)
         if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
         val now = System.currentTimeMillis()
@@ -133,7 +134,8 @@ class MemoryRepository(private val context: Context) {
             prefs[MEMORIES_JSON] = json.encodeToString(current.takeLast(MAX_MEMORY_COUNT))
         }
         Result.success(result!!)
-    } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) { Result.failure(e) }
+    }
 
     fun getMemories(): Flow<List<MemoryEntry>> = dataStore.data.map { prefs -> loadMemories(prefs).sortedWith(compareByDescending<MemoryEntry> { it.pinned }.thenByDescending { it.createdAt }) }
 
@@ -162,7 +164,8 @@ class MemoryRepository(private val context: Context) {
     suspend fun getRelevantMemories(query: String, maxResults: Int = 5): List<MemoryEntry> =
         searchMemories(query, MemorySearchPreset.ALL, maxResults)
 
-    suspend fun updateMemory(id: String, newContent: String): Result<Unit> = try {
+    suspend fun updateMemory(id: String, newContent: String): Result<Unit> {
+        return try {
         val trimmed = newContent.trim().take(MAX_MEMORY_LENGTH)
         if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
         dataStore.edit { prefs ->
@@ -175,7 +178,8 @@ class MemoryRepository(private val context: Context) {
             }
         }
         Result.success(Unit)
-    } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) { Result.failure(e) }
+    }
 
     suspend fun setPinned(id: String, pinned: Boolean): Result<Unit> = try {
         dataStore.edit { prefs ->

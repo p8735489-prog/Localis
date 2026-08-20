@@ -323,7 +323,7 @@ object TorManager {
             customConfig.lines()
                 .map { it.trim() }
                 .filter { it.isNotBlank() && !it.startsWith("#") }
-                .filter { line -> line.substringBefore(Regex("\\s")).lowercase() !in blocked }
+                .filter { line -> line.trimStart().split(Regex("\\s+"), limit = 2).first().lowercase() !in blocked }
                 .take(128)
                 .forEach { append(it).append('\n') }
         }

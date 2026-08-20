@@ -14,6 +14,8 @@ required_vendor = [
     vendor / "cpp-httplib/httplib.cpp",
     vendor / "nlohmann/json.hpp",
     vendor / "nlohmann/json_fwd.hpp",
+    vendor / "miniaudio/miniaudio.h",
+    vendor / "stb/stb_image.h",
 ]
 required_mtmd = [
     mtmd / "CMakeLists.txt",
@@ -72,4 +74,4 @@ if not src_link.is_symlink() or not src_link.exists():
     print("ERROR: src -> llama_src symlink is missing")
     sys.exit(1)
 
-print("NATIVE TREE OK: vendor + mtmd + symlink present")
+print("NATIVE TREE OK: vendor + miniaudio + stb + mtmd + symlink present")

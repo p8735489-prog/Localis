@@ -76,6 +76,12 @@ target_link_libraries     (mtmd PRIVATE Threads::Threads)
 target_include_directories(mtmd PUBLIC  .)
 target_include_directories(mtmd PRIVATE ../..)
 target_include_directories(mtmd PRIVATE ../../vendor)
+# Android app layout keeps shared llama.cpp vendor headers at cpp/vendor.
+# The upstream relative path above points at cpp/llama_src/vendor, which is
+# intentionally absent in this repository. Add the actual vendor roots so
+# mtmd-helper.cpp can resolve miniaudio/miniaudio.h and stb/stb_image.h.
+target_include_directories(mtmd PRIVATE ../../../vendor)
+target_include_directories(mtmd PRIVATE ../../../vendor/stb)
 target_compile_features   (mtmd PRIVATE cxx_std_17)
 
 if (MTMD_VIDEO)

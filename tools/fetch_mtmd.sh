@@ -5,6 +5,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST_MTMD="$ROOT/app/src/main/cpp/llama_src/tools/mtmd"
 DEST_VENDOR="$ROOT/app/src/main/cpp/vendor/cpp-httplib"
 DEST_VENDOR_ROOT="$ROOT/app/src/main/cpp/vendor"
+DEST_MINIAUDIO="$DEST_VENDOR_ROOT/miniaudio"
+DEST_STB="$DEST_VENDOR_ROOT/stb"
 REF="${LLAMA_CPP_MTMD_REF:-b10218}"
 
 TMP="$(mktemp -d)"
@@ -17,7 +19,9 @@ if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
       ! -f "$DEST_VENDOR/httplib.h" ||
       ! -f "$DEST_VENDOR/httplib.cpp" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json_fwd.hpp" ||
-      ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json.hpp" ]]; then
+      ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json.hpp" ||
+      ! -f "$DEST_MINIAUDIO/miniaudio.h" ||
+      ! -f "$DEST_STB/stb_image.h" ]]; then
     need_vendor=1
 fi
 
@@ -62,6 +66,8 @@ with tarfile.open(archive, "r:gz") as tf:
 checks=(
     "/vendor/cpp-httplib/CMakeLists.txt",
     "/vendor/cpp-httplib/httplib.h",
+    "/vendor/miniaudio/miniaudio.h",
+    "/vendor/stb/stb_image.h",
     "/tools/mtmd/CMakeLists.txt",
 )
 for suffix in checks:
@@ -97,6 +103,27 @@ if (( need_vendor == 1 )); then
     fi
     echo "Copied llama.cpp vendor/cpp-httplib"
 fi
+
+# MTMD uses the upstream miniaudio and stb_image headers. They are not part
+# of the app's handwritten vendor tree, so copy the exact versions bundled
+# with the pinned llama.cpp archive. Without these, Android compilation fails
+# late in mtmd-helper.cpp with miniaudio/miniaudio.h not found.
+for dep in miniaudio stb; do
+    SRC_DEP="$UPROOT/vendor/$dep"
+    DEST_DEP="$DEST_VENDOR_ROOT/$dep"
+    if [[ ! -f "$SRC_DEP/miniaudio.h" && "$dep" == "miniaudio" ]]; then
+        echo "::error::llama.cpp ${REF} vendor/miniaudio/miniaudio.h is missing"
+        exit 1
+    fi
+    if [[ ! -f "$SRC_DEP/stb_image.h" && "$dep" == "stb" ]]; then
+        echo "::error::llama.cpp ${REF} vendor/stb/stb_image.h is missing"
+        exit 1
+    fi
+    rm -rf "$DEST_DEP"
+    mkdir -p "$DEST_VENDOR_ROOT"
+    cp -a "$SRC_DEP" "$DEST_DEP"
+    echo "Copied llama.cpp vendor/$dep"
+done
 
 if (( need_mtmd == 1 )); then
     SRC="$UPROOT/tools/mtmd"

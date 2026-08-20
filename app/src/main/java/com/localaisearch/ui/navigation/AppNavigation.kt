@@ -46,6 +46,7 @@ import com.localaisearch.ui.screens.VisionModelScreen
 import com.localaisearch.ui.viewmodel.ChatViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
+import kotlinx.coroutines.launch
 
 /**
  * Prevent duplicate destinations when users tap navigation targets repeatedly.

@@ -8,8 +8,10 @@ vendor = cpp / "vendor"
 mtmd = cpp / "llama_src/tools/mtmd"
 
 required_vendor = [
+    vendor / "CMakeLists.txt",
     vendor / "cpp-httplib/CMakeLists.txt",
     vendor / "cpp-httplib/httplib.h",
+    vendor / "cpp-httplib/httplib.cpp",
     vendor / "nlohmann/json.hpp",
     vendor / "nlohmann/json_fwd.hpp",
 ]
@@ -26,8 +28,17 @@ if missing:
     sys.exit(1)
 
 cmake = (cpp / "CMakeLists.txt").read_text(errors="ignore")
+if "add_subdirectory(vendor)" not in cmake:
+    print("ERROR: vendor/ subdirectory is not added before common/")
+    sys.exit(1)
 if "add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd" not in cmake:
     print("ERROR: pinned llama.cpp MTMD target is not added")
     sys.exit(1)
 
-print("NATIVE TREE OK: vendor + mtmd present")
+# Verify the src -> llama_src symlink exists so ../src/llama-ext.h resolves.
+src_link = cpp / "src"
+if not src_link.is_symlink() or not src_link.exists():
+    print("ERROR: src -> llama_src symlink is missing")
+    sys.exit(1)
+
+print("NATIVE TREE OK: vendor + mtmd + symlink present")

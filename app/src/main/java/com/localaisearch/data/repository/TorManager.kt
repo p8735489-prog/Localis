@@ -53,7 +53,10 @@ object TorManager {
     private const val TOR_SERVICE_CLASS = "org.torproject.jni.TorService"
     private const val ACTION_START = "org.torproject.android.intent.action.START"
     private const val ACTION_STOP = "org.torproject.android.intent.action.STOP"
+    private const val ACTION_STATUS = "org.torproject.android.intent.action.STATUS"
+    private const val ACTION_ERROR = "org.torproject.android.intent.action.ERROR"
     private const val EXTRA_PACKAGE_NAME = "org.torproject.android.intent.extra.PACKAGE_NAME"
+    private const val EXTRA_STATUS = "org.torproject.android.intent.extra.STATUS"
 
     fun initialize(context: Context) {
         appContext = context.applicationContext

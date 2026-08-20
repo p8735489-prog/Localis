@@ -167,11 +167,10 @@ fun ModelCenterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = MaterialTheme.shapes.extraLarge,
                 colors = SearchBarDefaults.colors(
                     containerColor = colorScheme.surfaceContainerHigh
                 )
-            )
+            ) {}
 
             Surface(
                 modifier = Modifier

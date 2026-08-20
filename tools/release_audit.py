@@ -33,8 +33,8 @@ if sensitive:
     errors.append(f'Signing keystore/certificate files must not be committed: {sensitive}')
 if 'com.localaisearch.data.llm.LlamaBridge' not in proguard or '-keepclasseswithmembers class *' not in proguard:
     errors.append('JNI keep rules for LlamaBridge are incomplete.')
-if 'org.torproject.jni.TorService' not in proguard:
-    errors.append('TorService R8 keep rule is missing.')
+if 'org.torproject' not in proguard:
+    errors.append('TorService dontwarn rule is missing.')
 if 'versionName = "2.1.0"' not in gradle:
     errors.append('Release versionName is not 2.1.0.')
 if 'assembleRelease' not in workflow:
@@ -73,6 +73,13 @@ if 'include("${LLAMA_CMAKE_DIR}/common.cmake")' not in cmake_text:
     errors.append('Bundled llama.cpp CMake helper is not loaded before common/.')
 if not (root/'app/src/main/cpp/cmake/common.cmake').exists():
     errors.append('Missing app/src/main/cpp/cmake/common.cmake')
+# vendor/ must be added before common/ so cpp-httplib target exists when common links.
+if 'add_subdirectory(vendor)' not in cmake_text:
+    errors.append('vendor/ subdirectory is not added before common/ in CMakeLists.txt.')
+elif cmake_text.index('add_subdirectory(vendor)') > cmake_text.index('add_subdirectory(common)'):
+    errors.append('vendor/ must be added before common/ in CMakeLists.txt.')
+if not (root/'app/src/main/cpp/vendor/CMakeLists.txt').exists():
+    errors.append('Missing app/src/main/cpp/vendor/CMakeLists.txt')
 
 if errors:
     print('RELEASE AUDIT FAILED')

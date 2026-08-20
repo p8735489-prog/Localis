@@ -15,6 +15,7 @@ need_mtmd=0
 
 if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
       ! -f "$DEST_VENDOR/httplib.h" ||
+      ! -f "$DEST_VENDOR/httplib.cpp" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json_fwd.hpp" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json.hpp" ]]; then
     need_vendor=1
@@ -80,6 +81,10 @@ if (( need_vendor == 1 )); then
     rm -rf "$DEST_VENDOR"
     mkdir -p "$DEST_VENDOR_ROOT"
     cp -a "$SRC_VENDOR" "$DEST_VENDOR"
+    # Ensure httplib.cpp exists (upstream may only ship the header-only variant).
+    if [[ ! -f "$DEST_VENDOR/httplib.cpp" ]]; then
+        echo '#include "httplib.h"' > "$DEST_VENDOR/httplib.cpp"
+    fi
     echo "Copied llama.cpp vendor/cpp-httplib"
 fi
 

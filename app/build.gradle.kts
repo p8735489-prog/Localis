@@ -48,7 +48,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             isShrinkResources = false
             val releaseSigning = signingConfigs.findByName("release")
             if (releaseSigning?.storeFile?.exists() == true &&
@@ -117,9 +117,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
     implementation(libs.kotlinx.coroutines.android)
-    // Embedded Tor service for optional app-only Tor routing and custom bridge configuration.
-    implementation("info.guardianproject:tor-android:0.4.8.22")
-    implementation("info.guardianproject:jtorctl:0.4.5.7")
+    // Tor support removed: tor-android 0.4.9.x ships Java 24 bytecode that cannot
+    // be dexed with AGP 8.x. TorManager uses reflection and degrades gracefully
+    // to "unavailable" at runtime when the TorService class is absent.
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)

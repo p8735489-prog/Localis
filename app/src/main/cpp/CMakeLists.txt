@@ -92,6 +92,12 @@ include("${LLAMA_CMAKE_DIR}/common.cmake")
 # llama.cpp. Expose the app's bundled llama target under the name expected by
 # common/ so GGUF-specific templates are formatted exactly as upstream does.
 add_library(llama ALIAS local_llama)
+
+# vendor/ must be added before common/ because common/CMakeLists.txt links
+# against the cpp-httplib target defined inside vendor/cpp-httplib.
+# license_add_file() is stubbed in vendor/CMakeLists.txt for upstream compat.
+add_subdirectory(vendor)
+
 add_subdirectory(common)
 
 # libmtmd is the upstream llama.cpp multimodal runtime. The repository checkout
@@ -122,7 +128,6 @@ if(NOT DEFINED LLAMA_VERSION_MAJOR)
     set(LLAMA_VERSION_MAJOR 0)
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/cpp-httplib ${CMAKE_CURRENT_BINARY_DIR}/cpp-httplib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd ${CMAKE_CURRENT_BINARY_DIR}/mtmd)
 
 add_library(llama_bridge SHARED llama_bridge.cpp)

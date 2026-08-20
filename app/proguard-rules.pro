@@ -21,6 +21,6 @@
     fun onToken(java.lang.String);
 }
 
-# TorService is referenced from AndroidManifest and loaded by the embedded AAR.
--keep class org.torproject.jni.TorService { *; }
--dontwarn org.torproject.jni.**
+# TorService keep rule removed: tor-android AAR is no longer a dependency.
+# TorManager uses reflection and degrades to "unavailable" when the class is absent.
+-dontwarn org.torproject.**

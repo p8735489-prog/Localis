@@ -3,7 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST_MTMD="$ROOT/app/src/main/cpp/llama_src/tools/mtmd"
-DEST_VENDOR="$ROOT/app/src/main/cpp/vendor"
+DEST_VENDOR="$ROOT/app/src/main/cpp/vendor/cpp-httplib"
+DEST_VENDOR_ROOT="$ROOT/app/src/main/cpp/vendor"
 REF="${LLAMA_CPP_MTMD_REF:-b10218}"
 
 TMP="$(mktemp -d)"
@@ -13,8 +14,10 @@ need_vendor=0
 need_mtmd=0
 
 if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
-      ! -f "$DEST_VENDOR/nlohmann/json_fwd.hpp" ||
-      ! -f "$DEST_VENDOR/nlohmann/json.hpp" ]]; then
+      ! -f "$DEST_VENDOR/httplib.h" ||
+      ! -f "$DEST_VENDOR_ROOT/CMakeLists.txt" ||
+      ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json_fwd.hpp" ||
+      ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json.hpp" ]]; then
     need_vendor=1
 fi
 
@@ -40,21 +43,31 @@ fi
 test -s "$ARCHIVE"
 tar -tzf "$ARCHIVE" >/dev/null
 
+# Refuse unexpected/incomplete archives before touching the project tree.
+tar -tzf "$ARCHIVE" | grep -q "/vendor/cpp-httplib/CMakeLists.txt$"
+tar -tzf "$ARCHIVE" | grep -q "/vendor/cpp-httplib/httplib.h$"
+tar -tzf "$ARCHIVE" | grep -q "/tools/mtmd/CMakeLists.txt$"
+
 tar -xzf "$ARCHIVE" -C "$TMP"
 UPROOT="$(find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -1)"
 test -n "$UPROOT"
 
 if (( need_vendor == 1 )); then
-    if [[ ! -f "$UPROOT/vendor/CMakeLists.txt" ||
-          ! -f "$UPROOT/vendor/nlohmann/json.hpp" ||
-          ! -f "$UPROOT/vendor/nlohmann/json_fwd.hpp" ]]; then
-        echo "::error::llama.cpp ${REF} vendor tree is incomplete"
+    SRC_VENDOR="$UPROOT/vendor/cpp-httplib"
+    if [[ ! -f "$SRC_VENDOR/CMakeLists.txt" || ! -f "$SRC_VENDOR/httplib.h" ]]; then
+        echo "::error::llama.cpp ${REF} vendor/cpp-httplib is incomplete"
         exit 1
     fi
     rm -rf "$DEST_VENDOR"
-    mkdir -p "$(dirname "$DEST_VENDOR")"
-    cp -a "$UPROOT/vendor" "$DEST_VENDOR"
-    echo "Copied llama.cpp vendor tree"
+    mkdir -p "$DEST_VENDOR_ROOT"
+    cp -a "$SRC_VENDOR" "$DEST_VENDOR"
+    cat > "$DEST_VENDOR_ROOT/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.22.1)
+if(NOT TARGET cpp-httplib)
+    add_subdirectory(cpp-httplib)
+endif()
+EOF
+    echo "Copied llama.cpp vendor/cpp-httplib and generated vendor/CMakeLists.txt"
 fi
 
 if (( need_mtmd == 1 )); then

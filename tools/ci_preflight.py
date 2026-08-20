@@ -81,6 +81,11 @@ if 'include("${LLAMA_CMAKE_DIR}/common.cmake")' not in cmake_text:
 helper=ROOT/'app/src/main/cpp/cmake/common.cmake'
 if not helper.exists() or 'function(llama_add_compile_flags)' not in helper.read_text(errors='ignore'):
     errors.append('Bundled llama CMake helper missing llama_add_compile_flags().')
+httplib_cmake=ROOT/'app/src/main/cpp/vendor/cpp-httplib/CMakeLists.txt'
+httplib_h=ROOT/'app/src/main/cpp/vendor/cpp-httplib/httplib.h'
+mtmd_cmake=ROOT/'app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt'
+for pth, label in [(httplib_cmake,'vendor/cpp-httplib/CMakeLists.txt'),(httplib_h,'vendor/cpp-httplib/httplib.h'),(mtmd_cmake,'llama_src/tools/mtmd/CMakeLists.txt')]:
+    if not pth.exists(): errors.append(f'Missing native dependency file: {label}')
 
 if errors:
     print('CI PREFLIGHT FAILED')

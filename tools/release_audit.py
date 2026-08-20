@@ -18,7 +18,7 @@ for name in ('SIGNING_KEYSTORE_PATH','SIGNING_STORE_PASSWORD','SIGNING_KEY_ALIAS
         errors.append(f'Missing CI signing env: {name}')
 if 'SIGNING_KEYSTORE_B64' not in workflow:
     errors.append('CI must restore the signing keystore from SIGNING_KEYSTORE_B64 secret.')
-if re.search(r'SIGNING_(STORE_PASSWORD|KEY_PASSWORD):\\s*[^$\\n]+', workflow):
+if re.search(r'SIGNING_(STORE_PASSWORD|KEY_PASSWORD):\s*[^$\n]+', workflow):
     errors.append('Signing passwords must come from GitHub Actions secrets, not hard-coded workflow values.')
 if (root/'app/localis-release.jks').exists():
     errors.append('Signing keystore must not be committed to the repository.')
@@ -41,17 +41,13 @@ for m in methods:
         errors.append(f'Missing JNI implementation: {m}')
 
 
-# Security / CI duplication checks — only android-release.yml is canonical.
+# Security / CI duplication checks — audit only; never mutate repository files.
 workflow_dir=root/'.github/workflows'
 canonical='android-release.yml'
-for wf in workflow_dir.glob('*.yml'):
-    if wf.name != canonical:
-        # Stale workflow (e.g. old build-apk.yml) — delete it so it won't trigger duplicate CI runs.
-        wf.unlink()
-        print(f'  Deleted stale workflow: {wf.name}')
 remaining=list(workflow_dir.glob('*.yml'))
-if len(remaining) > 1:
-    errors.append(f'Multiple release workflows remain after cleanup: {[w.name for w in remaining]}')
+extra=[w.name for w in remaining if w.name != canonical]
+if extra:
+    errors.append(f'Stale/duplicate workflows present: {extra}; remove them explicitly before release.')
 
 # Native CMake helper must be loaded before llama-common.
 cmake=root/'app/src/main/cpp/CMakeLists.txt'

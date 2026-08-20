@@ -107,9 +107,9 @@ if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd/CMakeLists.txt)
         "A successful Localis build must include the real multimodal runtime."
     )
 endif()
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/CMakeLists.txt)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cpp-httplib/CMakeLists.txt)
     message(FATAL_ERROR
-        "Required llama.cpp vendor CMakeLists.txt is missing. "
+        "Required llama.cpp vendor/cpp-httplib CMakeLists.txt is missing. "
         "Run tools/fetch_mtmd.sh before configuring the native build."
     )
 endif()
@@ -122,7 +122,7 @@ if(NOT DEFINED LLAMA_VERSION_MAJOR)
     set(LLAMA_VERSION_MAJOR 0)
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor ${CMAKE_CURRENT_BINARY_DIR}/vendor)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/cpp-httplib ${CMAKE_CURRENT_BINARY_DIR}/cpp-httplib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama_src/tools/mtmd ${CMAKE_CURRENT_BINARY_DIR}/mtmd)
 
 add_library(llama_bridge SHARED llama_bridge.cpp)

@@ -8,7 +8,8 @@ vendor = cpp / "vendor"
 mtmd = cpp / "llama_src/tools/mtmd"
 
 required_vendor = [
-    vendor / "CMakeLists.txt",
+    vendor / "cpp-httplib/CMakeLists.txt",
+    vendor / "cpp-httplib/httplib.h",
     vendor / "nlohmann/json.hpp",
     vendor / "nlohmann/json_fwd.hpp",
 ]

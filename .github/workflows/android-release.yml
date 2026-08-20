@@ -84,7 +84,8 @@ jobs:
           chmod +x tools/fetch_mtmd.sh tools/check_native_tree.py
           LLAMA_CPP_MTMD_REF=b10218 tools/fetch_mtmd.sh
           python3 tools/check_native_tree.py
-          test -f app/src/main/cpp/vendor/CMakeLists.txt
+          test -f app/src/main/cpp/vendor/cpp-httplib/CMakeLists.txt
+          test -f app/src/main/cpp/vendor/cpp-httplib/httplib.h
           test -f app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt
 
       - name: Remove stale native build cache
@@ -94,6 +95,9 @@ jobs:
 
       - name: Run native CI preflight
         run: python3 tools/ci_preflight.py
+
+      - name: Run release configuration audit
+        run: python3 tools/release_audit.py
 
       - name: Build debug APK
         if: "!startsWith(github.ref, 'refs/tags/v')"

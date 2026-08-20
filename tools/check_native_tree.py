@@ -17,6 +17,13 @@ required_vendor = [
 ]
 required_mtmd = [
     mtmd / "CMakeLists.txt",
+    # CMakeLists.txt alone is not proof the dependency is populated -- it can
+    # be committed/updated (e.g. bumping to a newer llama.cpp ref) without the
+    # matching source files being fetched, which used to let this check pass
+    # while CMake later failed with "Cannot find source file: mtmd.cpp".
+    mtmd / "mtmd.cpp",
+    mtmd / "mtmd.h",
+    mtmd / "clip.cpp",
 ]
 
 missing = [str(p.relative_to(root)) for p in required_vendor + required_mtmd if not p.exists()]

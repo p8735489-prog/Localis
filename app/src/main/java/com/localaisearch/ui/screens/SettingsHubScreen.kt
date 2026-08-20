@@ -157,10 +157,30 @@ private fun SettingsGroupBlock(group: SettingsGroup) {
 
 @Composable
 private fun SettingsCategoryRow(category: SettingsCategory) {
-    // Native Material 3 Expressive ListItem: no custom icon container or hand-rolled row geometry.
+    // `ListItem` has no `onClick` param of its own (it's a plain layout
+    // composable) -- passing one there does not compile. The click and its
+    // tactile feedback belong on the modifier via `clickable`, driven by our
+    // own interaction source so we can react to the press state.
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = com.localaisearch.ui.animation.SpringSpecs.snappy,
+        label = "settingsRowPressScale"
+    )
+
     androidx.compose.material3.ListItem(
-        onClick = category.onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current,
+                onClick = category.onClick
+            ),
         leadingContent = {
             Icon(category.icon, contentDescription = null)
         },

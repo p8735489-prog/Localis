@@ -1,0 +1,123 @@
+diff --git a/app/src/main/java/com/localaisearch/ui/navigation/AppNavigation.kt b/app/src/main/java/com/localaisearch/ui/navigation/AppNavigation.kt
+index 13e93ec..b8e3d17 100644
+--- a/app/src/main/java/com/localaisearch/ui/navigation/AppNavigation.kt
++++ b/app/src/main/java/com/localaisearch/ui/navigation/AppNavigation.kt
+@@ -161,19 +161,34 @@ fun AppNavigation() {
+                     scaleX = 1f - (abs(dragAnim.value) / 10000f).coerceAtMost(0.018f)
+                     scaleY = 1f - (abs(dragAnim.value) / 10000f).coerceAtMost(0.018f)
+                 },
++                // Settings screens (hub + every settings_* sub-page) get a
++                // noticeably snappier transition than the rest of the app:
++                // they're navigated in and out of frequently, so the ~400ms
++                // slide used for primary destinations reads as sluggish there.
+                 enterTransition = {
+-                    fadeIn(tween(360, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f))) +
+-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(420, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)))
++                    val fast = initialState.destination.route == Routes.SETTINGS_HUB ||
++                        targetState.destination.route?.startsWith("settings") == true
++                    val fadeMs = if (fast) 160 else 360
++                    val slideMs = if (fast) 200 else 420
++                    fadeIn(tween(fadeMs, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f))) +
++                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(slideMs, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)))
+                 },
+                 exitTransition = {
+-                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(380, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)))
++                    val fast = initialState.destination.route?.startsWith("settings") == true
++                    val slideMs = if (fast) 180 else 380
++                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(slideMs, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)))
+                 },
+                 popEnterTransition = {
+-                    fadeIn(tween(360, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f))) +
+-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(420, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)))
++                    val fast = targetState.destination.route?.startsWith("settings") == true
++                    val fadeMs = if (fast) 160 else 360
++                    val slideMs = if (fast) 200 else 420
++                    fadeIn(tween(fadeMs, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f))) +
++                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(slideMs, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)))
+                 },
+                 popExitTransition = {
+-                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(380, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)))
++                    val fast = initialState.destination.route?.startsWith("settings") == true
++                    val slideMs = if (fast) 180 else 380
++                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(slideMs, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)))
+                 }
+             ) {
+         composable(Routes.HOME) {
+diff --git a/app/src/main/java/com/localaisearch/ui/screens/SettingsHubScreen.kt b/app/src/main/java/com/localaisearch/ui/screens/SettingsHubScreen.kt
+index 8ab06d3..85a1c1a 100644
+--- a/app/src/main/java/com/localaisearch/ui/screens/SettingsHubScreen.kt
++++ b/app/src/main/java/com/localaisearch/ui/screens/SettingsHubScreen.kt
+@@ -157,10 +157,30 @@ private fun SettingsGroupBlock(group: SettingsGroup) {
+ 
+ @Composable
+ private fun SettingsCategoryRow(category: SettingsCategory) {
+-    // Native Material 3 Expressive ListItem: no custom icon container or hand-rolled row geometry.
++    // `ListItem` has no `onClick` param of its own (it's a plain layout
++    // composable) -- passing one there does not compile. The click and its
++    // tactile feedback belong on the modifier via `clickable`, driven by our
++    // own interaction source so we can react to the press state.
++    val interactionSource = remember { MutableInteractionSource() }
++    val isPressed by interactionSource.collectIsPressedAsState()
++    val pressScale by animateFloatAsState(
++        targetValue = if (isPressed) 0.97f else 1f,
++        animationSpec = com.localaisearch.ui.animation.SpringSpecs.snappy,
++        label = "settingsRowPressScale"
++    )
++
+     androidx.compose.material3.ListItem(
+-        onClick = category.onClick,
+-        modifier = Modifier.fillMaxWidth(),
++        modifier = Modifier
++            .fillMaxWidth()
++            .graphicsLayer {
++                scaleX = pressScale
++                scaleY = pressScale
++            }
++            .clickable(
++                interactionSource = interactionSource,
++                indication = androidx.compose.foundation.LocalIndication.current,
++                onClick = category.onClick
++            ),
+         leadingContent = {
+             Icon(category.icon, contentDescription = null)
+         },
+diff --git a/tools/check_native_tree.py b/tools/check_native_tree.py
+index 9147a62..151b59f 100644
+--- a/tools/check_native_tree.py
++++ b/tools/check_native_tree.py
+@@ -17,6 +17,13 @@ required_vendor = [
+ ]
+ required_mtmd = [
+     mtmd / "CMakeLists.txt",
++    # CMakeLists.txt alone is not proof the dependency is populated -- it can
++    # be committed/updated (e.g. bumping to a newer llama.cpp ref) without the
++    # matching source files being fetched, which used to let this check pass
++    # while CMake later failed with "Cannot find source file: mtmd.cpp".
++    mtmd / "mtmd.cpp",
++    mtmd / "mtmd.h",
++    mtmd / "clip.cpp",
+ ]
+ 
+ missing = [str(p.relative_to(root)) for p in required_vendor + required_mtmd if not p.exists()]
+diff --git a/tools/fetch_mtmd.sh b/tools/fetch_mtmd.sh
+index d83d32e..059e73c 100644
+--- a/tools/fetch_mtmd.sh
++++ b/tools/fetch_mtmd.sh
+@@ -21,7 +21,16 @@ if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
+     need_vendor=1
+ fi
+ 
+-if [[ ! -f "$DEST_MTMD/CMakeLists.txt" ]]; then
++# Checking only for CMakeLists.txt is not sufficient: a hand-edited or
++# partially-restored tree can contain a CMakeLists.txt (which lists mtmd.cpp,
++# clip.cpp, etc. as build sources) while the actual .cpp/.h files it
++# references are missing. That mismatch makes the "already present" fast
++# path silently skip the fetch and CMake fails later with
++# "Cannot find source file: mtmd.cpp". Require the real source files too.
++if [[ ! -f "$DEST_MTMD/CMakeLists.txt" ||
++      ! -f "$DEST_MTMD/mtmd.cpp" ||
++      ! -f "$DEST_MTMD/mtmd.h" ||
++      ! -f "$DEST_MTMD/clip.cpp" ]]; then
+     need_mtmd=1
+ fi
+ 

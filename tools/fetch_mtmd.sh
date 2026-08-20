@@ -21,7 +21,16 @@ if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
     need_vendor=1
 fi
 
-if [[ ! -f "$DEST_MTMD/CMakeLists.txt" ]]; then
+# Checking only for CMakeLists.txt is not sufficient: a hand-edited or
+# partially-restored tree can contain a CMakeLists.txt (which lists mtmd.cpp,
+# clip.cpp, etc. as build sources) while the actual .cpp/.h files it
+# references are missing. That mismatch makes the "already present" fast
+# path silently skip the fetch and CMake fails later with
+# "Cannot find source file: mtmd.cpp". Require the real source files too.
+if [[ ! -f "$DEST_MTMD/CMakeLists.txt" ||
+      ! -f "$DEST_MTMD/mtmd.cpp" ||
+      ! -f "$DEST_MTMD/mtmd.h" ||
+      ! -f "$DEST_MTMD/clip.cpp" ]]; then
     need_mtmd=1
 fi
 

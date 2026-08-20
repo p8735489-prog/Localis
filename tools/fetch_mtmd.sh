@@ -12,10 +12,6 @@ trap 'rm -rf "$TMP"' EXIT
 need_vendor=0
 need_mtmd=0
 
-# llama.cpp's vendor CMake layer is required by llama-common/mtmd
-# (it defines vendor::hash, vendor::miniaudio, vendor::stb, vendor::sheredom, etc.).
-# Checking only nlohmann headers is insufficient because older project snapshots
-# may already contain those headers while missing vendor/CMakeLists.txt.
 if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
       ! -f "$DEST_VENDOR/nlohmann/json_fwd.hpp" ||
       ! -f "$DEST_VENDOR/nlohmann/json.hpp" ]]; then
@@ -31,43 +27,47 @@ if (( need_vendor == 0 && need_mtmd == 0 )); then
     exit 0
 fi
 
-echo "Downloading llama.cpp ${REF}..."
-URL="https://github.com/ggml-org/llama.cpp/archive/refs/heads/${REF}.tar.gz"
-if [[ "$REF" != "master" ]]; then
-    URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${REF}.tar.gz"
+echo "Preparing llama.cpp ${REF} native dependency..."
+ARCHIVE="$TMP/llama.tar.gz"
+URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/${REF}.tar.gz"
+FALLBACK_URL="https://codeload.github.com/ggml-org/llama.cpp/tar.gz/refs/tags/${REF}"
+
+if ! curl -fL --retry 5 --retry-all-errors --connect-timeout 20 --max-time 180 "$URL" -o "$ARCHIVE"; then
+    echo "Primary download failed; trying GitHub codeload fallback..."
+    curl -fL --retry 5 --retry-all-errors --connect-timeout 20 --max-time 180 "$FALLBACK_URL" -o "$ARCHIVE"
 fi
 
-curl -L --fail --retry 3 --connect-timeout 15 "$URL" -o "$TMP/llama.tar.gz"
-tar -xzf "$TMP/llama.tar.gz" -C "$TMP"
+test -s "$ARCHIVE"
+tar -tzf "$ARCHIVE" >/dev/null
 
-UPROOT="$(find "$TMP" -maxdepth 1 -type d -name 'llama.cpp-*' | head -1)"
-if [[ -z "$UPROOT" ]]; then
-    UPROOT="$(find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -1)"
-fi
+tar -xzf "$ARCHIVE" -C "$TMP"
+UPROOT="$(find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -1)"
 test -n "$UPROOT"
 
 if (( need_vendor == 1 )); then
-    if [[ -d "$UPROOT/vendor" ]]; then
-        rm -rf "$DEST_VENDOR"
-        mkdir -p "$(dirname "$DEST_VENDOR")"
-        cp -a "$UPROOT/vendor" "$DEST_VENDOR"
-        echo "Copied vendor headers"
-    else
-        echo "::error::llama.cpp ${REF} has no vendor directory"
+    if [[ ! -f "$UPROOT/vendor/CMakeLists.txt" ||
+          ! -f "$UPROOT/vendor/nlohmann/json.hpp" ||
+          ! -f "$UPROOT/vendor/nlohmann/json_fwd.hpp" ]]; then
+        echo "::error::llama.cpp ${REF} vendor tree is incomplete"
         exit 1
     fi
+    rm -rf "$DEST_VENDOR"
+    mkdir -p "$(dirname "$DEST_VENDOR")"
+    cp -a "$UPROOT/vendor" "$DEST_VENDOR"
+    echo "Copied llama.cpp vendor tree"
 fi
 
 if (( need_mtmd == 1 )); then
-    SRC="$(find "$UPROOT" -type d -path '*/tools/mtmd' | head -1 || true)"
-    if [[ -n "$SRC" && -f "$SRC/CMakeLists.txt" ]]; then
-        rm -rf "$DEST_MTMD"
-        mkdir -p "$(dirname "$DEST_MTMD")"
-        cp -a "$SRC" "$DEST_MTMD"
-        echo "Copied mtmd sources"
-    else
-        echo "::error::Could not find tools/mtmd in llama.cpp ${REF}."\n        exit 1
+    SRC="$UPROOT/tools/mtmd"
+    if [[ ! -f "$SRC/CMakeLists.txt" ]]; then
+        echo "::error::llama.cpp ${REF} does not contain tools/mtmd/CMakeLists.txt"
+        exit 1
     fi
+    rm -rf "$DEST_MTMD"
+    mkdir -p "$(dirname "$DEST_MTMD")"
+    cp -a "$SRC" "$DEST_MTMD"
+    echo "Copied llama.cpp MTMD sources"
 fi
 
-echo "Fetch complete. vendor=$([[ -d "$DEST_VENDOR" ]] && echo OK || echo MISSING) mtmd=$([[ -f "$DEST_MTMD/CMakeLists.txt" ]] && echo OK || echo MISSING)"
+python3 "$ROOT/tools/check_native_tree.py"
+echo "Fetch complete: llama.cpp ${REF} vendor + MTMD are ready"

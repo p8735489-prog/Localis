@@ -15,7 +15,6 @@ need_mtmd=0
 
 if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
       ! -f "$DEST_VENDOR/httplib.h" ||
-      ! -f "$DEST_VENDOR_ROOT/CMakeLists.txt" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json_fwd.hpp" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json.hpp" ]]; then
     need_vendor=1
@@ -44,12 +43,17 @@ test -s "$ARCHIVE"
 tar -tzf "$ARCHIVE" >/dev/null
 
 # Refuse unexpected/incomplete archives before touching the project tree.
-tar -tzf "$ARCHIVE" | grep -q "/vendor/cpp-httplib/CMakeLists.txt$"
-tar -tzf "$ARCHIVE" | grep -q "/vendor/cpp-httplib/httplib.h$"
-tar -tzf "$ARCHIVE" | grep -q "/tools/mtmd/CMakeLists.txt$"
+# Under "set -o pipefail", piping tar into grep -q is unsafe: grep may exit
+# after the first match, tar gets SIGPIPE, and the successful check becomes
+# exit code 2. Keep the archive listing in a file instead.
+ARCHIVE_LIST="$TMP/archive.list"
+tar -tzf "$ARCHIVE" > "$ARCHIVE_LIST"
+grep -q "/vendor/cpp-httplib/CMakeLists.txt$" "$ARCHIVE_LIST"
+grep -q "/vendor/cpp-httplib/httplib.h$" "$ARCHIVE_LIST"
+grep -q "/tools/mtmd/CMakeLists.txt$" "$ARCHIVE_LIST"
 
 tar -xzf "$ARCHIVE" -C "$TMP"
-UPROOT="$(find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -1)"
+UPROOT="$(find "$TMP" -mindepth 1 -maxdepth 1 -type d -print -quit)"
 test -n "$UPROOT"
 
 if (( need_vendor == 1 )); then
@@ -61,13 +65,7 @@ if (( need_vendor == 1 )); then
     rm -rf "$DEST_VENDOR"
     mkdir -p "$DEST_VENDOR_ROOT"
     cp -a "$SRC_VENDOR" "$DEST_VENDOR"
-    cat > "$DEST_VENDOR_ROOT/CMakeLists.txt" <<'EOF'
-cmake_minimum_required(VERSION 3.22.1)
-if(NOT TARGET cpp-httplib)
-    add_subdirectory(cpp-httplib)
-endif()
-EOF
-    echo "Copied llama.cpp vendor/cpp-httplib and generated vendor/CMakeLists.txt"
+    echo "Copied llama.cpp vendor/cpp-httplib"
 fi
 
 if (( need_mtmd == 1 )); then

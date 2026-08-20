@@ -41,6 +41,18 @@ for m in methods:
         errors.append(f'Missing JNI implementation: {m}')
 
 
+
+# Fetch script must be safe under "set -o pipefail"; tar/find pipelines can
+# otherwise turn successful checks into false failures via SIGPIPE.
+fetch = (root/'tools/fetch_mtmd.sh').read_text(errors='ignore')
+if 'set -euo pipefail' not in fetch:
+    errors.append('fetch_mtmd.sh must use strict shell error handling.')
+for unsafe in ('tar -tzf "$ARCHIVE" | grep -q', 'find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -1'):
+    if unsafe in fetch:
+        errors.append(f'Unsafe pipefail-sensitive pipeline in fetch_mtmd.sh: {unsafe}')
+if 'ARCHIVE_LIST="$TMP/archive.list"' not in fetch:
+    errors.append('fetch_mtmd.sh must materialize the tar listing before grep checks.')
+
 # Security / CI duplication checks — audit only; never mutate repository files.
 workflow_dir=root/'.github/workflows'
 canonical='android-release.yml'

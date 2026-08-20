@@ -82,8 +82,11 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x tools/fetch_mtmd.sh tools/check_native_tree.py
-          LLAMA_CPP_MTMD_REF=b10218 tools/fetch_mtmd.sh
+          export LLAMA_CPP_MTMD_REF=b10218
+          tools/fetch_mtmd.sh
           python3 tools/check_native_tree.py
+          grep -q 'ARCHIVE_LIST="$TMP/archive.list"' tools/fetch_mtmd.sh
+          ! grep -q 'tar -tzf "$ARCHIVE" | grep -q' tools/fetch_mtmd.sh
           test -f app/src/main/cpp/vendor/cpp-httplib/CMakeLists.txt
           test -f app/src/main/cpp/vendor/cpp-httplib/httplib.h
           test -f app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt

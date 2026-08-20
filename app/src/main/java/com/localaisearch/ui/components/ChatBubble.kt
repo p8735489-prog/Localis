@@ -2,12 +2,13 @@
 
 package com.localaisearch.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
@@ -187,13 +188,16 @@ fun ChatBubble(
             }
 
             // Momentary elastic "Copied" confirmation badge, anchored above the bubble.
-            AnimatedVisibility(
-                    visible = showCopiedBadge,
-                enter = fadeIn(SpringSpecs.fadeIn) + scaleIn(initialScale = 0.6f, animationSpec = SpringSpecs.elastic),
-                exit = fadeOut(SpringSpecs.fadeOut) + scaleOut(targetScale = 0.6f, animationSpec = SpringSpecs.snappy),
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-            ) {
+            AnimatedContent(
+                targetState = showCopiedBadge,
+                transitionSpec = {
+                    fadeIn(SpringSpecs.fadeIn) + scaleIn(initialScale = 0.6f, animationSpec = SpringSpecs.elastic) togetherWith
+                        (fadeOut(SpringSpecs.fadeOut) + scaleOut(targetScale = 0.6f, animationSpec = SpringSpecs.snappy))
+                },
+                modifier = Modifier.padding(bottom = 4.dp),
+                label = "copiedBadge"
+            ) { visible ->
+                if (!visible) return@AnimatedContent
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = colorScheme.inverseSurface,

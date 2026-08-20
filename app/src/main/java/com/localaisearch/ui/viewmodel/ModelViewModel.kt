@@ -38,7 +38,7 @@ class ModelViewModel(
     val activeModel = modelRepo.activeModel
 
     init {
-        viewModelScope.launch { _modelRepo.refreshModels() }
+        viewModelScope.launch { modelRepo.refreshModels() }
     }
 
     /**
@@ -46,7 +46,7 @@ class ModelViewModel(
      */
     fun importModel(uri: Uri) {
         viewModelScope.launch {
-            _modelRepo.refreshModels()
+            modelRepo.refreshModels()
             _importStatus.value = ImportStatus.Importing
             val result = modelRepo.importModel(uri)
             result.onSuccess {

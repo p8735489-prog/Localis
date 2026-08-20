@@ -113,7 +113,7 @@ fun ChatBubble(
         }
     }
 
-    rowScope@Row(
+    Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
@@ -187,8 +187,7 @@ fun ChatBubble(
             }
 
             // Momentary elastic "Copied" confirmation badge, anchored above the bubble.
-            with(this@rowScope) {
-                AnimatedVisibility(
+            AnimatedVisibility(
                     visible = showCopiedBadge,
                 enter = fadeIn(SpringSpecs.fadeIn) + scaleIn(initialScale = 0.6f, animationSpec = SpringSpecs.elastic),
                 exit = fadeOut(SpringSpecs.fadeOut) + scaleOut(targetScale = 0.6f, animationSpec = SpringSpecs.snappy),
@@ -217,7 +216,6 @@ fun ChatBubble(
                             color = colorScheme.inverseOnSurface
                         )
                     }
-                }
                 }
             }
         }

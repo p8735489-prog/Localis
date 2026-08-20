@@ -7,6 +7,9 @@ DEST_VENDOR="$ROOT/app/src/main/cpp/vendor/cpp-httplib"
 DEST_VENDOR_ROOT="$ROOT/app/src/main/cpp/vendor"
 DEST_MINIAUDIO="$DEST_VENDOR_ROOT/miniaudio"
 DEST_STB="$DEST_VENDOR_ROOT/stb"
+DEST_LLAMA_VENDOR="$ROOT/app/src/main/cpp/llama_src/vendor"
+DEST_LLAMA_MINIAUDIO="$DEST_LLAMA_VENDOR/miniaudio"
+DEST_LLAMA_STB="$DEST_LLAMA_VENDOR/stb"
 REF="${LLAMA_CPP_MTMD_REF:-b10218}"
 
 TMP="$(mktemp -d)"
@@ -21,7 +24,9 @@ if [[ ! -f "$DEST_VENDOR/CMakeLists.txt" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json_fwd.hpp" ||
       ! -f "$ROOT/app/src/main/cpp/vendor/nlohmann/json.hpp" ||
       ! -f "$DEST_MINIAUDIO/miniaudio.h" ||
-      ! -f "$DEST_STB/stb_image.h" ]]; then
+      ! -f "$DEST_STB/stb_image.h" ||
+      ! -f "$DEST_LLAMA_MINIAUDIO/miniaudio.h" ||
+      ! -f "$DEST_LLAMA_STB/stb_image.h" ]]; then
     need_vendor=1
 fi
 
@@ -122,7 +127,14 @@ for dep in miniaudio stb; do
     rm -rf "$DEST_DEP"
     mkdir -p "$DEST_VENDOR_ROOT"
     cp -a "$SRC_DEP" "$DEST_DEP"
-    echo "Copied llama.cpp vendor/$dep"
+    # Keep the upstream llama_src/vendor layout populated too. The upstream
+    # MTMD CMakeLists uses ../../vendor relative to tools/mtmd, which resolves
+    # to app/src/main/cpp/llama_src/vendor.
+    LLAMA_DEST="$DEST_LLAMA_VENDOR/$dep"
+    rm -rf "$LLAMA_DEST"
+    mkdir -p "$DEST_LLAMA_VENDOR"
+    cp -a "$SRC_DEP" "$LLAMA_DEST"
+    echo "Copied llama.cpp vendor/$dep to both app/cpp/vendor and llama_src/vendor"
 done
 
 if (( need_mtmd == 1 )); then

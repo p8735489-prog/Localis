@@ -74,7 +74,10 @@ class ModelCenterViewModel(
             onComplete = { model ->
                 // Add to downloaded list
                 _downloadedModels.value = _downloadedModels.value + model
-                _modelRepo.refreshModels()
+                viewModelScope.launch {
+                    _modelRepo.refreshModels()
+                    _downloadedModels.value = _modelRepo.models.value
+                }
             }
         )
         downloadStates = _downloadManager.downloadStates
@@ -286,8 +289,10 @@ class ModelCenterViewModel(
      * Refresh the list of downloaded models.
      */
     fun refreshDownloadedModels() {
-        _modelRepo.refreshModels()
-        _downloadedModels.value = _modelRepo.models.value
+        viewModelScope.launch {
+            _modelRepo.refreshModels()
+            _downloadedModels.value = _modelRepo.models.value
+        }
     }
 
     /**

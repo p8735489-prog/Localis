@@ -75,6 +75,10 @@ target_link_libraries     (mtmd PRIVATE Threads::Threads)
 target_include_directories(mtmd PUBLIC  .)
 target_include_directories(mtmd PRIVATE ../..)
 target_include_directories(mtmd PRIVATE ../../vendor)
+# App vendor mirror; fetch_mtmd.sh populates both locations for deterministic Android builds.
+target_include_directories(mtmd PRIVATE ../../../vendor)
+target_include_directories(mtmd PRIVATE ../../../vendor/stb)
+# Upstream llama.cpp layout: tools/mtmd -> ../../vendor.
 target_compile_features   (mtmd PRIVATE cxx_std_17)
 
 if (MTMD_VIDEO)

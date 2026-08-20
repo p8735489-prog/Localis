@@ -37,11 +37,16 @@ class ModelViewModel(
     val models = modelRepo.models
     val activeModel = modelRepo.activeModel
 
+    init {
+        viewModelScope.launch { _modelRepo.refreshModels() }
+    }
+
     /**
      * Import a GGUF model from a content URI.
      */
     fun importModel(uri: Uri) {
         viewModelScope.launch {
+            _modelRepo.refreshModels()
             _importStatus.value = ImportStatus.Importing
             val result = modelRepo.importModel(uri)
             result.onSuccess {

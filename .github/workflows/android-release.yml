@@ -97,6 +97,10 @@ jobs:
           python3 tools/check_native_tree.py
           test -f app/src/main/cpp/vendor/cpp-httplib/CMakeLists.txt
           test -f app/src/main/cpp/vendor/cpp-httplib/httplib.h
+          test -f app/src/main/cpp/vendor/miniaudio/miniaudio.h
+          test -f app/src/main/cpp/vendor/stb/stb_image.h
+          test -f app/src/main/cpp/llama_src/vendor/miniaudio/miniaudio.h
+          test -f app/src/main/cpp/llama_src/vendor/stb/stb_image.h
           test -f app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt
           python3 tools/normalize_mtmd_cmake.py app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt
           ! grep -Eq '^[[:space:]]*VERSION[[:space:]]+\\\$\\\{LLAMA_INSTALL_VERSION\\\}' app/src/main/cpp/llama_src/tools/mtmd/CMakeLists.txt

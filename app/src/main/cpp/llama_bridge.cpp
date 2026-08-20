@@ -9,6 +9,7 @@
 #include <cstring>
 #include <algorithm>
 #include <unordered_map>
+#include <memory>
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
@@ -43,7 +44,7 @@ struct ModelContext {
     std::mutex inferenceMutex;
 };
 
-static std::unordered_map<int64_t, ModelContext*> g_contexts;
+static std::unordered_map<int64_t, std::shared_ptr<ModelContext>> g_contexts;
 static std::mutex g_mutex;
 static int64_t g_nextHandle = 1;
 static thread_local std::string g_lastError;
@@ -171,7 +172,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
 
     std::lock_guard<std::mutex> lock(g_mutex);
     int64_t handle = g_nextHandle++;
-    ModelContext* mc = new ModelContext();
+    auto mc = std::make_shared<ModelContext>();
     mc->model = model;
     mc->ctx = ctx;
     mc->modelPath = std::string(filePath);
@@ -186,7 +187,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
 
 JNIEXPORT jboolean JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeUnloadModel(JNIEnv*, jobject, jlong handle) {
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         auto it = g_contexts.find(handle);
@@ -209,7 +210,8 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeUnloadModel(JNIEnv*, jobject, 
         if (mc->model) { llama_model_free(mc->model); mc->model = nullptr; }
         g_contexts.erase(it);
     }
-    delete mc;
+    // shared_ptr keeps the native context alive for any operation that raced
+    // with unload after taking a snapshot from g_contexts.
     LOGI("Model unloaded. Handle=%ld", handle);
     return JNI_TRUE;
 }
@@ -258,7 +260,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadVisionProjector(
     setLastError("Multimodal runtime (mtmd) was not compiled into this build");
     return JNI_FALSE;
 #else
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         auto it = g_contexts.find(handle);
@@ -334,7 +336,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
     setLastError("Multimodal runtime (mtmd) was not compiled into this build");
     return JNI_FALSE;
 #else
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         auto it = g_contexts.find(handle);
@@ -479,7 +481,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
     std::unique_lock<std::mutex> mapLock(g_mutex);
     auto it = g_contexts.find(handle);
     if (it == g_contexts.end() || !it->second) return JNI_FALSE;
-    ModelContext* mc = it->second;
+    std::shared_ptr<ModelContext> mc = it->second;
     mapLock.unlock();
 
     std::unique_lock<std::mutex> inferenceLock(mc->inferenceMutex);
@@ -606,7 +608,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
 JNIEXPORT jstring JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeFormatChat(
         JNIEnv* env, jobject, jlong handle, jobjectArray jRoles, jobjectArray jContents) {
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         auto it = g_contexts.find(handle);
@@ -675,7 +677,7 @@ JNIEXPORT jlong JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeTokenize(
         JNIEnv* env, jobject, jlong handle, jstring jText, jintArray jTokens) {
 
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     { std::lock_guard<std::mutex> lock(g_mutex); auto it = g_contexts.find(handle); if (it == g_contexts.end()) return -1; mc = it->second; }
     std::lock_guard<std::mutex> inferenceLock(mc->inferenceMutex);
     if (!mc->model) return -1;
@@ -699,7 +701,7 @@ JNIEXPORT jstring JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeDetokenize(
         JNIEnv* env, jobject, jlong handle, jintArray jTokens) {
 
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     { std::lock_guard<std::mutex> lock(g_mutex); auto it = g_contexts.find(handle); if (it == g_contexts.end()) return env->NewStringUTF(""); mc = it->second; }
     std::lock_guard<std::mutex> inferenceLock(mc->inferenceMutex);
     if (!mc->model) return env->NewStringUTF("");
@@ -724,7 +726,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeDetokenize(
 JNIEXPORT jlong JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeGetModelContextSize(
         JNIEnv*, jobject, jlong handle) {
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     { std::lock_guard<std::mutex> lock(g_mutex); auto it = g_contexts.find(handle); if (it == g_contexts.end()) return 0; mc = it->second; }
     std::lock_guard<std::mutex> inferenceLock(mc->inferenceMutex);
     return mc->ctx ? llama_n_ctx(mc->ctx) : 0;
@@ -733,7 +735,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGetModelContextSize(
 JNIEXPORT jstring JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeGetModelInfo(
         JNIEnv* env, jobject, jlong handle) {
-    ModelContext* mc = nullptr;
+    std::shared_ptr<ModelContext> mc;
     { std::lock_guard<std::mutex> lock(g_mutex); auto it = g_contexts.find(handle); if (it == g_contexts.end()) return env->NewStringUTF("Invalid handle"); mc = it->second; }
     std::lock_guard<std::mutex> inferenceLock(mc->inferenceMutex);
     std::string info = "Path: " + mc->modelPath;

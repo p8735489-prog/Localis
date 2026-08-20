@@ -43,10 +43,8 @@ class ModelRepository(
     private val _activeModel = MutableStateFlow<GGUFModel?>(null)
     val activeModel: StateFlow<GGUFModel?> = _activeModel.asStateFlow()
     private val modelOperationMutex = Mutex()
+    private var activeConfig: InferenceConfig? = null
 
-    init {
-        refreshModels()
-    }
 
     /**
      * Validate that a file is a valid GGUF file by checking the magic number.
@@ -71,7 +69,7 @@ class ModelRepository(
     /**
      * Scan the models directory and update the model list.
      */
-    fun refreshModels() {
+    suspend fun refreshModels() = withContext(Dispatchers.IO) {
         val modelFiles = modelsDir.listFiles { file ->
             file.isFile && file.extension.equals("gguf", ignoreCase = true)
         } ?: emptyArray()
@@ -86,6 +84,7 @@ class ModelRepository(
             )
         }.sortedBy { it.name }
 
+        // Publish only after the full directory scan has completed off the main thread.
         _models.value = models
     }
 
@@ -153,6 +152,7 @@ class ModelRepository(
             if (_activeModel.value?.id == model.id) {
                 engine.unloadModel()
                 _activeModel.value = null
+                activeConfig = null
             }
 
             val file = File(model.filePath)
@@ -178,9 +178,27 @@ class ModelRepository(
                 if (!file.isFile || !validateGGUFFile(file)) {
                     return@withLock Result.failure(IllegalArgumentException("Invalid or missing GGUF file: ${model.filePath}"))
                 }
+
+                val previousModel = _activeModel.value
+                val previousConfig = activeConfig
+                // GGUFEngine replaces an already-loaded native model before loading the
+                // requested one. Preserve a rollback target so a failed replacement does
+                // not leave the UI claiming that a dead model is still active.
                 val result = engine.loadModel(model.filePath, config)
-                result.onSuccess {
+                if (result.isSuccess) {
                     _activeModel.value = model.copy(isLoaded = true)
+                    activeConfig = config
+                    return@withLock result
+                }
+
+                _activeModel.value = null
+                activeConfig = null
+                if (previousModel != null && previousConfig != null) {
+                    val rollback = engine.loadModel(previousModel.filePath, previousConfig)
+                    if (rollback.isSuccess) {
+                        _activeModel.value = previousModel.copy(isLoaded = true)
+                        activeConfig = previousConfig
+                    }
                 }
                 result
             }
@@ -194,6 +212,7 @@ class ModelRepository(
             try {
                 engine.unloadModel()
                 _activeModel.value = null
+                activeConfig = null
                 Result.success(Unit)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -212,11 +231,25 @@ class ModelRepository(
                     if (!file.isFile || !validateGGUFFile(file)) {
                         return@withLock Result.failure(IllegalArgumentException("Invalid or missing GGUF file: ${model.filePath}"))
                     }
+                    val previousModel = _activeModel.value
+                    val previousConfig = activeConfig
                     engine.unloadModel()
                     _activeModel.value = null
+                    activeConfig = null
                     val result = engine.loadModel(model.filePath, config)
-                    result.onSuccess {
+                    if (result.isSuccess) {
                         _activeModel.value = model.copy(isLoaded = true)
+                        activeConfig = config
+                        return@withLock result
+                    }
+                    // Failed model switches automatically restore the previous model when
+                    // its file and configuration are still available.
+                    if (previousModel != null && previousConfig != null && File(previousModel.filePath).isFile) {
+                        val rollback = engine.loadModel(previousModel.filePath, previousConfig)
+                        if (rollback.isSuccess) {
+                            _activeModel.value = previousModel.copy(isLoaded = true)
+                            activeConfig = previousConfig
+                        }
                     }
                     result
                 } catch (e: Exception) {

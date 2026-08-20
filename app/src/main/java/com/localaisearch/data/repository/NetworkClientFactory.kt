@@ -1,6 +1,7 @@
 package com.localaisearch.data.repository
 
 import okhttp3.Authenticator
+import okhttp3.ConnectionPool
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -51,6 +52,10 @@ object NetworkClientFactory {
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        // Do not keep idle direct connections alive across a Tor/proxy switch.
+        // Every new request must re-run the ProxySelector so enabling Tor cannot
+        // silently reuse an already-open direct connection.
+        .connectionPool(ConnectionPool(0, 1, TimeUnit.MILLISECONDS))
         .proxySelector(dynamicProxySelector)
         .authenticator(object : Authenticator {
             override fun authenticate(route: Route?, response: Response): okhttp3.Request? {

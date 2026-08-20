@@ -115,8 +115,10 @@ object TorManager {
                 val ready = awaitCircuitReady(context, readyReceiver, generation, 45_000L)
                 if (!ready) {
                     if (lifecycleGeneration.get() == generation) {
+                        restorePreviousProxyIfOwned()
                         status = Status.ERROR
-                        lastError = "Tor did not establish a circuit within 45 seconds. Check the network or bridge configuration."
+                        lastError = lastError ?: "Tor did not establish a circuit within 45 seconds. Check the network or bridge configuration."
+                        runCatching { context.startService(torIntent(context, ACTION_STOP)) }
                     }
                     return@withContext Result.failure(IllegalStateException(lastError ?: "Tor start cancelled"))
                 }
@@ -323,7 +325,11 @@ object TorManager {
             customConfig.lines()
                 .map { it.trim() }
                 .filter { it.isNotBlank() && !it.startsWith("#") }
-                .filter { line -> line.trimStart().split(Regex("\\s+"), limit = 2).first().lowercase() !in blocked }
+                .filter { line ->
+                    val directive = line.split(Regex("\\s+"), limit = 2).first().lowercase()
+                    directive !in blocked &&
+                        (country.length != 2 || directive !in setOf("exitnodes", "strictnodes"))
+                }
                 .take(128)
                 .forEach { append(it).append('\n') }
         }

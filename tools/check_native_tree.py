@@ -16,6 +16,8 @@ required_vendor = [
     vendor / "nlohmann/json_fwd.hpp",
     vendor / "miniaudio/miniaudio.h",
     vendor / "stb/stb_image.h",
+    cpp / "llama_src/vendor/miniaudio/miniaudio.h",
+    cpp / "llama_src/vendor/stb/stb_image.h",
 ]
 required_mtmd = [
     mtmd / "CMakeLists.txt",

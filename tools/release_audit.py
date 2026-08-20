@@ -54,9 +54,17 @@ for m in methods:
 workflow_dir=root/'.github/workflows'
 canonical='android-release.yml'
 remaining=list(workflow_dir.glob('*.yml'))
-extra=[w.name for w in remaining if w.name != canonical]
+extra=[]
+for w in remaining:
+    if w.name == canonical:
+        continue
+    # The legacy workflow is intentionally retained as a no-op migration shim
+    # so uploading over an existing repository disables the old auto-build.
+    if w.name == 'build-apk.yml' and 'workflow_dispatch:' in w.read_text(errors='ignore') and 'push:' not in w.read_text(errors='ignore'):
+        continue
+    extra.append(w.name)
 if extra:
-    errors.append(f'Stale/duplicate workflows present: {extra}; remove them explicitly before release.')
+    errors.append(f'Stale/duplicate workflows present: {extra}; replace/remove them before release.')
 
 # Native CMake helper must be loaded before llama-common.
 cmake=root/'app/src/main/cpp/CMakeLists.txt'

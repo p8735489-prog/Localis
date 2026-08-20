@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -69,7 +69,7 @@ fun PrivacyBadge(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Lock,
+                        imageVector = Icons.Rounded.Lock,
                         contentDescription = stringResource(R.string.privacy_mode_active),
                         tint = colorScheme.primary,
                         modifier = Modifier.size(14.dp)
@@ -95,7 +95,7 @@ fun PrivacyBadge(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Lock,
+                        imageVector = Icons.Rounded.Lock,
                         contentDescription = stringResource(R.string.privacy_mode_off),
                         tint = colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp)

@@ -248,9 +248,20 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
     ): Flow<String> = flow {
         val prompt = withContext(Dispatchers.IO) {
             runCatching {
+                // Snapshot the handle under the same lock every other native
+                // call uses. Without this, chatStream was the one code path
+                // that read modelHandle unsynchronized and never checked
+                // isLoaded first — a concurrent unloadModel() could hand
+                // nativeFormatChat a stale/zero handle and crash the native
+                // side instead of failing as a Kotlin exception like every
+                // other entry point in this class does.
+                val handle = synchronized(lock) { modelHandle }
+                if (handle <= 0L) {
+                    throw IllegalStateException("No model loaded")
+                }
                 val roles = messages.map { it.first }.toTypedArray()
                 val contents = messages.map { it.second }.toTypedArray()
-                val formatted = LlamaBridge.nativeFormatChat(modelHandle, roles, contents)
+                val formatted = LlamaBridge.nativeFormatChat(handle, roles, contents)
                 if (formatted.isBlank()) {
                     val reason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
                     throw IllegalStateException(

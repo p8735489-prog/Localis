@@ -383,6 +383,8 @@
     <string name="settings_tor_proxy">Tor とプロキシ</string>
     <string name="settings_tor_proxy_desc">このアプリだけに適用する Tor ルートとプロキシ設定</string>
     <string name="settings_tor_connecting_desc">Tor ネットワークに接続中です。まだ接続は完了していません。</string>
+    <string name="settings_tor_off">Tor はオフです</string>
+    <string name="settings_tor_off_desc">上のスイッチをオンにすると、このアプリの通信が Tor 経由になります。</string>
     <string name="settings_tor_scope_detail">Tor はこのアプリだけをプロキシします。Android 全体の VPN は作成しません。Web 検索とモデルセンターの通信はこの Tor ルートを使用します。</string>
     <string name="settings_tor_connection_method">接続方法</string>
     <string name="settings_proxy_disabled_by_tor">Tor 接続中は手動プロキシを無効にします。</string>

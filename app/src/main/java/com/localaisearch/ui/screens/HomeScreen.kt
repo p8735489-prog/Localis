@@ -34,12 +34,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Message
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Message
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Science
@@ -201,7 +202,7 @@ fun HomeScreen(
             onDismissRequest = { viewModel.dismissPrivacySessionNotification() },
             icon = {
                             Icon(
-                                imageVector = Icons.Filled.Lock,
+                                imageVector = Icons.Rounded.Lock,
                                 contentDescription = null,
                                 tint = colorScheme.primary
                             )
@@ -251,7 +252,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 NavigationDrawerItem(
-                    icon = { Icon(Icons.Filled.Message, contentDescription = null) },
+                    icon = { Icon(Icons.Outlined.Chat, contentDescription = null) },
                     label = { Text(stringResource(R.string.new_chat)) },
                     selected = false,
                     onClick = {
@@ -364,7 +365,7 @@ fun HomeScreen(
                             }
                         }) {
                             Icon(
-                                imageVector = Icons.Filled.Menu,
+                                imageVector = Icons.Rounded.Menu,
                                 contentDescription = stringResource(R.string.open_menu)
                             )
                         }
@@ -374,9 +375,9 @@ fun HomeScreen(
                         IconButton(onClick = { viewModel.togglePrivacyMode() }) {
                             Icon(
                                 imageVector = if (isPrivacyMode)
-                                    androidx.compose.material.icons.Icons.Filled.Lock
+                                    androidx.compose.material.icons.Icons.Rounded.Lock
                                 else
-                                    Icons.Filled.Lock,
+                                    Icons.Rounded.Lock,
                                 contentDescription = if (isPrivacyMode) stringResource(R.string.privacy_on) else stringResource(R.string.privacy_off),
                                 tint = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
                             )
@@ -385,7 +386,7 @@ fun HomeScreen(
                         Box {
                             IconButton(onClick = { showMenu = !showMenu }) {
                                 Icon(
-                                    imageVector = Icons.Filled.MoreVert,
+                                    imageVector = Icons.Rounded.MoreVert,
                                     contentDescription = stringResource(R.string.more_options)
                                 )
                             }
@@ -407,7 +408,7 @@ fun HomeScreen(
                                     onClick = { showMenu = false; viewModel.toggleInternetSearch() }
                                 )
                                 DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Filled.Lock, null) },
+                                    leadingIcon = { Icon(Icons.Rounded.Lock, null) },
                                     text = { Text(stringResource(if (isPrivacyMode) R.string.disable_private_mode else R.string.enable_private_mode)) },
                                     onClick = { showMenu = false; viewModel.togglePrivacyMode() }
                                 )
@@ -554,12 +555,11 @@ private fun EmptyStateScreen(
                 modelName = modelName,
                 onSelectModel = onSelectModel
             )
-            if (!modelLoaded && isProcessing) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(34.dp),
-                    color = colorScheme.primary
-                )
-            }
+            // No separate CircularProgressIndicator overlay here: it used to
+            // render a flat Material "spinner" disk on top of the orb's own
+            // glow/arc, which read as two unrelated loading animations
+            // layered on each other. The orb's blob + sweep arc already
+            // communicate the loading state on their own, continuously.
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -762,7 +762,7 @@ private fun ChatScreen(
                 if (!isProcessing && messages.isNotEmpty()) {
                     IconButton(onClick = onNewConversation) {
                         Icon(
-                            imageVector = Icons.Filled.Message,
+                            imageVector = Icons.Rounded.Message,
                             contentDescription = stringResource(R.string.new_conversation),
                             tint = colorScheme.onSurfaceVariant
                         )
@@ -794,7 +794,7 @@ private fun ChatScreen(
                 containerColor = colorScheme.surfaceContainerHigh,
                 contentColor = colorScheme.onSurface
             ) {
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = stringResource(R.string.chat_scroll_to_bottom))
+                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = stringResource(R.string.chat_scroll_to_bottom))
             }
         }
     }

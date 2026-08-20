@@ -22,10 +22,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -79,7 +79,7 @@ fun SettingsAIScreen(
                 title = { Text(stringResource(R.string.settings_ai_models)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -87,7 +87,7 @@ fun SettingsAIScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            contentPadding = SettingsContentPadding,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item { LoadModelCard(loadStatus, onNavigateToModelManager) }
@@ -104,7 +104,7 @@ fun SettingsAIScreen(
                             Text(stringResource(R.string.settings_vision_models), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(stringResource(R.string.settings_vision_models_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
                     }
                 }
             }

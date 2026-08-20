@@ -383,6 +383,8 @@
     <string name="settings_tor_proxy">Tor и прокси</string>
     <string name="settings_tor_proxy_desc">Настройки Tor-маршрута и прокси только для этого приложения</string>
     <string name="settings_tor_connecting_desc">Подключение к сети Tor. Соединение ещё не установлено.</string>
+    <string name="settings_tor_off">Tor выключен</string>
+    <string name="settings_tor_off_desc">Включите переключатель выше, чтобы маршрутизировать сетевые запросы этого приложения через Tor.</string>
     <string name="settings_tor_scope_detail">Tor проксирует только это приложение. Системный VPN Android не создаётся. Веб-поиск и центр моделей используют Tor-маршрут приложения.</string>
     <string name="settings_tor_connection_method">Способ подключения</string>
     <string name="settings_proxy_disabled_by_tor">При подключённом Tor ручной прокси отключён.</string>

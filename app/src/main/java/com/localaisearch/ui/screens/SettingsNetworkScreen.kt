@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,7 +61,7 @@ fun SettingsNetworkScreen(
                 title = { Text(stringResource(R.string.network_and_search)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -69,7 +69,7 @@ fun SettingsNetworkScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            contentPadding = SettingsContentPadding,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { SettingsSectionTitle(stringResource(R.string.settings_model_center)) }
@@ -229,7 +229,7 @@ fun SettingsNetworkScreen(
                             onCheckedChange = { if (torStatus == TorManager.Status.OFF) viewModel.setTorEnabled(true) }
                         )
                         TextButton(onClick = { uriHandler.openUri("https://www.torproject.org/") }) {
-                            Icon(Icons.Filled.Public, contentDescription = null)
+                            Icon(Icons.Rounded.Public, contentDescription = null)
                             androidx.compose.foundation.layout.Spacer(Modifier.padding(horizontal = 3.dp))
                             Text(stringResource(R.string.settings_tor_official))
                         }

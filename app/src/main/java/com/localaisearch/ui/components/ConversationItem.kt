@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -129,7 +129,7 @@ fun ConversationItem(
                 ) {
                     if (conversation.pinned) {
                         Icon(
-                            imageVector = Icons.Filled.Star,
+                            imageVector = Icons.Rounded.Star,
                             contentDescription = stringResource(R.string.pinned),
                             tint = colorScheme.primary,
                             modifier = Modifier.size(16.dp)
@@ -177,7 +177,7 @@ fun ConversationItem(
                 text = { Text(stringResource(R.string.rename)) },
                 leadingIcon = {
                     Icon(
-                        Icons.Filled.Edit,
+                        Icons.Rounded.Edit,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
@@ -193,7 +193,7 @@ fun ConversationItem(
                 },
                 leadingIcon = {
                     Icon(
-                        if (conversation.pinned) Icons.Outlined.Star else Icons.Filled.Star,
+                        if (conversation.pinned) Icons.Outlined.Star else Icons.Rounded.Star,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
@@ -207,7 +207,7 @@ fun ConversationItem(
                 text = { Text(stringResource(R.string.delete)) },
                 leadingIcon = {
                     Icon(
-                        Icons.Filled.Delete,
+                        Icons.Rounded.Delete,
                         contentDescription = null,
                         tint = colorScheme.error,
                         modifier = Modifier.size(20.dp)
@@ -222,7 +222,7 @@ fun ConversationItem(
                 text = { Text(stringResource(R.string.export)) },
                 leadingIcon = {
                 Icon(
-                    Icons.Filled.Share,
+                    Icons.Rounded.Share,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp)
                 )

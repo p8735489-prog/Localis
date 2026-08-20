@@ -11,11 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +45,7 @@ fun SettingsAboutScreen(onNavigateBack: () -> Unit) {
                 title = { Text(stringResource(R.string.about)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -53,7 +53,7 @@ fun SettingsAboutScreen(onNavigateBack: () -> Unit) {
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 18.dp),
+            contentPadding = SettingsContentPadding,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
@@ -65,24 +65,24 @@ fun SettingsAboutScreen(onNavigateBack: () -> Unit) {
             }
             item { AboutSectionTitle(stringResource(R.string.about_info)) }
             item {
-                AboutCard(Icons.Filled.Person, stringResource(R.string.about_author), stringResource(R.string.about_author_desc)) {
+                AboutCard(Icons.Rounded.Person, stringResource(R.string.about_author), stringResource(R.string.about_author_desc)) {
                     uriHandler.openUri("https://github.com/p8735489-prog")
                 }
             }
             item {
-                AboutCard(Icons.Filled.Info, stringResource(R.string.about_version), "v${BuildConfig.VERSION_NAME}")
+                AboutCard(Icons.Rounded.Info, stringResource(R.string.about_version), "v${BuildConfig.VERSION_NAME}")
             }
             item { AboutSectionTitle(stringResource(R.string.about_open_source)) }
             item {
-                AboutCard(Icons.Filled.Code, stringResource(R.string.about_source), "github.com/p8735489-prog") {
+                AboutCard(Icons.Rounded.Code, stringResource(R.string.about_source), "github.com/p8735489-prog") {
                     uriHandler.openUri("https://github.com/p8735489-prog")
                 }
             }
             item {
-                AboutCard(Icons.Filled.Code, stringResource(R.string.about_technology), stringResource(R.string.about_technology_desc))
+                AboutCard(Icons.Rounded.Code, stringResource(R.string.about_technology), stringResource(R.string.about_technology_desc))
             }
             item {
-                AboutCard(Icons.Filled.Public, stringResource(R.string.about_tor), stringResource(R.string.about_tor_desc)) {
+                AboutCard(Icons.Rounded.Public, stringResource(R.string.about_tor), stringResource(R.string.about_tor_desc)) {
                     uriHandler.openUri("https://www.torproject.org/")
                 }
             }

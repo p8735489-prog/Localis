@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -157,7 +157,7 @@ fun SourceCard(
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
-                        imageVector = Icons.Filled.OpenInNew,
+                        imageVector = Icons.Rounded.OpenInNew,
                         contentDescription = stringResource(R.string.open_source),
                         tint = colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(14.dp)

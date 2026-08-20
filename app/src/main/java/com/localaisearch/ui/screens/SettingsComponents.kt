@@ -1,6 +1,7 @@
 package com.localaisearch.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+
+/**
+ * Single source of truth for the content padding used by every settings
+ * sub-page's LazyColumn. Before this, each Settings*Screen hand-rolled its
+ * own PaddingValues (16dp vs 20dp horizontal, 12/16/18dp vertical, one with
+ * a bespoke top/bottom formula) — small, easy-to-miss differences that make
+ * the margins visibly shift as you navigate from one settings page to the
+ * next. All Settings*Screen files should use this instead of inlining their
+ * own PaddingValues.
+ */
+val SettingsContentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
 
 @Composable
 fun SettingsSectionTitle(title: String) {

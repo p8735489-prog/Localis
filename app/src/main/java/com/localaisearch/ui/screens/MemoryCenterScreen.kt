@@ -22,14 +22,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Message
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Message
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -120,7 +120,7 @@ fun MemoryCenterScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = stringResource(R.string.back)
                         )
                     }
@@ -132,7 +132,7 @@ fun MemoryCenterScreen(
                             enabled = !isLoading
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Delete,
+                                imageVector = Icons.Rounded.Delete,
                                 contentDescription = stringResource(R.string.clear_all_memories_desc),
                                 tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.error
                             )
@@ -155,7 +155,7 @@ fun MemoryCenterScreen(
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_memory_desc))
+                    Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.add_memory_desc))
                 }
             }
         }
@@ -175,7 +175,7 @@ fun MemoryCenterScreen(
                 placeholder = { Text(stringResource(R.string.search_memories)) },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.Search,
+                        imageVector = Icons.Rounded.Search,
                         contentDescription = null,
                         tint = colorScheme.onSurfaceVariant
                     )
@@ -352,7 +352,7 @@ fun MemoryCenterScreen(
             onDismissRequest = { showClearAllDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.Message,
+                    imageVector = Icons.Rounded.Message,
                     contentDescription = null,
                     tint = colorScheme.error
                 )
@@ -437,7 +437,7 @@ private fun MemoryItemCard(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Edit,
+                            imageVector = Icons.Rounded.Edit,
                             contentDescription = stringResource(R.string.edit_memory),
                             tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.primary,
                             modifier = Modifier.size(18.dp)
@@ -449,7 +449,7 @@ private fun MemoryItemCard(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Delete,
+                            imageVector = Icons.Rounded.Delete,
                             contentDescription = stringResource(R.string.delete_memory),
                             tint = if (isLoading) colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else colorScheme.error,
                             modifier = Modifier.size(18.dp)
@@ -498,7 +498,7 @@ private fun EmptyMemoryState() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.Save,
+                imageVector = Icons.Rounded.Save,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = colorScheme.onSurfaceVariant.copy(alpha = 0.4f)

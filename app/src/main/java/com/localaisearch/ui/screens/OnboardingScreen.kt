@@ -7,12 +7,12 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,7 +95,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                         onClick = { page-- },
                         modifier = Modifier.height(52.dp),
                         shape = RoundedCornerShape(20.dp)
-                    ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+                    ) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, null) }
                 }
                 Button(
                     onClick = {
@@ -109,7 +109,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                 ) {
                     Text(if (page == 2) stringResource(R.string.onboarding_enter) else stringResource(R.string.onboarding_next))
                     Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Filled.ArrowForward, null)
+                    Icon(Icons.Rounded.ArrowForward, null)
                 }
             }
         }
@@ -123,7 +123,7 @@ private fun LanguagePage(
     onSelect: (String) -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Filled.Language, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
+        Icon(Icons.Rounded.Language, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
         Spacer(Modifier.height(18.dp))
         Text(stringResource(R.string.onboarding_language), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
@@ -155,12 +155,12 @@ private fun InfoPage(onSource: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.onboarding_about_desc), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(20.dp))
-        InfoCard(Icons.Filled.Lock, stringResource(R.string.onboarding_security_title), stringResource(R.string.onboarding_security_desc))
+        InfoCard(Icons.Rounded.Lock, stringResource(R.string.onboarding_security_title), stringResource(R.string.onboarding_security_desc))
         Spacer(Modifier.height(10.dp))
-        InfoCard(Icons.Filled.Memory, stringResource(R.string.onboarding_memory_title), stringResource(R.string.onboarding_memory_desc))
+        InfoCard(Icons.Rounded.Memory, stringResource(R.string.onboarding_memory_title), stringResource(R.string.onboarding_memory_desc))
         Spacer(Modifier.height(14.dp))
         OutlinedButton(onClick = onSource, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(20.dp)) {
-            Icon(Icons.Filled.Code, null)
+            Icon(Icons.Rounded.Code, null)
             Spacer(Modifier.width(10.dp))
             Text(stringResource(R.string.onboarding_source))
         }

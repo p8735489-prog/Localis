@@ -444,6 +444,8 @@
     <string name="settings_tor_proxy">Tor 與代理</string>
     <string name="settings_tor_proxy_desc">僅本應用程式的 Tor 路由與代理設定</string>
     <string name="settings_tor_connecting_desc">正在連線 Tor 網路，目前尚未連線成功。</string>
+    <string name="settings_tor_off">Tor 已關閉</string>
+    <string name="settings_tor_off_desc">開啟上方開關，即可讓本應用程式的網路請求透過 Tor 路由。</string>
     <string name="settings_tor_scope_detail">Tor 只代理本應用程式，不會建立 Android 全域 VPN。網路搜尋與模型中心要求會使用本應用程式的 Tor 路由。</string>
     <string name="settings_tor_connection_method">連線方式</string>
     <string name="settings_proxy_disabled_by_tor">Tor 連線後，手動代理會暫時停用。</string>

@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,29 +40,29 @@ fun SettingsHubScreen(
 
     val groups = listOf(
         SettingsGroup(stringResource(R.string.settings_ai), listOf(
-            SettingsCategory(Icons.Filled.AutoAwesome, stringResource(R.string.settings_ai_models), stringResource(R.string.settings_ai_models_desc), onNavigateToAI, "ai model models 模型 llm"),
-            SettingsCategory(Icons.Filled.Chat, stringResource(R.string.settings_chat), stringResource(R.string.settings_chat_desc), onNavigateToChat, "chat 聊天 conversation"),
-            SettingsCategory(Icons.Filled.Memory, stringResource(R.string.settings_memory), stringResource(R.string.settings_memory_desc), onNavigateToDataSecurity, "memory 记忆 context") ,
-            SettingsCategory(Icons.Filled.Visibility, stringResource(R.string.settings_vision_models), stringResource(R.string.settings_vision_models_desc), onNavigateToAI, "vision 图片 image 视觉") ,
-            SettingsCategory(Icons.Filled.Speed, stringResource(R.string.settings_performance), stringResource(R.string.settings_performance_desc), onNavigateToPerformance, "performance 性能 cpu gpu npu")
+            SettingsCategory(Icons.Rounded.AutoAwesome, stringResource(R.string.settings_ai_models), stringResource(R.string.settings_ai_models_desc), onNavigateToAI, "ai model models 模型 llm"),
+            SettingsCategory(Icons.Rounded.Chat, stringResource(R.string.settings_chat), stringResource(R.string.settings_chat_desc), onNavigateToChat, "chat 聊天 conversation"),
+            SettingsCategory(Icons.Rounded.Memory, stringResource(R.string.settings_memory), stringResource(R.string.settings_memory_desc), onNavigateToDataSecurity, "memory 记忆 context") ,
+            SettingsCategory(Icons.Rounded.Visibility, stringResource(R.string.settings_vision_models), stringResource(R.string.settings_vision_models_desc), onNavigateToAI, "vision 图片 image 视觉") ,
+            SettingsCategory(Icons.Rounded.Speed, stringResource(R.string.settings_performance), stringResource(R.string.settings_performance_desc), onNavigateToPerformance, "performance 性能 cpu gpu npu")
         )),
         SettingsGroup(stringResource(R.string.settings_network), listOf(
-            SettingsCategory(Icons.Filled.Cloud, stringResource(R.string.settings_network_search), stringResource(R.string.settings_network_search_desc), onNavigateToNetwork, "network 网络 search 搜索 internet"),
-            SettingsCategory(Icons.Filled.Security, stringResource(R.string.settings_privacy_security), stringResource(R.string.settings_privacy_security_desc), onNavigateToPrivacy, "privacy security data protection") ,
-            SettingsCategory(Icons.Filled.VpnKey, stringResource(R.string.settings_tor_proxy), stringResource(R.string.settings_tor_proxy_desc), onNavigateToTorProxy, "tor proxy bridge onion routing")
+            SettingsCategory(Icons.Rounded.Cloud, stringResource(R.string.settings_network_search), stringResource(R.string.settings_network_search_desc), onNavigateToNetwork, "network 网络 search 搜索 internet"),
+            SettingsCategory(Icons.Rounded.Security, stringResource(R.string.settings_privacy_security), stringResource(R.string.settings_privacy_security_desc), onNavigateToPrivacy, "privacy security data protection") ,
+            SettingsCategory(Icons.Rounded.VpnKey, stringResource(R.string.settings_tor_proxy), stringResource(R.string.settings_tor_proxy_desc), onNavigateToTorProxy, "tor proxy bridge onion routing")
         )),
         SettingsGroup(stringResource(R.string.settings_appearance_group), listOf(
-            SettingsCategory(Icons.Filled.Palette, stringResource(R.string.settings_appearance), stringResource(R.string.settings_appearance_desc), onNavigateToAppearance, "appearance 外观 theme 主题 color 颜色 monet font")
+            SettingsCategory(Icons.Rounded.Palette, stringResource(R.string.settings_appearance), stringResource(R.string.settings_appearance_desc), onNavigateToAppearance, "appearance 外观 theme 主题 color 颜色 monet font")
         )),
         SettingsGroup(stringResource(R.string.settings_data), listOf(
-            SettingsCategory(Icons.Filled.Folder, stringResource(R.string.settings_data), stringResource(R.string.settings_data_desc), onNavigateToData, "data 数据 storage 存储 history 历史"),
-            SettingsCategory(Icons.Filled.Lock, stringResource(R.string.settings_data_security), stringResource(R.string.settings_data_security_desc), onNavigateToDataSecurity, "privacy 安全 memory 记忆")
+            SettingsCategory(Icons.Rounded.Folder, stringResource(R.string.settings_data), stringResource(R.string.settings_data_desc), onNavigateToData, "data 数据 storage 存储 history 历史"),
+            SettingsCategory(Icons.Rounded.Lock, stringResource(R.string.settings_data_security), stringResource(R.string.settings_data_security_desc), onNavigateToDataSecurity, "privacy 安全 memory 记忆")
         )),
         SettingsGroup(stringResource(R.string.settings_general), listOf(
-            SettingsCategory(Icons.Filled.Language, stringResource(R.string.settings_language), currentLanguageDisplay, onNavigateToLanguage, "language 语言 idioma español english 日本語 한국어")
+            SettingsCategory(Icons.Rounded.Language, stringResource(R.string.settings_language), currentLanguageDisplay, onNavigateToLanguage, "language 语言 idioma español english 日本語 한국어")
         )),
         SettingsGroup(stringResource(R.string.settings_about), listOf(
-            SettingsCategory(Icons.Filled.Info, stringResource(R.string.settings_about), stringResource(R.string.settings_about_desc), onNavigateToAbout, "about 关于 version 版本 open source 开源")
+            SettingsCategory(Icons.Rounded.Info, stringResource(R.string.settings_about), stringResource(R.string.settings_about_desc), onNavigateToAbout, "about 关于 version 版本 open source 开源")
         ))
     )
 
@@ -85,7 +85,7 @@ fun SettingsHubScreen(
                 title = { Text(stringResource(R.string.settings), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back))
                     }
                 }
             )
@@ -102,7 +102,7 @@ fun SettingsHubScreen(
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(stringResource(R.string.settings_search)) },
-                    leadingIcon = { Icon(Icons.Filled.Search, null) },
+                    leadingIcon = { Icon(Icons.Rounded.Search, null) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.extraLarge,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -173,7 +173,7 @@ private fun SettingsCategoryRow(category: SettingsCategory) {
         },
         trailingContent = {
             Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

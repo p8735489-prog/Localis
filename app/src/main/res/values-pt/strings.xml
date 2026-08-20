@@ -438,6 +438,8 @@
     <string name="settings_tor_proxy">Tor e proxy</string>
     <string name="settings_tor_proxy_desc">Roteamento Tor e configurações de proxy somente para este app</string>
     <string name="settings_tor_connecting_desc">Conectando à rede Tor. A conexão ainda não foi estabelecida.</string>
+    <string name="settings_tor_off">O Tor está desativado</string>
+    <string name="settings_tor_off_desc">Ative o interruptor acima para rotear as solicitações de rede deste app pela rede Tor.</string>
     <string name="settings_tor_scope_detail">O Tor faz proxy apenas deste app. Ele não cria uma VPN global do Android. A pesquisa na Web e o centro de modelos usam a rota Tor do app.</string>
     <string name="settings_tor_connection_method">Método de conexão</string>
     <string name="settings_proxy_disabled_by_tor">O proxy manual fica desativado enquanto o Tor está conectado.</string>

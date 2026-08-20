@@ -16,8 +16,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -75,7 +75,7 @@ fun SearchInputBar(
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Add,
+                    imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(R.string.add),
                     tint = colorScheme.onSurfaceVariant.copy(alpha = if (enabled && imageInputAvailable) 0.85f else 0.32f),
                     modifier = Modifier.size(20.dp)
@@ -117,7 +117,7 @@ fun SearchInputBar(
                         ) {
                             IconButton(onClick = { AppHaptics.tap(hapticView); onValueChange("") }, modifier = Modifier.size(32.dp)) {
                                 Icon(
-                                    imageVector = Icons.Filled.Close,
+                                    imageVector = Icons.Rounded.Close,
                                     contentDescription = stringResource(R.string.clear),
                                     tint = colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                                     modifier = Modifier.size(18.dp)

@@ -8,11 +8,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Colorize
-import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Colorize
+import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -37,18 +37,18 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
     Scaffold(topBar = {
         TopAppBar(
             title = { Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleLarge) },
-            navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }
+            navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } }
         )
     }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+            contentPadding = SettingsContentPadding,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item { SettingsSectionTitle(stringResource(R.string.appearance_theme)) }
             item {
                 SettingsChoiceCard(
-                    icon = Icons.Filled.DarkMode,
+                    icon = Icons.Rounded.DarkMode,
                     title = stringResource(R.string.appearance_dark_mode),
                     value = when(darkMode) {
                         "light" -> stringResource(R.string.appearance_light)
@@ -65,7 +65,7 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
             }
             item {
                 SettingsSwitchCard(
-                    icon = Icons.Filled.Colorize,
+                    icon = Icons.Rounded.Colorize,
                     title = stringResource(R.string.appearance_monet),
                     subtitle = stringResource(R.string.appearance_monet_desc),
                     checked = dynamicColor,
@@ -74,7 +74,7 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
             }
             item {
                 SettingsChoiceCard(
-                    icon = Icons.Filled.Palette,
+                    icon = Icons.Rounded.Palette,
                     title = stringResource(R.string.appearance_font_family),
                     value = when (fontMode) {
                         "google_sans" -> stringResource(R.string.appearance_font_google)
@@ -105,7 +105,7 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
             item { SettingsSectionTitle(stringResource(R.string.appearance_ai_core)) }
             item {
                 SettingsChoiceCard(
-                    icon = Icons.Filled.Animation,
+                    icon = Icons.Rounded.Animation,
                     title = stringResource(R.string.appearance_animation_level),
                     value = when(animationLevel) {
                         "off" -> stringResource(R.string.appearance_animation_off)

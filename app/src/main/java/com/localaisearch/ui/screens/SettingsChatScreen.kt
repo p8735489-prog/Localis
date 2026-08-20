@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,9 +31,9 @@ fun SettingsChatScreen(onNavigateBack: () -> Unit, viewModel: SettingsViewModel 
     val enterSend by viewModel.chatEnterSend.collectAsState(true)
     val autoCopy by viewModel.chatAutoCopy.collectAsState(false)
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_chat)) }, navigationIcon = {
-        IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
+        IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
     }) }) { padding ->
-        LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        LazyColumn(Modifier.padding(padding), contentPadding = SettingsContentPadding, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             item { SettingsSectionTitle(stringResource(R.string.settings_message_display)) }
             item { SwitchRow(stringResource(R.string.settings_auto_scroll), autoScroll) { viewModel.updateChatAutoScroll(it) } }
             item { SwitchRow(stringResource(R.string.settings_markdown), markdown) { viewModel.updateChatMarkdown(it) } }

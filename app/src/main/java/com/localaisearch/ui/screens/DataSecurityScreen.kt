@@ -16,13 +16,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,7 +94,7 @@ fun DataSecurityScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = stringResource(R.string.back)
                         )
                     }
@@ -115,7 +115,7 @@ fun DataSecurityScreen(
         ) {
             // ── Privacy Session Section ──
             item {
-                SectionCard(title = stringResource(R.string.privacy_session_title), icon = Icons.Filled.Lock) {
+                SectionCard(title = stringResource(R.string.privacy_session_title), icon = Icons.Rounded.Lock) {
                     SwitchRow(
                         label = stringResource(R.string.privacy_mode),
                         checked = isPrivacyMode,
@@ -152,7 +152,7 @@ fun DataSecurityScreen(
 
             // ── Memory System Section ──
             item {
-                SectionCard(title = stringResource(R.string.memory_system), icon = Icons.Filled.Save) {
+                SectionCard(title = stringResource(R.string.memory_system), icon = Icons.Rounded.Save) {
                     SwitchRow(
                         label = stringResource(R.string.enable_memory),
                         checked = isMemoryEnabled,
@@ -167,7 +167,7 @@ fun DataSecurityScreen(
 
             // ── Storage Statistics ──
             item {
-                SectionCard(title = stringResource(R.string.storage_usage), icon = Icons.Filled.Save) {
+                SectionCard(title = stringResource(R.string.storage_usage), icon = Icons.Rounded.Save) {
                     StorageStatRow(label = stringResource(R.string.conversations), value = storageStats.conversationsCount)
                     StorageStatRow(label = stringResource(R.string.memories), value = storageStats.memoriesCount)
                     StorageStatRow(label = stringResource(R.string.image_cache), value = storageStats.imageCacheSize)
@@ -195,14 +195,14 @@ fun DataSecurityScreen(
 
             // ── Data Management Section ──
             item {
-                SectionCard(title = stringResource(R.string.data_management), icon = Icons.Filled.Delete) {
+                SectionCard(title = stringResource(R.string.data_management), icon = Icons.Rounded.Delete) {
                     OutlinedButton(
                         onClick = { showDeleteConversationsDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Lock,
+                            imageVector = Icons.Rounded.Lock,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -216,7 +216,7 @@ fun DataSecurityScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Save,
+                            imageVector = Icons.Rounded.Save,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -230,7 +230,7 @@ fun DataSecurityScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Star,
+                            imageVector = Icons.Rounded.Star,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -252,7 +252,7 @@ fun DataSecurityScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Warning,
+                                    imageVector = Icons.Rounded.Warning,
                                     contentDescription = null,
                                     tint = colorScheme.error,
                                     modifier = Modifier.size(20.dp)
@@ -271,7 +271,7 @@ fun DataSecurityScreen(
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Delete,
+                                    imageVector = Icons.Rounded.Delete,
                                     contentDescription = null,
                                     tint = colorScheme.error,
                                     modifier = Modifier.size(18.dp)
@@ -292,7 +292,7 @@ fun DataSecurityScreen(
             onDismissRequest = { showDeleteConversationsDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.Warning,
+                    imageVector = Icons.Rounded.Warning,
                     contentDescription = null,
                     tint = colorScheme.error
                 )
@@ -327,7 +327,7 @@ fun DataSecurityScreen(
             onDismissRequest = { showDeleteMemoriesDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.Warning,
+                    imageVector = Icons.Rounded.Warning,
                     contentDescription = null,
                     tint = colorScheme.error
                 )
@@ -390,7 +390,7 @@ fun DataSecurityScreen(
             onDismissRequest = { showDeleteAllDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.Warning,
+                    imageVector = Icons.Rounded.Warning,
                     contentDescription = null,
                     tint = colorScheme.error
                 )
@@ -498,7 +498,7 @@ private fun WarningRow(text: String) {
             verticalAlignment = Alignment.Top
         ) {
             Icon(
-                imageVector = Icons.Filled.Warning,
+                imageVector = Icons.Rounded.Warning,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(18.dp)
@@ -525,7 +525,7 @@ private fun InfoRow(text: String) {
             verticalAlignment = Alignment.Top
         ) {
             Icon(
-                imageVector = Icons.Filled.Star,
+                imageVector = Icons.Rounded.Star,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(18.dp)

@@ -383,6 +383,8 @@
     <string name="settings_tor_proxy">Tor 및 프록시</string>
     <string name="settings_tor_proxy_desc">이 앱에만 적용되는 Tor 라우팅 및 프록시 설정</string>
     <string name="settings_tor_connecting_desc">Tor 네트워크에 연결하는 중입니다. 아직 연결되지 않았습니다.</string>
+    <string name="settings_tor_off">Tor가 꺼져 있습니다</string>
+    <string name="settings_tor_off_desc">위 스위치를 켜면 이 앱의 네트워크 요청이 Tor를 통해 라우팅됩니다.</string>
     <string name="settings_tor_scope_detail">Tor는 이 앱만 프록시합니다. Android 전체 VPN을 만들지 않습니다. 웹 검색과 모델 센터 요청은 앱 전용 Tor 경로를 사용합니다.</string>
     <string name="settings_tor_connection_method">연결 방법</string>
     <string name="settings_proxy_disabled_by_tor">Tor 연결 중에는 수동 프록시가 비활성화됩니다.</string>

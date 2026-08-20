@@ -28,20 +28,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.AlertDialog
@@ -128,12 +128,12 @@ fun ModelCenterScreen(
                 title = { Text(stringResource(R.string.model_center)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh_models))
+                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.refresh_models))
                     }
                 }
             )
@@ -158,7 +158,7 @@ fun ModelCenterScreen(
                 active = false,
                 onActiveChange = {},
                 placeholder = { Text(stringResource(R.string.search_models_hint)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                 trailingIcon = {
                     if (isSearching) {
                         CircularProgressIndicator(modifier = Modifier.size(28.dp))
@@ -180,7 +180,7 @@ fun ModelCenterScreen(
                 color = colorScheme.surfaceContainerLow
             ) {
                 Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.size(18.dp), tint = colorScheme.primary)
+                    Icon(Icons.Rounded.Public, contentDescription = null, modifier = Modifier.size(18.dp), tint = colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         if (selectedSource == ModelRepositoryFactory.Source.HUGGING_FACE) stringResource(R.string.hf_official_source) else stringResource(R.string.hf_domestic_mirror),
@@ -211,7 +211,7 @@ fun ModelCenterScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Filled.Warning,
+                            Icons.Rounded.Warning,
                             contentDescription = null,
                             tint = colorScheme.error,
                             modifier = Modifier.size(20.dp)
@@ -448,7 +448,7 @@ private fun ModelCard(
                         }
                         is DownloadState.Completed -> {
                             Icon(
-                                imageVector = Icons.Filled.Download,
+                                imageVector = Icons.Rounded.Download,
                                 contentDescription = stringResource(R.string.downloaded),
                                 tint = colorScheme.primary,
                                 modifier = Modifier.size(22.dp)
@@ -456,7 +456,7 @@ private fun ModelCard(
                         }
                         is DownloadState.Error -> {
                             Icon(
-                                imageVector = Icons.Filled.CloudOff,
+                                imageVector = Icons.Rounded.CloudOff,
                                 contentDescription = stringResource(R.string.model_error_status),
                                 tint = colorScheme.error,
                                 modifier = Modifier.size(22.dp)
@@ -485,12 +485,12 @@ private fun ModelCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 IconWithText(
-                    icon = Icons.Filled.Star,
+                    icon = Icons.Rounded.Star,
                     text = "${model.downloads / 1000}k",
                     color = colorScheme.onSurfaceVariant
                 )
                 IconWithText(
-                    icon = Icons.Filled.Favorite,
+                    icon = Icons.Rounded.Favorite,
                     text = "${model.likes}",
                     color = colorScheme.onSurfaceVariant
                 )
@@ -589,7 +589,7 @@ private fun DownloadedModelCard(
 
             IconButton(onClick = onDelete) {
                 Icon(
-                    imageVector = Icons.Filled.Delete,
+                    imageVector = Icons.Rounded.Delete,
                     contentDescription = stringResource(R.string.delete),
                     tint = colorScheme.error
                 )
@@ -648,8 +648,8 @@ private fun ModelDetailDialog(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
-                    IconWithText(Icons.Filled.Star, stringResource(R.string.performance_downloads, "${model.downloads / 1000}k"))
-                    IconWithText(Icons.Filled.Favorite, stringResource(R.string.performance_likes, model.likes))
+                    IconWithText(Icons.Rounded.Star, stringResource(R.string.performance_downloads, "${model.downloads / 1000}k"))
+                    IconWithText(Icons.Rounded.Favorite, stringResource(R.string.performance_likes, model.likes))
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
@@ -768,26 +768,26 @@ private fun FileDownloadCard(
                     is DownloadState.Downloading -> {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = onPause, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Pause, contentDescription = stringResource(R.string.pause), modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.Pause, contentDescription = stringResource(R.string.pause), modifier = Modifier.size(20.dp))
                             }
                             IconButton(onClick = onCancel, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.cancel), modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.cancel), modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                     is DownloadState.Paused -> {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = onResume, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.resume), modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.resume), modifier = Modifier.size(20.dp))
                             }
                             IconButton(onClick = onCancel, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.cancel), modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.cancel), modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                     is DownloadState.Completed -> {
                         Icon(
-                            imageVector = Icons.Filled.Download,
+                            imageVector = Icons.Rounded.Download,
                             contentDescription = stringResource(R.string.downloaded),
                             tint = colorScheme.primary,
                             modifier = Modifier.size(24.dp)
@@ -795,7 +795,7 @@ private fun FileDownloadCard(
                     }
                     is DownloadState.Error -> {
                         IconButton(onClick = onDownload, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.retry), tint = colorScheme.error, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Rounded.Warning, contentDescription = stringResource(R.string.retry), tint = colorScheme.error, modifier = Modifier.size(20.dp))
                         }
                     }
                     else -> {
@@ -873,7 +873,7 @@ private fun EmptyState(message: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.Public,
+                imageVector = Icons.Rounded.Public,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)

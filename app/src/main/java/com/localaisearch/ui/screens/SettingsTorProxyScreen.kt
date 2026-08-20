@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -59,7 +59,7 @@ fun SettingsTorProxyScreen(
                 title = { Text(stringResource(R.string.settings_tor_proxy)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -67,7 +67,7 @@ fun SettingsTorProxyScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp, padding.calculateTopPadding() + 8.dp, 16.dp, padding.calculateBottomPadding() + 24.dp),
+            contentPadding = PaddingValues(16.dp, padding.calculateTopPadding() + 16.dp, 16.dp, padding.calculateBottomPadding() + 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
@@ -78,7 +78,7 @@ fun SettingsTorProxyScreen(
                 ) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Security, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Rounded.Security, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                             Spacer(Modifier.size(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(stringResource(R.string.settings_tor_route_title), style = MaterialTheme.typography.titleLarge)
@@ -108,7 +108,7 @@ fun SettingsTorProxyScreen(
                             }
                             TorManager.Status.OFF -> {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Icon(Icons.Filled.VpnKey, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+                                    Icon(Icons.Rounded.VpnKey, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
                                     Column {
                                         Text(stringResource(R.string.settings_tor_off), style = MaterialTheme.typography.titleMedium)
                                         Text(stringResource(R.string.settings_tor_off_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -129,7 +129,7 @@ fun SettingsTorProxyScreen(
                 ) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.VpnKey, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Rounded.VpnKey, null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.size(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(stringResource(R.string.settings_manual_proxy), style = MaterialTheme.typography.titleLarge)
@@ -169,7 +169,7 @@ fun SettingsTorProxyScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         TextButton(onClick = { uriHandler.openUri("https://www.torproject.org/" ) }) {
-                            Icon(Icons.Filled.Public, null)
+                            Icon(Icons.Rounded.Public, null)
                             Spacer(Modifier.size(8.dp))
                             Text(stringResource(R.string.settings_tor_official))
                         }

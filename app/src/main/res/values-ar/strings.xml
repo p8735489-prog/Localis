@@ -383,6 +383,8 @@
     <string name="settings_tor_proxy">Tor والوكيل</string>
     <string name="settings_tor_proxy_desc">إعدادات توجيه Tor والوكيل لهذا التطبيق فقط</string>
     <string name="settings_tor_connecting_desc">جارٍ الاتصال بشبكة Tor. لم يكتمل الاتصال بعد.</string>
+    <string name="settings_tor_off">Tor متوقف</string>
+    <string name="settings_tor_off_desc">فعّل المفتاح أعلاه لتوجيه طلبات شبكة هذا التطبيق عبر Tor.</string>
     <string name="settings_tor_scope_detail">يقوم Tor بتوجيه هذا التطبيق فقط عبر الوكيل. لا يتم إنشاء VPN شامل لنظام Android. يستخدم البحث على الويب ومركز النماذج مسار Tor الخاص بالتطبيق.</string>
     <string name="settings_tor_connection_method">طريقة الاتصال</string>
     <string name="settings_proxy_disabled_by_tor">يتم تعطيل الوكيل اليدوي أثناء اتصال Tor.</string>

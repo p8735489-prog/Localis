@@ -438,6 +438,8 @@
     <string name="settings_tor_proxy">Tor &amp; Proxy</string>
     <string name="settings_tor_proxy_desc">Tor-Routing und Proxy-Einstellungen nur für diese App</string>
     <string name="settings_tor_connecting_desc">Verbindung mit dem Tor-Netzwerk wird hergestellt. Die Verbindung ist noch nicht aktiv.</string>
+    <string name="settings_tor_off">Tor ist aus</string>
+    <string name="settings_tor_off_desc">Aktivieren Sie den Schalter oben, um die Netzwerkanfragen dieser App über Tor zu leiten.</string>
     <string name="settings_tor_scope_detail">Tor proxyt nur diese App. Es wird kein systemweites Android-VPN erstellt. Websuche und Modellcenter-Anfragen verwenden die Tor-Route dieser App.</string>
     <string name="settings_tor_connection_method">Verbindungsmethode</string>
     <string name="settings_proxy_disabled_by_tor">Der manuelle Proxy ist bei aktiver Tor-Verbindung deaktiviert.</string>

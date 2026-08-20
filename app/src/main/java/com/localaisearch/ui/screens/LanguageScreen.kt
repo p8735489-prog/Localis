@@ -8,10 +8,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,7 +47,7 @@ fun LanguageScreen(onNavigateBack: () -> Unit, viewModel: SettingsViewModel = vi
                 title = { Text(stringResource(R.string.language_settings), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back))
                     }
                 }
             )
@@ -68,7 +68,7 @@ fun LanguageScreen(onNavigateBack: () -> Unit, viewModel: SettingsViewModel = vi
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(46.dp)) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Filled.Language, null, tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Rounded.Language, null, tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                             Spacer(Modifier.width(14.dp))
@@ -83,7 +83,7 @@ fun LanguageScreen(onNavigateBack: () -> Unit, viewModel: SettingsViewModel = vi
                             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                             singleLine = true,
                             shape = MaterialTheme.shapes.extraLarge,
-                            leadingIcon = { Icon(Icons.Filled.Search, null) },
+                            leadingIcon = { Icon(Icons.Rounded.Search, null) },
                             placeholder = { Text(stringResource(R.string.language_search)) },
                             label = null
                         )
@@ -189,7 +189,7 @@ private fun LanguageItem(code: String, selected: Boolean, onSelect: () -> Unit) 
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(native, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (selected) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
+            if (selected) Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

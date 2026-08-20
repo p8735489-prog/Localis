@@ -495,7 +495,7 @@ fun HomeScreen(
                             onAttachClick = { imagePicker.launch("image/*") },
                             onImageUnavailableClick = { showImageModelHint = true },
                             onRegenerate = { viewModel.regenerateMessage(it.id) },
-                            onOtherAi = onNavigateToModels,
+                            onOtherAi = { onNavigateToModels() },
                             torRoutingActive = torRoutingActive
                         )
                     }

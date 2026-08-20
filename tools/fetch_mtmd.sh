@@ -35,6 +35,7 @@ if [[ ! -f "$DEST_MTMD/CMakeLists.txt" ||
 fi
 
 if (( need_vendor == 0 && need_mtmd == 0 )); then
+    python3 "$ROOT/tools/normalize_mtmd_cmake.py" "$DEST_MTMD/CMakeLists.txt"
     echo "llama.cpp vendor headers and mtmd sources already present"
     exit 0
 fi
@@ -109,5 +110,11 @@ if (( need_mtmd == 1 )); then
     echo "Copied llama.cpp MTMD sources"
 fi
 
+python3 "$ROOT/tools/normalize_mtmd_cmake.py" "$DEST_MTMD/CMakeLists.txt"
+# Never let a stale/upstream-unpatched VERSION property reach Android CMake.
+if grep -Eq '^[[:space:]]*VERSION[[:space:]]+\\\$\\\{LLAMA_INSTALL_VERSION\\\}' "$DEST_MTMD/CMakeLists.txt"; then
+    echo "::error::Unsafe LLAMA_INSTALL_VERSION property remains in MTMD CMake after normalization"
+    exit 1
+fi
 python3 "$ROOT/tools/check_native_tree.py"
 echo "Fetch complete: llama.cpp ${REF} vendor + MTMD are ready"

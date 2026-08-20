@@ -390,4 +390,10 @@
     <string name="chat_regenerate">Повторить ответ</string>
     <string name="chat_other_ai">Выбрать другой ИИ</string>
     <string name="chat_scroll_to_bottom">К последнему сообщению</string>
+    <string name="settings_tor_exit_country">Страна выхода Tor (необязательно)</string>
+    <string name="settings_tor_exit_country_hint">Например: us, jp, de</string>
+    <string name="settings_tor_exit_country_desc">Введите двухбуквенный код страны; оставьте пустым для автоматического выбора Tor.</string>
+    <string name="settings_tor_custom_config">Пользовательская конфигурация Tor</string>
+    <string name="settings_tor_custom_config_hint">Например: CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">Один параметр torrc в каждой строке. Параметры, способные нарушить встроенный SOCKS-сервис, блокируются.</string>
 </resources>

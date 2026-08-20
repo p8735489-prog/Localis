@@ -390,4 +390,10 @@
     <string name="chat_regenerate">إعادة إنشاء الرد</string>
     <string name="chat_other_ai">اختيار ذكاء اصطناعي آخر</string>
     <string name="chat_scroll_to_bottom">الانتقال إلى الأحدث</string>
+    <string name="settings_tor_exit_country">بلد خروج Tor (اختياري)</string>
+    <string name="settings_tor_exit_country_hint">مثال: us، jp، de</string>
+    <string name="settings_tor_exit_country_desc">أدخل رمز بلد من حرفين؛ اتركه فارغًا لاختيار Tor تلقائيًا.</string>
+    <string name="settings_tor_custom_config">إعدادات Tor مخصصة</string>
+    <string name="settings_tor_custom_config_hint">مثال: CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">خيار torrc واحد في كل سطر. يمنع التطبيق الخيارات التي قد تتداخل مع خدمة SOCKS المدمجة.</string>
 </resources>

@@ -111,9 +111,9 @@ fun AIOrb(
 
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val base = minOf(size.width, size.height) * .28f
+            val cx = this.size.width / 2f
+            val cy = this.size.height / 2f
+            val base = minOf(this.size.width, this.size.height) * .28f
 
             // Rotation speed rises smoothly with load/activity intensity —
             // never a hard cut to a new tween duration.

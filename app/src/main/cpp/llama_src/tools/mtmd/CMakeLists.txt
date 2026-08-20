@@ -65,7 +65,7 @@ add_library(mtmd
 
 if (BUILD_SHARED_LIBS AND NOT ANDROID AND DEFINED LLAMA_INSTALL_VERSION AND NOT "${LLAMA_INSTALL_VERSION}" STREQUAL "")
     set_target_properties(mtmd PROPERTIES
-        VERSION ${LLAMA_INSTALL_VERSION}
+        VERSION "${LLAMA_INSTALL_VERSION}"
         SOVERSION 0
         MACHO_CURRENT_VERSION 0 # keep macOS linker from seeing oversized version number
     )

@@ -2,6 +2,8 @@ package com.localaisearch.ui.components
 
 import com.localaisearch.R
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable

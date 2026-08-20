@@ -70,10 +70,6 @@ class ChatViewModel(
 
     private var agentEngine: AgentEngine? = null
     private var currentJob: Job? = null
-    // Monotonic request token prevents callbacks from a cancelled generation
-    // from mutating the state of a newer request. All callback paths below
-    // capture the token created for their request.
-    private var requestGeneration: Long = 0L
     private var lastModelActivityTime: Long = System.currentTimeMillis()
     private var _lastSaveTime: Long = 0L
     private val answerBuffer = StringBuilder()
@@ -219,10 +215,10 @@ class ChatViewModel(
         }
 
         currentJob?.cancel()
-        val generation = ++requestGeneration
         _error.value = null
         synchronized(answerBuffer) { answerBuffer.setLength(0) }
         lastAnswerUiUpdate = 0L
+        answerFlushJob?.cancel()
         answerFlushJob?.cancel()
         synchronized(answerBuffer) { answerBuffer.setLength(0) }
         _currentAnswer.value = ""
@@ -285,23 +281,19 @@ class ChatViewModel(
 
                 val callback = object : AgentCallback {
                     override fun onStateChanged(status: AgentStatus) {
-                        if (generation != requestGeneration) return
                         _agentStatus.value = status
                         updateLastMessage { it.copy(agentStatus = status) }
                     }
 
                     override fun onSearchRound(round: SearchRound) {
-                        if (generation != requestGeneration) return
                         _searchResults.value = _searchResults.value + round.results
                     }
 
                     override fun onSearchResults(results: List<SearchResult>) {
-                        if (generation != requestGeneration) return
                         _searchResults.value = results
                     }
 
                     override fun onToken(token: String) {
-                        if (generation != requestGeneration) return
                         synchronized(answerBuffer) { answerBuffer.append(token) }
                         val now = System.currentTimeMillis()
                         if (now - lastAnswerUiUpdate >= 50L && answerFlushJob?.isActive != true) {
@@ -320,7 +312,6 @@ class ChatViewModel(
                         citations: List<Citation>,
                         session: SearchSession
                     ) {
-                        if (generation != requestGeneration) return
                         answerFlushJob?.cancel()
                         val finalAnswer = if (answer.isNotBlank()) answer else synchronized(answerBuffer) { answerBuffer.toString() }
                         _currentAnswer.value = finalAnswer
@@ -336,7 +327,6 @@ class ChatViewModel(
                     }
 
                     override fun onError(message: String) {
-                        if (generation != requestGeneration) return
                         _error.value = message
                         updateLastMessage {
                             it.copy(
@@ -381,7 +371,6 @@ class ChatViewModel(
                         throw IllegalStateException("当前 GGUF 模型没有可用的视觉聊天模板")
                     }
                     localEngine.generateMultimodalStream(formattedPrompt, imageBytes, inferenceConfig).collect { token ->
-                        if (generation != requestGeneration) return@collect
                         synchronized(answerBuffer) { answerBuffer.append(token) }
                         val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
                         _currentAnswer.value = snapshot
@@ -542,7 +531,6 @@ class ChatViewModel(
      * Cancel ongoing processing.
      */
     fun cancel() {
-        requestGeneration++
         currentJob?.cancel()
         viewModelScope.launch {
             agentEngine?.cancel()
@@ -600,7 +588,6 @@ class ChatViewModel(
      * In privacy mode, does not save the current conversation.
      */
     fun newConversation() {
-        requestGeneration++
         currentJob?.cancel()
         viewModelScope.launch {
             agentEngine?.cancel()
@@ -636,7 +623,6 @@ class ChatViewModel(
         viewModelScope.launch {
             val conv = conversationRepo.getConversation(conversationId)
             if (conv != null) {
-                requestGeneration++
                 currentJob?.cancel()
                 agentEngine?.let { 
                     viewModelScope.launch { it.cancel() }

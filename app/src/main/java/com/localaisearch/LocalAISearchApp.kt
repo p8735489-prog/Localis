@@ -23,7 +23,12 @@ class LocalAISearchApp : Application() {
         LlamaBridge.initialize()
         TorManager.initialize(this)
         appScope.launch {
-            NetworkClientFactory.updateProxy(SettingsRepository(this@LocalAISearchApp).proxyConfig.first())
+            val settings = SettingsRepository(this@LocalAISearchApp)
+            // A persisted Tor toggle means startup must not briefly install the
+            // user's clearnet proxy before SettingsViewModel can re-establish Tor.
+            if (!settings.torEnabled.first()) {
+                NetworkClientFactory.updateProxy(settings.proxyConfig.first())
+            }
         }
     }
 }

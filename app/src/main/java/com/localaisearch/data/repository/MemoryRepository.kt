@@ -108,32 +108,43 @@ class MemoryRepository(private val context: Context) {
         return exact * 2.4f + phraseStart + overlap * 1.8f + recency * 0.8f + accessBoost + importance * 0.7f + if (entry.pinned) 2f else 0f
     }
 
-    suspend fun addMemory(content: String, topic: String, sourceConversationId: String): Result<MemoryEntry> = try {
-        val trimmed = content.trim().take(MAX_MEMORY_LENGTH)
-        if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
-        val now = System.currentTimeMillis()
-        var result: MemoryEntry? = null
-        dataStore.edit { prefs ->
-            val current = loadMemories(prefs).toMutableList()
-            val index = current.indexOfFirst { normalize(it.content) == normalize(trimmed) }
-            if (index >= 0) {
-                val old = current[index]
-                result = old.copy(
-                    topic = topic.ifBlank { old.topic },
-                    lastAccessedAt = now,
-                    lastUpdatedAt = now,
-                    accessCount = old.accessCount + 1,
-                    importance = maxOf(old.importance, 0.7f)
-                )
-                current[index] = result!!
-            } else {
-                result = MemoryEntry(content = trimmed, topic = topic.ifBlank { "general" }, sourceConversationId = sourceConversationId, createdAt = now, lastAccessedAt = now, lastUpdatedAt = now)
-                current.add(result!!)
+    suspend fun addMemory(content: String, topic: String, sourceConversationId: String): Result<MemoryEntry> {
+        return try {
+            val trimmed = content.trim().take(MAX_MEMORY_LENGTH)
+            if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
+            val now = System.currentTimeMillis()
+            var result: MemoryEntry? = null
+            dataStore.edit { prefs ->
+                val current = loadMemories(prefs).toMutableList()
+                val index = current.indexOfFirst { normalize(it.content) == normalize(trimmed) }
+                if (index >= 0) {
+                    val old = current[index]
+                    result = old.copy(
+                        topic = topic.ifBlank { old.topic },
+                        lastAccessedAt = now,
+                        lastUpdatedAt = now,
+                        accessCount = old.accessCount + 1,
+                        importance = maxOf(old.importance, 0.7f)
+                    )
+                    current[index] = result!!
+                } else {
+                    result = MemoryEntry(
+                        content = trimmed,
+                        topic = topic.ifBlank { "general" },
+                        sourceConversationId = sourceConversationId,
+                        createdAt = now,
+                        lastAccessedAt = now,
+                        lastUpdatedAt = now
+                    )
+                    current.add(result!!)
+                }
+                prefs[MEMORIES_JSON] = json.encodeToString(current.takeLast(MAX_MEMORY_COUNT))
             }
-            prefs[MEMORIES_JSON] = json.encodeToString(current.takeLast(MAX_MEMORY_COUNT))
+            Result.success(result!!)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        Result.success(result!!)
-    } catch (e: Exception) { Result.failure(e) }
+    }
 
     fun getMemories(): Flow<List<MemoryEntry>> = dataStore.data.map { prefs -> loadMemories(prefs).sortedWith(compareByDescending<MemoryEntry> { it.pinned }.thenByDescending { it.createdAt }) }
 
@@ -162,20 +173,24 @@ class MemoryRepository(private val context: Context) {
     suspend fun getRelevantMemories(query: String, maxResults: Int = 5): List<MemoryEntry> =
         searchMemories(query, MemorySearchPreset.ALL, maxResults)
 
-    suspend fun updateMemory(id: String, newContent: String): Result<Unit> = try {
-        val trimmed = newContent.trim().take(MAX_MEMORY_LENGTH)
-        if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
-        dataStore.edit { prefs ->
-            val current = loadMemories(prefs).toMutableList()
-            val index = current.indexOfFirst { it.id == id }
-            if (index >= 0) {
-                val old = current[index]
-                current[index] = old.copy(content = trimmed, lastUpdatedAt = System.currentTimeMillis())
-                prefs[MEMORIES_JSON] = json.encodeToString(current)
+    suspend fun updateMemory(id: String, newContent: String): Result<Unit> {
+        return try {
+            val trimmed = newContent.trim().take(MAX_MEMORY_LENGTH)
+            if (trimmed.isBlank()) return Result.failure(IllegalArgumentException("Memory content cannot be blank"))
+            dataStore.edit { prefs ->
+                val current = loadMemories(prefs).toMutableList()
+                val index = current.indexOfFirst { it.id == id }
+                if (index >= 0) {
+                    val old = current[index]
+                    current[index] = old.copy(content = trimmed, lastUpdatedAt = System.currentTimeMillis())
+                    prefs[MEMORIES_JSON] = json.encodeToString(current)
+                }
             }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        Result.success(Unit)
-    } catch (e: Exception) { Result.failure(e) }
+    }
 
     suspend fun setPinned(id: String, pinned: Boolean): Result<Unit> = try {
         dataStore.edit { prefs ->

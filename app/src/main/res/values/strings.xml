@@ -518,4 +518,10 @@
     <string name="chat_regenerate">Regenerate response</string>
     <string name="chat_other_ai">Choose another AI</string>
     <string name="chat_scroll_to_bottom">Jump to latest</string>
+    <string name="settings_tor_exit_country">Tor 出口国家（可选）</string>
+    <string name="settings_tor_exit_country_hint">例如：us、jp、de</string>
+    <string name="settings_tor_exit_country_desc">填写两位国家代码；留空表示由 Tor 自动选择。</string>
+    <string name="settings_tor_custom_config">自定义 Tor 配置</string>
+    <string name="settings_tor_custom_config_hint">例如：CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">每行一个 torrc 选项。应用会阻止可能破坏内置 SOCKS 服务的关键项。</string>
 </resources>

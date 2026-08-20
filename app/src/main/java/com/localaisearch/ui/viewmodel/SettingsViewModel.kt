@@ -70,6 +70,11 @@ class SettingsViewModel(
     val torEnabled: StateFlow<Boolean> = _torEnabled.asStateFlow()
     private val _torBridges = MutableStateFlow("")
     val torBridges: StateFlow<String> = _torBridges.asStateFlow()
+    private val _torExitCountry = MutableStateFlow("")
+    val torExitCountry: StateFlow<String> = _torExitCountry.asStateFlow()
+    private val _torCustomConfig = MutableStateFlow("")
+    val torCustomConfig: StateFlow<String> = _torCustomConfig.asStateFlow()
+    private var torJob: kotlinx.coroutines.Job? = null
     val torStatus: StateFlow<TorManager.Status> = TorManager.statusFlow
     val proxyConfig: StateFlow<com.localaisearch.data.repository.ProxyConfig> = _proxyConfig.asStateFlow()
     val privacyMode: StateFlow<Boolean> = _privacyMode.asStateFlow()
@@ -91,10 +96,16 @@ class SettingsViewModel(
             _proxyConfig.value = settingsRepo.proxyConfig.first()
             _torEnabled.value = settingsRepo.torEnabled.first()
             _torBridges.value = settingsRepo.torBridges.first()
+            _torExitCountry.value = settingsRepo.torExitCountry.first()
+            _torCustomConfig.value = settingsRepo.torCustomConfig.first()
             if (_torEnabled.value) {
                 // A persisted toggle is not proof that Tor is connected. Reconnect and let
                 // TorManager report STARTING/ON/ERROR. Never restore a fake ON state.
-                val result = TorManager.start(_torBridges.value)
+                val result = TorManager.start(
+                bridgeLines = _torBridges.value,
+                exitCountry = _torExitCountry.value,
+                customConfig = _torCustomConfig.value
+            )
                 if (result.isFailure) {
                     _torEnabled.value = false
                     settingsRepo.setTorEnabled(false)
@@ -273,10 +284,22 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepo.setTorBridges(value) }
     }
 
+    fun updateTorExitCountry(value: String) {
+        val normalized = value.trim().lowercase().filter(Char::isLetter).take(2)
+        _torExitCountry.value = normalized
+        viewModelScope.launch { settingsRepo.setTorExitCountry(normalized) }
+    }
+
+    fun updateTorCustomConfig(value: String) {
+        _torCustomConfig.value = value.take(8192)
+        viewModelScope.launch { settingsRepo.setTorCustomConfig(_torCustomConfig.value) }
+    }
+
     fun setTorEnabled(enabled: Boolean) {
+        torJob?.cancel()
         if (!enabled) {
             _torEnabled.value = false
-            viewModelScope.launch {
+            torJob = viewModelScope.launch {
                 settingsRepo.setTorEnabled(false)
                 TorManager.stop()
                 com.localaisearch.data.repository.NetworkClientFactory.updateProxy(_proxyConfig.value)
@@ -284,19 +307,37 @@ class SettingsViewModel(
             return
         }
 
-        // Do not flip the UI switch before Tor is actually reachable.
-        // STARTING is a connection state, not an enabled/connected state.
         _torEnabled.value = false
-        viewModelScope.launch {
-            val result = TorManager.start(_torBridges.value)
+        torJob = viewModelScope.launch {
+            val result = TorManager.start(
+                bridgeLines = _torBridges.value,
+                exitCountry = _torExitCountry.value,
+                customConfig = _torCustomConfig.value
+            )
             if (result.isSuccess && TorManager.status == TorManager.Status.ON) {
                 _torEnabled.value = true
-                // Tor routing must not silently change the user's model source.
                 settingsRepo.setTorEnabled(true)
             } else {
                 _torEnabled.value = false
                 settingsRepo.setTorEnabled(false)
             }
+        }
+    }
+
+    fun retryTor() {
+        torJob?.cancel()
+        torJob = viewModelScope.launch {
+            _torEnabled.value = false
+            TorManager.stop()
+            kotlinx.coroutines.delay(350)
+            val result = TorManager.start(
+                bridgeLines = _torBridges.value,
+                exitCountry = _torExitCountry.value,
+                customConfig = _torCustomConfig.value
+            )
+            val connected = result.isSuccess && TorManager.status == TorManager.Status.ON
+            _torEnabled.value = connected
+            settingsRepo.setTorEnabled(connected)
         }
     }
 

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ComponentName
 import android.content.IntentFilter
+import org.json.JSONObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -18,6 +19,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.net.InetSocketAddress
 import java.net.Socket
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.net.Proxy
+import java.util.concurrent.TimeUnit
 
 /**
  * Embedded Tor controller used by the optional app-only Tor route.
@@ -31,6 +36,7 @@ object TorManager {
     @Volatile private var activeSocksPort: Int = DEFAULT_SOCKS_PORT
     private val lifecycleGeneration = AtomicLong(0L)
     @Volatile private var circuitEstablished = false
+    @Volatile private var previousProxyConfig: ProxyConfig? = null
 
     enum class Status { OFF, STARTING, ON, ERROR }
 
@@ -62,7 +68,11 @@ object TorManager {
         appContext = context.applicationContext
     }
 
-    suspend fun start(bridgeLines: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun start(
+        bridgeLines: String,
+        exitCountry: String = "",
+        customConfig: String = ""
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         val context = appContext ?: return@withContext Result.failure(IllegalStateException("Tor manager is not initialized"))
 
         // Idempotent start: do not launch multiple TorService instances.
@@ -72,6 +82,7 @@ object TorManager {
         }
 
         val generation = lifecycleGeneration.incrementAndGet()
+        previousProxyConfig = NetworkClientFactory.currentProxy()
         status = Status.STARTING
         lastError = null
         circuitEstablished = false
@@ -80,7 +91,7 @@ object TorManager {
             val torrc = getTorrc(context)
             torrc.parentFile?.mkdirs()
             activeSocksPort = findFreeSocksPort()
-            writeTorrc(torrc, bridgeLines, activeSocksPort)
+            writeTorrc(torrc, bridgeLines, activeSocksPort, exitCountry, customConfig)
 
             // Register before START so the official TorService STATUS=ON broadcast
             // cannot be missed. A listening SOCKS socket alone is NOT proof that
@@ -115,9 +126,27 @@ object TorManager {
                 }
 
                 // Only after Tor reports a completed circuit do we route app traffic.
-                NetworkClientFactory.updateProxy(
-                    ProxyConfig(enabled = true, type = "SOCKS", host = "127.0.0.1", port = activeSocksPort)
+                val torProxy = ProxyConfig(
+                    enabled = true,
+                    type = "SOCKS",
+                    host = "127.0.0.1",
+                    port = activeSocksPort
                 )
+                NetworkClientFactory.updateProxy(torProxy)
+
+                // Verify a real request through the Tor circuit before exposing ON.
+                val verification = verifyTorCircuit(activeSocksPort)
+                if (lifecycleGeneration.get() != generation || status != Status.STARTING) {
+                    return@withContext Result.failure(IllegalStateException("Tor start was cancelled"))
+                }
+                if (verification.isFailure) {
+                    restorePreviousProxyIfOwned()
+                    status = Status.ERROR
+                    lastError = verification.exceptionOrNull()?.message ?: "Tor circuit verification failed"
+                    runCatching { context.startService(torIntent(context, ACTION_STOP)) }
+                    return@withContext Result.failure(IllegalStateException(lastError))
+                }
+
                 status = Status.ON
                 Result.success(Unit)
             } finally {
@@ -125,6 +154,7 @@ object TorManager {
             }
         } catch (e: Exception) {
             if (lifecycleGeneration.get() == generation) {
+                restorePreviousProxyIfOwned()
                 status = Status.ERROR
                 lastError = e.message ?: "Unable to start Tor"
             }
@@ -181,6 +211,35 @@ object TorManager {
         continuation.invokeOnCancellation { waiter.interrupt() }
     }
 
+    private fun verifyTorCircuit(port: Int): Result<Unit> {
+        return try {
+            val proxy = Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", port))
+            val client = OkHttpClient.Builder()
+                .proxy(proxy)
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
+                .callTimeout(20, TimeUnit.SECONDS)
+                .build()
+            val request = Request.Builder()
+                .url("https://check.torproject.org/api/ip")
+                .header("Cache-Control", "no-cache")
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return Result.failure(IllegalStateException("Tor verification HTTP ${response.code}"))
+                }
+                val body = response.body?.string().orEmpty()
+                val isTor = runCatching { JSONObject(body).optBoolean("IsTor", false) }.getOrDefault(false)
+                if (!isTor) {
+                    return Result.failure(IllegalStateException("Connection was not confirmed as a Tor exit"))
+                }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(IllegalStateException("Tor circuit verification failed: ${e.message ?: "network error"}", e))
+        }
+    }
+
     fun stop() {
         val context = appContext ?: return
         lifecycleGeneration.incrementAndGet()
@@ -189,16 +248,22 @@ object TorManager {
             context.startService(torIntent(context, ACTION_STOP))
         }
         runCatching { context.stopService(torIntent(context, ACTION_STOP)) }
-        if (NetworkClientFactory.currentProxy().host == "127.0.0.1" &&
-            NetworkClientFactory.currentProxy().port == activeSocksPort &&
-            NetworkClientFactory.currentProxy().type.equals("SOCKS", ignoreCase = true)
-        ) {
-            NetworkClientFactory.updateProxy(ProxyConfig())
-        }
+        restorePreviousProxyIfOwned()
+        previousProxyConfig = null
         status = Status.OFF
         lastError = null
     }
 
+
+    private fun restorePreviousProxyIfOwned() {
+        val current = NetworkClientFactory.currentProxy()
+        if (current.host == "127.0.0.1" &&
+            current.port == activeSocksPort &&
+            current.type.equals("SOCKS", ignoreCase = true)
+        ) {
+            NetworkClientFactory.updateProxy(previousProxyConfig ?: ProxyConfig())
+        }
+    }
 
     private fun torIntent(context: Context, action: String): Intent =
         Intent(action).apply {
@@ -217,7 +282,13 @@ object TorManager {
         }
     }
 
-    private fun writeTorrc(file: File, bridgeLines: String, socksPort: Int) {
+    private fun writeTorrc(
+        file: File,
+        bridgeLines: String,
+        socksPort: Int,
+        exitCountry: String,
+        customConfig: String
+    ) {
         val clean = bridgeLines.lines()
             .map { it.trim() }
             .filter { it.isNotBlank() && !it.startsWith("#") }
@@ -240,21 +311,36 @@ object TorManager {
                     }
                 }
             }
+            val country = exitCountry.trim().lowercase().filter(Char::isLetter).take(2)
+            if (country.length == 2) {
+                append("ExitNodes {").append(country).append("}\n")
+                append("StrictNodes 1\n")
+            }
+            val blocked = setOf(
+                "socksport", "controlport", "datadirectory", "pidfile",
+                "runasdaemon", "user", "cookieauthentication"
+            )
+            customConfig.lines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() && !it.startsWith("#") }
+                .filter { line -> line.substringBefore(Regex("\\s")).lowercase() !in blocked }
+                .take(128)
+                .forEach { append(it).append('\n') }
         }
         file.writeText(content)
     }
 
     private fun findFreeSocksPort(): Int {
         for (port in DEFAULT_SOCKS_PORT..(DEFAULT_SOCKS_PORT + 10)) {
-            try {
+            val occupied = try {
                 Socket().use { socket ->
                     socket.connect(InetSocketAddress("127.0.0.1", port), 120)
-                    // A successful connect means another process owns the port.
-                    continue
+                    true
                 }
             } catch (_: Exception) {
-                return port
+                false
             }
+            if (!occupied) return port
         }
         return DEFAULT_SOCKS_PORT
     }

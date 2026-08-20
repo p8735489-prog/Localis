@@ -451,4 +451,10 @@
     <string name="chat_regenerate">重新回答</string>
     <string name="chat_other_ai">讓其他 AI 回答</string>
     <string name="chat_scroll_to_bottom">回到底部</string>
+    <string name="settings_tor_exit_country">Tor 出口國家（可選）</string>
+    <string name="settings_tor_exit_country_hint">例如：us、jp、de</string>
+    <string name="settings_tor_exit_country_desc">填寫兩位國家代碼；留空表示由 Tor 自動選擇。</string>
+    <string name="settings_tor_custom_config">自訂 Tor 設定</string>
+    <string name="settings_tor_custom_config_hint">例如：CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">每行一個 torrc 選項。應用會阻止可能破壞內建 SOCKS 服務的關鍵項。</string>
 </resources>

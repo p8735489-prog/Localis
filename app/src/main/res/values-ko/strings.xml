@@ -390,4 +390,10 @@
     <string name="chat_regenerate">응답 다시 생성</string>
     <string name="chat_other_ai">다른 AI로 답변하기</string>
     <string name="chat_scroll_to_bottom">최신 메시지로 이동</string>
+    <string name="settings_tor_exit_country">Tor 출구 국가(선택사항)</string>
+    <string name="settings_tor_exit_country_hint">예: us, jp, de</string>
+    <string name="settings_tor_exit_country_desc">두 글자 국가 코드를 입력하세요. 비워 두면 Tor가 자동으로 선택합니다.</string>
+    <string name="settings_tor_custom_config">사용자 지정 Tor 설정</string>
+    <string name="settings_tor_custom_config_hint">예: CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">한 줄에 하나의 torrc 옵션을 입력합니다. 내장 SOCKS 서비스를 방해할 수 있는 핵심 항목은 차단됩니다.</string>
 </resources>

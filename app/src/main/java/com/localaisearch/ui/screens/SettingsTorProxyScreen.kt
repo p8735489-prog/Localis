@@ -49,6 +49,8 @@ fun SettingsTorProxyScreen(
 ) {
     val torStatus by viewModel.torStatus.collectAsState()
     val torBridges by viewModel.torBridges.collectAsState()
+    val torExitCountry by viewModel.torExitCountry.collectAsState()
+    val torCustomConfig by viewModel.torCustomConfig.collectAsState()
     val proxy by viewModel.proxyConfig.collectAsState()
     val torConnected = torStatus == TorManager.Status.ON
     val uriHandler = LocalUriHandler.current
@@ -104,7 +106,7 @@ fun SettingsTorProxyScreen(
                             TorManager.Status.ERROR -> {
                                 Text(stringResource(R.string.settings_tor_failed), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                                 Text(TorManager.lastError ?: stringResource(R.string.settings_tor_service_error), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                TextButton(onClick = { viewModel.setTorEnabled(false); viewModel.setTorEnabled(true) }) { Text(stringResource(R.string.settings_tor_retry)) }
+                                TextButton(onClick = viewModel::retryTor) { Text(stringResource(R.string.settings_tor_retry)) }
                             }
                             TorManager.Status.OFF -> {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -167,6 +169,27 @@ fun SettingsTorProxyScreen(
                             stringResource(if (torStatus == TorManager.Status.OFF) R.string.settings_bridge_note else R.string.settings_bridge_disabled_note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedTextField(
+                            value = torExitCountry,
+                            onValueChange = viewModel::updateTorExitCountry,
+                            enabled = torStatus == TorManager.Status.OFF,
+                            label = { Text(stringResource(R.string.settings_tor_exit_country)) },
+                            placeholder = { Text(stringResource(R.string.settings_tor_exit_country_hint)) },
+                            supportingText = { Text(stringResource(R.string.settings_tor_exit_country_desc)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = torCustomConfig,
+                            onValueChange = viewModel::updateTorCustomConfig,
+                            enabled = torStatus == TorManager.Status.OFF,
+                            label = { Text(stringResource(R.string.settings_tor_custom_config)) },
+                            placeholder = { Text(stringResource(R.string.settings_tor_custom_config_hint)) },
+                            supportingText = { Text(stringResource(R.string.settings_tor_custom_config_desc)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 4,
+                            maxLines = 8
                         )
                         TextButton(onClick = { uriHandler.openUri("https://www.torproject.org/" ) }) {
                             Icon(Icons.Rounded.Public, null)

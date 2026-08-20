@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -100,7 +101,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                 Button(
                     onClick = {
                         if (page == 2 && selectedLanguage != LanguageManager.SYSTEM_DEFAULT) {
-                            LanguageManager(context).applyLanguage(context, selectedLanguage)
+                            (context as? Activity)?.let { LanguageManager(it).applyLanguage(it, selectedLanguage) }
                         }
                         next()
                     },

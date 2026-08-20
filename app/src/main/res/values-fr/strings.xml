@@ -445,4 +445,10 @@
     <string name="chat_regenerate">Régénérer la réponse</string>
     <string name="chat_other_ai">Choisir une autre IA</string>
     <string name="chat_scroll_to_bottom">Aller au plus récent</string>
+    <string name="settings_tor_exit_country">Pays de sortie Tor (facultatif)</string>
+    <string name="settings_tor_exit_country_hint">Exemple : us, jp, de</string>
+    <string name="settings_tor_exit_country_desc">Saisissez un code pays à deux lettres ; laissez vide pour le choix automatique de Tor.</string>
+    <string name="settings_tor_custom_config">Configuration Tor personnalisée</string>
+    <string name="settings_tor_custom_config_hint">Exemple : CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">Une option torrc par ligne. Les options susceptibles de perturber le service SOCKS intégré sont bloquées.</string>
 </resources>

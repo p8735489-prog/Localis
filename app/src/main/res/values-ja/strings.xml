@@ -390,4 +390,10 @@
     <string name="chat_regenerate">回答を再生成</string>
     <string name="chat_other_ai">別のAIに回答させる</string>
     <string name="chat_scroll_to_bottom">最新へ移動</string>
+    <string name="settings_tor_exit_country">Tor出口国（任意）</string>
+    <string name="settings_tor_exit_country_hint">例：us、jp、de</string>
+    <string name="settings_tor_exit_country_desc">2文字の国コードを入力してください。空欄ならTorが自動選択します。</string>
+    <string name="settings_tor_custom_config">Torカスタム設定</string>
+    <string name="settings_tor_custom_config_hint">例：CircuitPadding 1</string>
+    <string name="settings_tor_custom_config_desc">1行に1つのtorrcオプションを指定します。内蔵SOCKSサービスを壊す可能性のある重要項目はブロックされます。</string>
 </resources>

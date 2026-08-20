@@ -1,4 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package com.localaisearch.ui.screens
 
@@ -24,7 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -199,7 +198,7 @@ private fun ModelOperationStatus(importStatus: ImportStatus, loadStatus: LoadSta
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                LoadingIndicator(modifier = Modifier.size(22.dp))
+                CircularProgressIndicator(modifier = Modifier.size(22.dp))
                 Text(
                     text = stringResource(R.string.loading_model),
                     style = MaterialTheme.typography.bodyMedium,
@@ -213,7 +212,7 @@ private fun ModelOperationStatus(importStatus: ImportStatus, loadStatus: LoadSta
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                LoadingIndicator(modifier = Modifier.size(22.dp))
+                CircularProgressIndicator(modifier = Modifier.size(22.dp))
                 Text(stringResource(R.string.importing_model), style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -292,7 +291,7 @@ private fun LoadStatusIndicator(loadStatus: LoadStatus) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        LoadingIndicator(modifier = Modifier.size(22.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(22.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             LoadingTypewriterText(
                                 base = stringResource(R.string.loading_model).removeSuffix("...").removeSuffix("…")
@@ -414,7 +413,7 @@ private fun ModelCard(
                         enabled = loadStatus !is LoadStatus.Loading
                     ) {
                         if (isLoadingThisModel) {
-                            LoadingIndicator(modifier = Modifier.size(16.dp))
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(stringResource(R.string.loading_model).removeSuffix("...").removeSuffix("…"))
                         } else {

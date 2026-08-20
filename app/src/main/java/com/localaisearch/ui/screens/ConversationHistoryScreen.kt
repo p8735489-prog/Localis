@@ -1,4 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package com.localaisearch.ui.screens
 
@@ -29,7 +28,7 @@ import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -157,7 +156,7 @@ fun ConversationHistoryScreen(
                 modifier = Modifier.alpha(if (isLoading) 0.5f else 1f)
             ) {
                 if (isLoading) {
-                    LoadingIndicator(modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_chat))
                 }

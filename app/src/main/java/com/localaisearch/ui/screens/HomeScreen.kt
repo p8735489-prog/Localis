@@ -1,4 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package com.localaisearch.ui.screens
 
@@ -63,7 +62,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -556,7 +555,7 @@ private fun EmptyStateScreen(
                 onSelectModel = onSelectModel
             )
             if (!modelLoaded && isProcessing) {
-                LoadingIndicator(
+                CircularProgressIndicator(
                     modifier = Modifier.size(34.dp),
                     color = colorScheme.primary
                 )

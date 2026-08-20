@@ -1,4 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package com.localaisearch.ui.screens
 
@@ -10,7 +9,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -80,7 +78,7 @@ fun VisionModelScreen(
             )
             if (searching && results.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    LoadingIndicator(modifier = Modifier.size(64.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(64.dp))
                 }
             } else {
                 val vision = results.filter { model ->
@@ -127,7 +125,7 @@ fun VisionModelScreen(
             title = { Text(model.name) },
             text = {
                 if (loadingFiles) {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { LoadingIndicator(modifier = Modifier.size(48.dp)) }
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(modifier = Modifier.size(48.dp)) }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.gguf_files), style = MaterialTheme.typography.titleSmall)

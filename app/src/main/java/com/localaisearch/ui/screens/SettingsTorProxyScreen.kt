@@ -16,10 +16,9 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -42,7 +41,7 @@ import com.localaisearch.data.repository.TorManager
 import com.localaisearch.ui.viewmodel.SettingsViewModel
 
 /** Dedicated app-only Tor + proxy settings, modelled after the simple connection-first flow used by Tor apps. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTorProxyScreen(
     onNavigateBack: () -> Unit,
@@ -91,7 +90,7 @@ fun SettingsTorProxyScreen(
                         when (torStatus) {
                             TorManager.Status.STARTING -> {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    LoadingIndicator(modifier = Modifier.size(32.dp))
+                                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
                                     Column {
                                         Text(stringResource(R.string.settings_tor_connecting), style = MaterialTheme.typography.titleMedium)
                                         Text(stringResource(R.string.settings_tor_connecting_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

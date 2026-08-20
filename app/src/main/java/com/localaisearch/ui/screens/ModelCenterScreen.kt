@@ -1,4 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package com.localaisearch.ui.screens
 
@@ -48,7 +47,7 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -162,7 +161,7 @@ fun ModelCenterScreen(
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
                     if (isSearching) {
-                        LoadingIndicator(modifier = Modifier.size(28.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(28.dp))
                     }
                 },
                 modifier = Modifier
@@ -262,7 +261,7 @@ fun ModelCenterScreen(
             when (selectedTab) {
                 0 -> if (isLoadingTrending && trendingModels.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        LoadingIndicator(modifier = Modifier.size(72.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(72.dp))
                     }
                 } else TrendingList(
                     models = trendingModels,
@@ -351,7 +350,7 @@ private fun SearchResultsList(
     when {
         isSearching -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator(modifier = Modifier.size(56.dp))
+                CircularProgressIndicator(modifier = Modifier.size(56.dp))
             }
         }
         models.isEmpty() -> {
@@ -443,7 +442,7 @@ private fun ModelCard(
                 downloadState?.let { state ->
                     when (state) {
                         is DownloadState.Downloading -> {
-                            LoadingIndicator(
+                            CircularProgressIndicator(
                                 progress = { state.progress.coerceIn(0f, 1f) },
                                 modifier = Modifier.size(24.dp)
                             )
@@ -669,7 +668,7 @@ private fun ModelDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        LoadingIndicator(modifier = Modifier.size(40.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(40.dp))
                     }
                 } else if (files.isEmpty()) {
                     Text(

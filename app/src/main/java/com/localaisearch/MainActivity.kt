@@ -1,4 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package com.localaisearch
 
@@ -79,7 +78,7 @@ class MainActivity : ComponentActivity() {
                         modifier = androidx.compose.ui.Modifier.fillMaxSize(),
                         contentAlignment = androidx.compose.ui.Alignment.Center
                     ) {
-                        androidx.compose.material3.LoadingIndicator()
+                        androidx.compose.material3.CircularProgressIndicator()
                     }
                 } else if (onboardingCompleted) {
                     AppNavigation()

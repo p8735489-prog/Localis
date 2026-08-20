@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 
 package com.localaisearch.ui.components
 
@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -89,7 +89,7 @@ fun ChatBubble(
                     )
                     if (message.isStreaming) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        LoadingIndicator(modifier = Modifier.width(28.dp))
+                        CircularProgressIndicator(modifier = Modifier.width(28.dp))
                     }
                     if (message.hasCitations) {
                         Spacer(modifier = Modifier.height(8.dp))

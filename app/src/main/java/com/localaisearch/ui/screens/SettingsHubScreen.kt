@@ -155,7 +155,6 @@ private fun SettingsGroupBlock(group: SettingsGroup) {
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SettingsCategoryRow(category: SettingsCategory) {
     // Native Material 3 Expressive ListItem: no custom icon container or hand-rolled row geometry.

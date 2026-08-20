@@ -63,7 +63,7 @@ add_library(mtmd
             models/parakeet.cpp
             )
 
-if (BUILD_SHARED_LIBS AND LLAMA_INSTALL_VERSION)
+if (BUILD_SHARED_LIBS AND NOT ANDROID AND DEFINED LLAMA_INSTALL_VERSION AND NOT "${LLAMA_INSTALL_VERSION}" STREQUAL "")
     set_target_properties(mtmd PROPERTIES
         VERSION ${LLAMA_INSTALL_VERSION}
         SOVERSION 0

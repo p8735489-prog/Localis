@@ -42,8 +42,6 @@ fun SettingsPerformanceScreen(
     val memoryOpt by viewModel.perfMemoryOptimization.collectAsState(true)
     val background by viewModel.perfBackgroundInference.collectAsState(false)
     val tempProtection by viewModel.perfTemperatureProtection.collectAsState(true)
-    val context = LocalContext.current
-    val hardware = remember(context) { HardwareDetector.detectHardware(context) }
 
     Scaffold(
         topBar = {
@@ -79,6 +77,7 @@ fun SettingsPerformanceScreen(
                 }
             }
             item {
+                val hardware = remember { HardwareDetector.detectHardware(LocalContext.current) }
                 val ramGb = hardware.totalRamBytes / (1024.0 * 1024.0 * 1024.0)
                 Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -384,13 +384,6 @@
     <string name="settings_tor_off">Tor متوقف</string>
     <string name="settings_tor_off_desc">فعّل المفتاح أعلاه لتوجيه طلبات شبكة هذا التطبيق عبر Tor.</string>
     <string name="settings_tor_scope_detail">يقوم Tor بتوجيه هذا التطبيق فقط عبر الوكيل. لا يتم إنشاء VPN شامل لنظام Android. يستخدم البحث على الويب ومركز النماذج مسار Tor الخاص بالتطبيق.</string>
-    <string name="settings_tor_exit_country">دولة الخروج</string>
-    <string name="settings_tor_exit_country_desc">اختر دولة خروج Tor. يترك AUTO الاختيار لـ Tor تلقائياً.</string>
-    <string name="settings_tor_custom_config">إعداد Tor مخصص</string>
-    <string name="settings_tor_custom_config_label">أسطر إعداد Tor</string>
-    <string name="settings_tor_custom_config_placeholder">توجيهات torrc اختيارية، سطر واحد لكل توجيه. يتم تجاهل إعدادات SOCKS/التحكم المحمية.</string>
-    <string name="settings_tor_custom_config_desc">توجيهات torrc اختيارية، سطر واحد لكل توجيه. يتم تجاهل إعدادات SOCKS/التحكم المحمية.</string>
-    <string name="settings_tor_exit_status">الخروج: %1$s · IP: %2$s</string>
     <string name="settings_tor_connection_method">طريقة الاتصال</string>
     <string name="settings_proxy_disabled_by_tor">يتم تعطيل الوكيل اليدوي أثناء اتصال Tor.</string>
     <string name="chat_copied">تم النسخ</string>

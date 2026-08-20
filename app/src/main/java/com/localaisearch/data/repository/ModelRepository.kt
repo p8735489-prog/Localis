@@ -44,6 +44,10 @@ class ModelRepository(
     val activeModel: StateFlow<GGUFModel?> = _activeModel.asStateFlow()
     private val modelOperationMutex = Mutex()
 
+    init {
+        refreshModels()
+    }
+
     /**
      * Validate that a file is a valid GGUF file by checking the magic number.
      * The file header must start with "GGUF" (bytes 0x47 0x47 0x55 0x46).
@@ -208,23 +212,11 @@ class ModelRepository(
                     if (!file.isFile || !validateGGUFFile(file)) {
                         return@withLock Result.failure(IllegalArgumentException("Invalid or missing GGUF file: ${model.filePath}"))
                     }
-                    val previous = _activeModel.value
                     engine.unloadModel()
                     _activeModel.value = null
                     val result = engine.loadModel(model.filePath, config)
-                    if (result.isSuccess) {
+                    result.onSuccess {
                         _activeModel.value = model.copy(isLoaded = true)
-                        return@withLock result
-                    }
-
-                    // Do not leave the app with a blank model after a failed switch.
-                    // Re-load the previous model when possible; this also makes rapid
-                    // multi-model switching much safer under memory pressure.
-                    if (previous != null && previous.id != model.id) {
-                        val restore = engine.loadModel(previous.filePath, config)
-                        if (restore.isSuccess) {
-                            _activeModel.value = previous.copy(isLoaded = true)
-                        }
                     }
                     result
                 } catch (e: Exception) {

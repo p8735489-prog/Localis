@@ -46,7 +46,6 @@ import com.localaisearch.ui.screens.VisionModelScreen
 import com.localaisearch.ui.viewmodel.ChatViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
-import kotlinx.coroutines.launch
 
 /**
  * Prevent duplicate destinations when users tap navigation targets repeatedly.
@@ -199,7 +198,8 @@ fun AppNavigation() {
                 onNavigateToModelCenter = { navController.navigateSafely(Routes.MODEL_CENTER) },
                 onNavigateToHistory = { navController.navigateSafely(Routes.CONVERSATION_HISTORY) },
                 onNavigateToMemory = { navController.navigateSafely(Routes.MEMORY_CENTER) },
-                onNavigateToDataSecurity = { navController.navigateSafely(Routes.DATA_SECURITY) }
+                onNavigateToDataSecurity = { navController.navigateSafely(Routes.DATA_SECURITY) },
+                viewModel = chatViewModel
             )
         }
         composable(Routes.MODELS) {
@@ -229,7 +229,8 @@ fun AppNavigation() {
                 onNavigateToData = { navController.navigateSafely(Routes.SETTINGS_DATA) },
                 onNavigateToAbout = { navController.navigateSafely(Routes.SETTINGS_ABOUT) },
                 onNavigateToLanguage = { navController.navigateSafely(Routes.LANGUAGE) },
-                onNavigateToDataSecurity = { navController.navigateSafely(Routes.DATA_SECURITY) }
+                onNavigateToDataSecurity = { navController.navigateSafely(Routes.DATA_SECURITY) },
+                viewModel = chatViewModel
             )
         }
         // Settings sub-pages
@@ -251,7 +252,8 @@ fun AppNavigation() {
         composable(Routes.SETTINGS_PRIVACY) {
             SettingsPrivacyScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToDataSecurity = { navController.navigateSafely(Routes.DATA_SECURITY) }
+                onNavigateToDataSecurity = { navController.navigateSafely(Routes.DATA_SECURITY) },
+                viewModel = chatViewModel
             )
         }
         composable(Routes.SETTINGS_APPEARANCE) {

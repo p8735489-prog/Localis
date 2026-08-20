@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
 
 /**
  * ViewModel for model management (import, delete, switch, load/unload).
@@ -37,10 +36,6 @@ class ModelViewModel(
 
     val models = modelRepo.models
     val activeModel = modelRepo.activeModel
-
-    init {
-        viewModelScope.launch(Dispatchers.IO) { modelRepo.refreshModels() }
-    }
 
     /**
      * Import a GGUF model from a content URI.

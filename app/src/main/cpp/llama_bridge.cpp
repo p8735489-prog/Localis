@@ -216,18 +216,11 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeUnloadModel(JNIEnv*, jobject, 
 
 JNIEXPORT jlong JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeGetMemoryUsage(JNIEnv*, jobject, jlong handle) {
-    ModelContext* mc = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(g_mutex);
-        auto it = g_contexts.find(handle);
-        if (it == g_contexts.end() || !it->second) return -1;
-        mc = it->second;
-    }
-    // Keep the context alive while querying memory; unloadModel() waits on the
-    // same per-model mutex before freeing native resources.
-    std::lock_guard<std::mutex> inferenceLock(mc->inferenceMutex);
+    std::lock_guard<std::mutex> lock(g_mutex);
+    auto it = g_contexts.find(handle);
+    if (it == g_contexts.end()) return -1;
     const int64_t rss = processResidentBytes();
-    return rss > 0 ? rss : mc->memoryUsage;
+    return rss > 0 ? rss : it->second->memoryUsage;
 }
 
 JNIEXPORT jboolean JNICALL

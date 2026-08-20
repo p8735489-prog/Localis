@@ -98,7 +98,7 @@ fun SettingsAIScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                 ) {
                     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Image, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(stringResource(R.string.settings_vision_models), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -262,7 +262,7 @@ private fun LoadModelCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Memory,
+                    imageVector = Icons.Default.Memory,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
                     tint = if (isLoading) Color.White else MaterialTheme.colorScheme.primary

@@ -511,13 +511,6 @@
     <string name="settings_tor_off">Tor is off</string>
     <string name="settings_tor_off_desc">Turn on the switch above to route this app\'s network requests through Tor.</string>
     <string name="settings_tor_scope_detail">Tor only proxies this app. It does not create an Android system-wide VPN. Web search and Model Center requests use the app-only Tor route.</string>
-    <string name="settings_tor_exit_country">Exit country</string>
-    <string name="settings_tor_exit_country_desc">Choose an exit country. AUTO lets Tor choose automatically.</string>
-    <string name="settings_tor_custom_config">Custom Tor configuration</string>
-    <string name="settings_tor_custom_config_label">Tor configuration lines</string>
-    <string name="settings_tor_custom_config_placeholder">Optional torrc directives, one per line. Protected SOCKS/control settings are ignored.</string>
-    <string name="settings_tor_custom_config_desc">Optional torrc directives, one per line. Protected SOCKS/control settings are ignored.</string>
-    <string name="settings_tor_exit_status">Exit: %1$s · IP: %2$s</string>
     <string name="settings_tor_connection_method">Connection method</string>
     <string name="settings_proxy_disabled_by_tor">Manual proxy is disabled while Tor is connected.</string>
 

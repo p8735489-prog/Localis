@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Callback for receiving agent status updates during execution.
@@ -71,7 +70,7 @@ class AgentEngine(
     val status: StateFlow<AgentStatus> = _status.asStateFlow()
 
     private var callback: AgentCallback? = null
-    private val isCancelled = AtomicBoolean(false)
+    private var isCancelled = false
 
     /**
      * Set the callback for receiving updates.
@@ -95,7 +94,7 @@ class AgentEngine(
         conversationHistory: List<Pair<String, String>> = emptyList(),
         systemPrompt: String = ""
     ): Flow<String> = flow {
-        isCancelled.set(false)
+        isCancelled = false
         var searchSession = SearchSession()
 
         try {
@@ -118,7 +117,7 @@ class AgentEngine(
                     add("user" to query)
                 }
                 llmEngine.chatStream(fullHistory, config).collect { token ->
-                    if (isCancelled.get()) return@collect
+                    if (isCancelled) return@collect
                     emit(token)
                     callback?.onToken(token)
                     _status.value = _status.value.copy(
@@ -138,7 +137,7 @@ class AgentEngine(
             var sufficientInfo = false
 
             for (round in 0 until maxRounds) {
-                if (isCancelled.get()) return@flow
+                if (isCancelled) return@flow
 
                 // Generate search keywords
                 updateState(
@@ -237,7 +236,7 @@ class AgentEngine(
                     add("user" to query)
                 }
                 llmEngine.chatStream(fallbackHistory, config).collect { token ->
-                    if (isCancelled.get()) return@collect
+                    if (isCancelled) return@collect
                     emit(token)
                     callback?.onToken(token)
                     _status.value = _status.value.copy(
@@ -264,7 +263,7 @@ class AgentEngine(
                 ),
                 config
             ).collect { token ->
-                if (isCancelled.get()) return@collect
+                if (isCancelled) return@collect
                 emit(token)
                 answerBuilder.append(token)
                 callback?.onToken(token)
@@ -296,7 +295,7 @@ class AgentEngine(
      * coroutine if needed (e.g. from the UI layer via viewModelScope).
      */
     suspend fun cancel() {
-        isCancelled.set(true)
+        isCancelled = true
         llmEngine.stopGeneration()
         updateState(AgentState.IDLE, "Cancelled")
     }
@@ -305,7 +304,7 @@ class AgentEngine(
      * Reset to idle state.
      */
     fun reset() {
-        isCancelled.set(false)
+        isCancelled = false
         _status.value = AgentStatusIdle
     }
 

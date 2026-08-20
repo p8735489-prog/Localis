@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.localaisearch.R
 import com.localaisearch.data.repository.LanguageManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsHubScreen(
     onNavigateBack: () -> Unit, onNavigateToAI: () -> Unit, onNavigateToNetwork: () -> Unit,
@@ -191,9 +193,6 @@ private fun SettingsCategoryRow(category: SettingsCategory) {
                 maxLines = 2
             )
         },
-        headlineContent = {
-            Text(category.label, fontWeight = FontWeight.Medium)
-        },
         trailingContent = {
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -201,5 +200,7 @@ private fun SettingsCategoryRow(category: SettingsCategory) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    )
+    ) {
+        Text(category.label, fontWeight = FontWeight.Medium)
+    }
 }

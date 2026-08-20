@@ -29,7 +29,6 @@ import com.localaisearch.ui.viewmodel.SettingsViewModel
 fun OnboardingScreen(onComplete: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
-    val activity = context as? android.app.Activity
     val settings: SettingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     var page by remember { mutableIntStateOf(0) }
     var selectedLanguage by remember { mutableStateOf(LanguageManager.SYSTEM_DEFAULT) }
@@ -101,7 +100,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                 Button(
                     onClick = {
                         if (page == 2 && selectedLanguage != LanguageManager.SYSTEM_DEFAULT) {
-                            activity?.let { LanguageManager(it).applyLanguage(it, selectedLanguage) }
+                            LanguageManager(context).applyLanguage(context, selectedLanguage)
                         }
                         next()
                     },

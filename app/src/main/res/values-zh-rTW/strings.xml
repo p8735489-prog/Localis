@@ -445,13 +445,6 @@
     <string name="settings_tor_off">Tor 已關閉</string>
     <string name="settings_tor_off_desc">開啟上方開關，即可讓本應用程式的網路請求透過 Tor 路由。</string>
     <string name="settings_tor_scope_detail">Tor 只代理本應用程式，不會建立 Android 全域 VPN。網路搜尋與模型中心要求會使用本應用程式的 Tor 路由。</string>
-    <string name="settings_tor_exit_country">出口國家</string>
-    <string name="settings_tor_exit_country_desc">選擇 Tor 出口國家。AUTO 表示由 Tor 自動選擇。</string>
-    <string name="settings_tor_custom_config">自訂 Tor 設定</string>
-    <string name="settings_tor_custom_config_label">Tor 設定行</string>
-    <string name="settings_tor_custom_config_placeholder">可選 torrc 設定，每行一條。受保護的 SOCKS/控制埠設定會被忽略。</string>
-    <string name="settings_tor_custom_config_desc">可選 torrc 設定，每行一條。受保護的 SOCKS/控制埠設定會被忽略。</string>
-    <string name="settings_tor_exit_status">出口：%1$s · IP：%2$s</string>
     <string name="settings_tor_connection_method">連線方式</string>
     <string name="settings_proxy_disabled_by_tor">Tor 連線後，手動代理會暫時停用。</string>
     <string name="chat_copied">已複製</string>

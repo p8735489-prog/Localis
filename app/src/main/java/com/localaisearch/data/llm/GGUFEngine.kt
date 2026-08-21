@@ -98,24 +98,14 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                 if (isGenerating.get()) {
                     return@withContext Result.failure(IllegalStateException("请先停止当前 AI 生成，再加载或切换模型"))
                 }
-                if (modelHandle > 0L) {
-                    unloadModelInternal()
-                }
-
+                if (!nativeAvailable) nativeAvailable = LlamaBridge.initialize()
                 if (!nativeAvailable) {
-                    nativeAvailable = LlamaBridge.initialize()
-                }
-                if (!nativeAvailable) {
-                    val message = "Local GGUF engine is unavailable: libllama_bridge.so was not loaded for this device ABI. Rebuild/install the version with native llama.cpp enabled."
-                    Log.e(TAG, message)
+                    val message = "Local GGUF engine is unavailable: libllama_bridge.so was not loaded for this device ABI."
                     GlobalErrorHandler.emitModel(message)
                     return@withContext Result.failure(IllegalStateException(message))
                 }
-
                 try {
-                    // Avoid entering native allocation when the device is already under
-                    // severe memory pressure. Native OOMs can terminate the whole process
-                    // before Kotlin gets a chance to render an error.
+                    // Validate the replacement before unloading the healthy current model.
                     val modelFile = File(filePath)
                     if (!modelFile.isFile || modelFile.length() < 8L) {
                         val message = "The GGUF file is missing, empty, or incomplete."
@@ -124,72 +114,46 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     }
                     val metadata = GGUFMetadataReader.readMetadata(filePath)
                     if (metadata.isProjector) {
-                        val message = "This is a vision projector/mmproj file, not a language-model GGUF. Load the matching language model first."
+                        val message = "This is a vision projector/mmproj file, not a language-model GGUF."
                         GlobalErrorHandler.emitModel(message)
                         return@withContext Result.failure(IllegalArgumentException(message))
                     }
                     val am = appContext?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                     val safeThreads = config.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtMost(8).coerceAtLeast(1))
                     var requestedContext = config.contextLength.coerceIn(512, 32768)
-                    if (config.contextLength != requestedContext) {
-                        Log.w(TAG, "Clamping unsafe context length ${config.contextLength} to $requestedContext")
-                    }
                     val memInfo = ActivityManager.MemoryInfo()
                     am?.getMemoryInfo(memInfo)
                     val available = memInfo.availMem
-                    // A GGUF file's on-disk size is not its peak RSS: mmap pages,
-                    // allocator overhead and the KV cache all add memory pressure.
-                    // Refuse obviously unsafe loads before entering native code; a
-                    // native OOM can terminate the Android process and cannot be
-                    // caught reliably by Kotlin.
                     val fileBytes = modelFile.length()
                     if (available > 0L && fileBytes > 0L) {
-                        val contextBudget = (available - (fileBytes * 1.30f).toLong() - 256L * 1024L * 1024L)
-                            .coerceAtLeast(256L * 1024L * 1024L)
+                        val contextBudget = (available - (fileBytes * 1.30f).toLong() - 256L * 1024L * 1024L).coerceAtLeast(256L * 1024L * 1024L)
                         val memoryContextCap = (contextBudget / (96L * 1024L)).toInt().coerceIn(512, 32768)
                         requestedContext = minOf(requestedContext, memoryContextCap)
                     }
                     val kvReserve = requestedContext.toLong() * 96L * 1024L
-                    val requiredFloor = maxOf(
-                        (fileBytes * 1.35f).toLong(),
-                        fileBytes + kvReserve + 256L * 1024L * 1024L
-                    )
+                    val requiredFloor = maxOf((fileBytes * 1.35f).toLong(), fileBytes + kvReserve + 256L * 1024L * 1024L)
                     if (available > 0L && available < requiredFloor) {
                         val message = "Not enough free memory to load this model safely (${formatMemory(available)} free, about ${formatMemory(requiredFloor)} recommended). Try a smaller quantization or lower context length."
                         GlobalErrorHandler.emitModel(message)
                         return@withContext Result.failure(IllegalStateException(message))
                     }
-
-                    val handle = LlamaBridge.nativeLoadModel(
-                        filePath,
-                        requestedContext,
-                        safeThreads,
-                        false,
-                        0
-                    )
+                    if (modelHandle > 0L) unloadModelInternal()
+                    val handle = LlamaBridge.nativeLoadModel(filePath, requestedContext, safeThreads, false, 0)
                     if (handle <= 0L) {
                         val nativeReason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
-                        val message = nativeReason.ifBlank {
-                            "GGUF model could not be loaded by the bundled llama.cpp engine. Check GGUF metadata, model architecture support, file access, and available RAM. File: $filePath"
-                        }
+                        val message = nativeReason.ifBlank { "GGUF model could not be loaded by the bundled llama.cpp engine. Check architecture, file integrity and available RAM." }
                         GlobalErrorHandler.emitModel(message)
                         return@withContext Result.failure(IllegalStateException(message))
                     }
                     modelHandle = handle
                     currentModelPath = filePath
                     currentConfig = config.copy(contextLength = requestedContext, threads = safeThreads, useGpu = false, gpuLayers = 0)
-                    Log.i(TAG, "Model loaded: ${filePath.substringAfterLast('/')}")
                     Result.success(Unit)
                 } catch (e: OutOfMemoryError) {
-                    Log.e(TAG, "Model loading ran out of memory", e)
                     unloadModelInternal()
-                    val message = "The model needs more memory than is currently available. Try a smaller quantization."
-                    GlobalErrorHandler.emitModel(message)
-                    Result.failure(IllegalStateException(message, e))
+                    Result.failure(IllegalStateException("The model needs more memory than is currently available. Try a smaller quantization.", e))
                 } catch (e: Exception) {
-                    Log.e(TAG, "Model loading failed", e)
                     unloadModelInternal()
-                    GlobalErrorHandler.emitModel(e.message ?: "Unknown")
                     Result.failure(e)
                 }
             }
@@ -230,32 +194,29 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
             return@callbackFlow
         }
         stopRequested.set(false)
+        val generationHandle = synchronized(lock) { modelHandle }
+        if (generationHandle <= 0L) {
+            isGenerating.set(false)
+            close(IllegalStateException("Model was unloaded before generation started"))
+            return@callbackFlow
+        }
         val generationJob = launch(Dispatchers.IO) {
             try {
-                synchronized(lock) {
-                    if (modelHandle <= 0L) throw IllegalStateException("Model was unloaded before generation started")
-                    // Thinking depth controls the available generation budget. This keeps the
-                // setting model-agnostic while giving deeper reasoning-capable models more room.
                 val thinkingMultiplier = when (config.thinkingDepth.coerceIn(1, 4)) {
                     1 -> 1.0f
                     2 -> 1.5f
                     3 -> 2.0f
                     else -> 3.0f
                 }
-                val effectiveMaxTokens = (config.maxTokens * thinkingMultiplier)
-                    .toInt()
-                    .coerceAtMost(config.contextLength.coerceAtLeast(128))
+                val effectiveMaxTokens = (config.maxTokens * thinkingMultiplier).toInt().coerceAtMost(config.contextLength.coerceAtLeast(128))
                 val ok = LlamaBridge.nativeGenerateStream(
-                    modelHandle, prompt, config.temperature, effectiveMaxTokens,
+                    generationHandle, prompt, config.temperature, effectiveMaxTokens,
                     config.topK, config.topP, config.repeatPenalty, config.frequencyPenalty, config.presencePenalty,
-                    LlamaBridge.TokenCallback { token ->
-                        if (!stopRequested.get()) trySend(token)
-                    }
+                    LlamaBridge.TokenCallback { token -> if (!stopRequested.get()) trySend(token) }
                 )
-                    if (!ok && !stopRequested.get()) {
-                        val nativeReason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
-                        close(IllegalStateException(nativeReason.ifBlank { "Native generation failed" }))
-                    }
+                if (!ok && !stopRequested.get()) {
+                    val nativeReason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
+                    close(IllegalStateException(nativeReason.ifBlank { "Native generation failed" }))
                 }
             } catch (e: Exception) {
                 if (!stopRequested.get()) close(e)
@@ -372,27 +333,30 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
             return@callbackFlow
         }
         stopRequested.set(false)
+        val generationHandle = synchronized(lock) { modelHandle }
+        if (generationHandle <= 0L) {
+            isGenerating.set(false)
+            close(IllegalStateException("Model was unloaded before multimodal generation started"))
+            return@callbackFlow
+        }
         val generationJob = launch(Dispatchers.IO) {
             try {
-                synchronized(lock) {
-                    val thinkingMultiplier = when (config.thinkingDepth.coerceIn(1, 4)) {
-                        1 -> 1.0f
-                        2 -> 1.5f
-                        3 -> 2.0f
-                        else -> 3.0f
-                    }
-                    val effectiveMaxTokens = (config.maxTokens * thinkingMultiplier)
-                        .toInt().coerceAtMost(config.contextLength.coerceAtLeast(128))
-                    val ok = LlamaBridge.nativeGenerateMultimodalStream(
-                        modelHandle, promptWithMediaMarker, imageBytes, config.temperature,
-                        effectiveMaxTokens, config.topK, config.topP, config.repeatPenalty,
-                        config.frequencyPenalty, config.presencePenalty,
-                        LlamaBridge.TokenCallback { token -> if (!stopRequested.get()) trySend(token) }
-                    )
-                    if (!ok && !stopRequested.get()) {
-                        val reason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
-                        close(IllegalStateException(reason.ifBlank { "Multimodal inference failed" }))
-                    }
+                val thinkingMultiplier = when (config.thinkingDepth.coerceIn(1, 4)) {
+                    1 -> 1.0f
+                    2 -> 1.5f
+                    3 -> 2.0f
+                    else -> 3.0f
+                }
+                val effectiveMaxTokens = (config.maxTokens * thinkingMultiplier).toInt().coerceAtMost(config.contextLength.coerceAtLeast(128))
+                val ok = LlamaBridge.nativeGenerateMultimodalStream(
+                    generationHandle, promptWithMediaMarker, imageBytes, config.temperature,
+                    effectiveMaxTokens, config.topK, config.topP, config.repeatPenalty,
+                    config.frequencyPenalty, config.presencePenalty,
+                    LlamaBridge.TokenCallback { token -> if (!stopRequested.get()) trySend(token) }
+                )
+                if (!ok && !stopRequested.get()) {
+                    val reason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
+                    close(IllegalStateException(reason.ifBlank { "Multimodal inference failed" }))
                 }
             } catch (e: Exception) {
                 if (!stopRequested.get()) close(e)

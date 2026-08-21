@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstring>
+#include <cmath>
 #include <algorithm>
 #include <unordered_map>
 #include <memory>
@@ -211,6 +212,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
 
 JNIEXPORT jboolean JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeUnloadModel(JNIEnv*, jobject, jlong handle) {
+    g_stopRequested.store(true);
     std::shared_ptr<ModelContext> mc;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -344,10 +346,16 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeHasVision(JNIEnv*, jobject, jl
 #ifndef LLAMA_MTMD_AVAILABLE
     return JNI_FALSE;
 #else
-    std::lock_guard<std::mutex> lock(g_mutex);
-    auto it = g_contexts.find(handle);
-    if (it == g_contexts.end() || !it->second || !it->second->mtmd) return JNI_FALSE;
-    return mtmd_support_vision(it->second->mtmd) ? JNI_TRUE : JNI_FALSE;
+    std::shared_ptr<ModelContext> mc;
+    {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        auto it = g_contexts.find(handle);
+        if (it == g_contexts.end() || !it->second) return JNI_FALSE;
+        mc = it->second;
+    }
+    std::lock_guard<std::mutex> inferenceLock(mc->inferenceMutex);
+    if (!mc->mtmd) return JNI_FALSE;
+    return mtmd_support_vision(mc->mtmd) ? JNI_TRUE : JNI_FALSE;
 #endif
 }
 
@@ -385,8 +393,20 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
         setLastError("Image data is empty");
         return JNI_FALSE;
     }
+    constexpr jsize kMaxImageBytes = 12 * 1024 * 1024;
+    if (imageLen > kMaxImageBytes) {
+        env->ReleaseStringUTFChars(jPrompt, prompt);
+        setLastError("Image data is too large for safe on-device vision inference");
+        return JNI_FALSE;
+    }
     std::vector<unsigned char> image((size_t) imageLen);
     env->GetByteArrayRegion(jImage, 0, imageLen, reinterpret_cast<jbyte*>(image.data()));
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        env->ReleaseStringUTFChars(jPrompt, prompt);
+        setLastError("Could not read image data from Java");
+        return JNI_FALSE;
+    }
 
     auto bitmapResult = mtmd_helper_bitmap_init_from_buf(mc->mtmd, image.data(), image.size(), false);
     if (!bitmapResult.bitmap) {
@@ -402,6 +422,12 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
         return JNI_FALSE;
     }
     mtmd_input_chunks* chunks = mtmd_input_chunks_init();
+    if (!chunks) {
+        mtmd_bitmap_free(bitmap);
+        env->ReleaseStringUTFChars(jPrompt, prompt);
+        setLastError("mtmd could not allocate multimodal input chunks");
+        return JNI_FALSE;
+    }
     mtmd_input_text inputText{prompt, strlen(prompt), true, true};
     const mtmd_bitmap* bitmaps[] = {bitmap};
     int32_t tokenizeResult = mtmd_tokenize(mc->mtmd, chunks, &inputText, bitmaps, 1);
@@ -430,8 +456,20 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
         nPast = nextPast;
     }
     mtmd_input_chunks_free(chunks);
+    if (nPast >= llama_n_ctx(mc->ctx)) {
+        setLastError("The multimodal prompt already fills the model context; reduce conversation history or context length");
+        return JNI_FALSE;
+    }
 
     const llama_vocab* vocab = llama_model_get_vocab(mc->model);
+    const int nCtx = llama_n_ctx(mc->ctx);
+    const int safeMaxTokens = std::clamp(maxTokens, 1, std::max(1, nCtx));
+    const int safeTopK = std::clamp(topK, 1, 1000);
+    const float safeTemperature = std::isfinite(temperature) ? std::clamp(temperature, 0.01f, 2.0f) : 0.7f;
+    const float safeTopP = std::isfinite(topP) ? std::clamp(topP, 0.01f, 1.0f) : 0.95f;
+    const float safeRepeatPenalty = std::isfinite(repeatPenalty) ? std::clamp(repeatPenalty, 0.5f, 2.0f) : 1.1f;
+    const float safeFrequencyPenalty = std::isfinite(frequencyPenalty) ? std::clamp(frequencyPenalty, -2.0f, 2.0f) : 0.0f;
+    const float safePresencePenalty = std::isfinite(presencePenalty) ? std::clamp(presencePenalty, -2.0f, 2.0f) : 0.0f;
     jclass callbackClass = env->GetObjectClass(callback);
     jmethodID onToken = env->GetMethodID(callbackClass, "onToken", "(Ljava/lang/String;)V");
     if (!onToken) {
@@ -442,6 +480,11 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
     g_stopRequested.store(false);
 
     llama_batch batch = llama_batch_init(1, 0, 1);
+    if (!batch.token || !batch.pos || !batch.n_seq_id || !batch.seq_id || !batch.logits) {
+        llama_batch_free(batch);
+        setLastError("llama.cpp could not allocate the multimodal decode batch");
+        return JNI_FALSE;
+    }
     llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
     llama_sampler* smpl = llama_sampler_chain_init(sparams);
     if (!smpl) {
@@ -454,10 +497,10 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
         llama_sampler_chain_add(smpl, sampler);
         return true;
     };
-    if (!addSampler(llama_sampler_init_penalties(64, repeatPenalty, frequencyPenalty, presencePenalty)) ||
-        !addSampler(llama_sampler_init_top_k(std::max(1, topK))) ||
-        !addSampler(llama_sampler_init_top_p(std::clamp(topP, 0.0f, 1.0f), 1)) ||
-        !addSampler(llama_sampler_init_temp(std::max(0.0f, temperature))) ||
+    if (!addSampler(llama_sampler_init_penalties(64, safeRepeatPenalty, safeFrequencyPenalty, safePresencePenalty)) ||
+        !addSampler(llama_sampler_init_top_k(safeTopK)) ||
+        !addSampler(llama_sampler_init_top_p(safeTopP, 1)) ||
+        !addSampler(llama_sampler_init_temp(safeTemperature)) ||
         !addSampler(llama_sampler_init_dist((uint32_t)std::chrono::steady_clock::now().time_since_epoch().count()))) {
         llama_sampler_free(smpl);
         llama_batch_free(batch);
@@ -465,10 +508,9 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
         return JNI_FALSE;
     }
 
-    const int nCtx = llama_n_ctx(mc->ctx);
     const llama_token eos = llama_vocab_eos(vocab);
     bool ok = true;
-    for (int i = 0; i < maxTokens && nPast < nCtx; ++i) {
+    for (int i = 0; i < safeMaxTokens && nPast < nCtx; ++i) {
         if (g_stopRequested.load()) break;
         llama_token token = llama_sampler_sample(smpl, mc->ctx, -1);
         llama_sampler_accept(smpl, token);
@@ -524,11 +566,18 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
     const char* prompt = env->GetStringUTFChars(jPrompt, nullptr);
     const llama_vocab* vocab = llama_model_get_vocab(mc->model);
     const int n_ctx = llama_n_ctx(mc->ctx);
+    const int safeMaxTokens = std::clamp(maxTokens, 1, std::max(1, n_ctx));
+    const int safeTopK = std::clamp(topK, 1, 1000);
+    const float safeTemperature = std::isfinite(temperature) ? std::clamp(temperature, 0.01f, 2.0f) : 0.7f;
+    const float safeTopP = std::isfinite(topP) ? std::clamp(topP, 0.01f, 1.0f) : 0.95f;
+    const float safeRepeatPenalty = std::isfinite(repeatPenalty) ? std::clamp(repeatPenalty, 0.5f, 2.0f) : 1.1f;
+    const float safeFrequencyPenalty = std::isfinite(frequencyPenalty) ? std::clamp(frequencyPenalty, -2.0f, 2.0f) : 0.0f;
+    const float safePresencePenalty = std::isfinite(presencePenalty) ? std::clamp(presencePenalty, -2.0f, 2.0f) : 0.0f;
 
     // Every request supplies the complete chat history, so start from a clean KV state.
     llama_memory_clear(llama_get_memory(mc->ctx), true);
 
-    int n_tokens = llama_tokenize(vocab, prompt, strlen(prompt), nullptr, 0, true, false);
+    int n_tokens = llama_tokenize(vocab, prompt, strlen(prompt), nullptr, 0, true, true);
     if (n_tokens < 0) n_tokens = -n_tokens;
     if (n_tokens <= 0 || n_tokens >= n_ctx) {
         env->ReleaseStringUTFChars(jPrompt, prompt);
@@ -536,12 +585,18 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
         return JNI_FALSE;
     }
     std::vector<llama_token> tokens(n_tokens);
-    int written = llama_tokenize(vocab, prompt, strlen(prompt), tokens.data(), tokens.size(), true, false);
+    int written = llama_tokenize(vocab, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
     env->ReleaseStringUTFChars(jPrompt, prompt);
     if (written < 0) return JNI_FALSE;
     tokens.resize(written);
 
-    llama_batch batch = llama_batch_init(n_ctx, 0, 1);
+    const int batchCapacity = std::max(1, (int)tokens.size());
+    llama_batch batch = llama_batch_init(batchCapacity, 0, 1);
+    if (!batch.token || !batch.pos || !batch.n_seq_id || !batch.seq_id || !batch.logits) {
+        llama_batch_free(batch);
+        setLastError("llama.cpp could not allocate the prompt batch; reduce context length or close other apps");
+        return JNI_FALSE;
+    }
     for (int i = 0; i < (int)tokens.size(); ++i) {
         batch.token[i] = tokens[i];
         batch.pos[i] = i;
@@ -569,10 +624,10 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
         llama_sampler_chain_add(smpl, sampler);
         return true;
     };
-    if (!addSampler(llama_sampler_init_penalties(64, repeatPenalty, frequencyPenalty, presencePenalty)) ||
-        !addSampler(llama_sampler_init_top_k(std::max(1, topK))) ||
-        !addSampler(llama_sampler_init_top_p(std::clamp(topP, 0.0f, 1.0f), 1)) ||
-        !addSampler(llama_sampler_init_temp(std::max(0.0f, temperature))) ||
+    if (!addSampler(llama_sampler_init_penalties(64, safeRepeatPenalty, safeFrequencyPenalty, safePresencePenalty)) ||
+        !addSampler(llama_sampler_init_top_k(safeTopK)) ||
+        !addSampler(llama_sampler_init_top_p(safeTopP, 1)) ||
+        !addSampler(llama_sampler_init_temp(safeTemperature)) ||
         !addSampler(llama_sampler_init_dist((uint32_t)std::chrono::steady_clock::now().time_since_epoch().count()))) {
         llama_sampler_free(smpl);
         llama_batch_free(batch);
@@ -583,7 +638,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
     const llama_token eos = llama_vocab_eos(vocab);
     bool ok = true;
     int n_cur = (int)tokens.size();
-    for (int i = 0; i < maxTokens && n_cur < n_ctx; ++i) {
+    for (int i = 0; i < safeMaxTokens && n_cur < n_ctx; ++i) {
         if (g_stopRequested.load()) break;
         llama_token token = llama_sampler_sample(smpl, mc->ctx, -1);
         if (token == eos || token == llama_vocab_bos(vocab)) break;
@@ -708,9 +763,11 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeTokenize(
     if (!mc->model) return -1;
 
     const char* text = env->GetStringUTFChars(jText, nullptr);
+    if (!text) { setLastError("Could not read text from Java"); return -1; }
     const llama_vocab* vocab = llama_model_get_vocab(mc->model);
 
     jint* tokens = env->GetIntArrayElements(jTokens, nullptr);
+    if (!tokens) { env->ReleaseStringUTFChars(jText, text); setLastError("Could not access token output buffer"); return -1; }
     jint maxTokens = env->GetArrayLength(jTokens);
 
     int n = llama_tokenize(vocab, text, strlen(text),

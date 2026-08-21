@@ -1,6 +1,9 @@
 package com.localaisearch.ui.viewmodel
 
 import android.app.Application
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.agent.AgentCallback
@@ -248,12 +251,11 @@ class ChatViewModel(
             ?: throw IllegalStateException("专用视觉模型缺少匹配的 mmproj，请先下载视觉投影器")
 
         local.unloadModel().getOrThrow()
+        var primaryFailure: Throwable? = null
         try {
             local.loadModel(visionPath, config.copy(contextLength = config.contextLength.coerceAtMost(4096), useGpu = false, gpuLayers = 0)).getOrThrow()
             local.loadVisionProjector(projector, config).getOrThrow()
-            val bytes = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                getApplication<Application>().contentResolver.openInputStream(imageUri)?.use { it.readBytes() }
-            } ?: throw IllegalStateException("无法读取图片")
+            val bytes = loadImageBytesSafely(imageUri)
             require(bytes.isNotEmpty()) { "图片为空" }
             val history = listOf("user" to "<__media__>\n${userPrompt.ifBlank { "请详细描述这张图片，包括主要对象、文字、场景和关键细节。" }}")
             val formatted = LlamaBridge.nativeFormatChat(
@@ -266,15 +268,55 @@ class ChatViewModel(
             local.generateMultimodalStream(formatted, bytes, config.copy(maxTokens = minOf(config.maxTokens, 768))).collect { token ->
                 if (requestGeneration.get() == requestId) out.append(token)
             }
-            out.toString().trim().ifBlank { throw IllegalStateException("专用视觉模型没有返回识别结果") }
+            return out.toString().trim().ifBlank { throw IllegalStateException("专用视觉模型没有返回识别结果") }
+        } catch (t: Throwable) {
+            primaryFailure = t
+            throw t
         } finally {
             runCatching { local.unloadModel() }
-            // Restore the original conversation model before returning. If restoration
-            // fails, the caller gets a clear error instead of leaving the app in a
-            // half-loaded state.
-            local.loadModel(primaryPath, primaryConfig).getOrThrow()
+            val restore = runCatching { local.loadModel(primaryPath, primaryConfig).getOrThrow() }
+            if (restore.isFailure && primaryFailure == null) throw restore.exceptionOrNull()!!
         }
     }
+
+    /**
+     * Bound image memory before entering JNI/mtmd. Camera photos can be tens of MB;
+     * reading them directly with readBytes() can kill the Android process before the
+     * native layer can return a controlled error.
+     */
+    private suspend fun loadImageBytesSafely(uri: android.net.Uri): ByteArray =
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val resolver = getApplication<Application>().contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use { input -> BitmapFactory.decodeStream(input, null, bounds) }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+                throw IllegalArgumentException("无法识别图片格式或图片已损坏")
+            }
+            val maxDimension = 2048
+            var sample = 1
+            while (bounds.outWidth / sample > maxDimension || bounds.outHeight / sample > maxDimension) sample *= 2
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = sample.coerceAtLeast(1)
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            val bitmap = resolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            } ?: throw IllegalStateException("无法读取所选图片")
+            try {
+                if (bitmap.width <= 0 || bitmap.height <= 0) throw IllegalArgumentException("所选图片为空")
+                val output = ByteArrayOutputStream(2 * 1024 * 1024)
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)) {
+                    throw IllegalStateException("无法准备图片用于本地视觉模型")
+                }
+                val bytes = output.toByteArray()
+                if (bytes.isEmpty() || bytes.size > 12 * 1024 * 1024) {
+                    throw IllegalStateException("图片过大，无法安全交给本地视觉模型。请使用较小的图片")
+                }
+                bytes
+            } finally {
+                bitmap.recycle()
+            }
+        }
 
     private fun findProjectorForModel(modelPath: String): String? {
         val file = java.io.File(modelPath)
@@ -459,9 +501,7 @@ class ChatViewModel(
                     } else {
                     localEngine.loadVisionProjector(projectorPath, inferenceConfig).getOrThrow()
 
-                    val imageBytes = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        getApplication<Application>().contentResolver.openInputStream(pendingImage)?.use { it.readBytes() }
-                    } ?: throw IllegalStateException("无法读取所选图片")
+                    val imageBytes = loadImageBytesSafely(pendingImage)
                     if (imageBytes.isEmpty()) throw IllegalStateException("所选图片为空")
 
                     val multimodalMessages = buildList {
@@ -771,6 +811,7 @@ class ChatViewModel(
      */
     fun checkAutoUnload() {
         if (!_isAutoModeEnabled.value) return
+        if (_isProcessing.value) return
         if (!llmEngine.isLoaded) return
 
         val config = AutoModeConfigDefault

@@ -113,6 +113,9 @@ jobs:
       - name: Run native CI preflight
         run: python3 tools/ci_preflight.py
 
+      - name: Run model runtime audit
+        run: python3 tools/model_runtime_audit.py
+
       - name: Run release configuration audit
         run: python3 tools/release_audit.py
 

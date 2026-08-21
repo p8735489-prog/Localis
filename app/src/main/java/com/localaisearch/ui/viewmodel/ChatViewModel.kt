@@ -36,6 +36,7 @@ import com.localaisearch.data.repository.SearchRepository
 import com.localaisearch.data.repository.SettingsRepository
 import com.localaisearch.data.search.SearchConfig
 import kotlinx.coroutines.Job
+import com.localaisearch.ui.state.AIState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -77,6 +78,9 @@ class ChatViewModel(
 
     private var agentEngine: AgentEngine? = null
     private var currentJob: Job? = null
+
+    private val _aiState = MutableStateFlow<AIState>(AIState.Idle)
+    val aiState: StateFlow<AIState> = _aiState.asStateFlow()
     /** Monotonically increasing request id used to invalidate stale callbacks. */
     private val requestGeneration = AtomicLong(0L)
     private var lastModelActivityTime: Long = System.currentTimeMillis()
@@ -409,6 +413,7 @@ class ChatViewModel(
         _citations.value = emptyList()
         _searchResults.value = emptyList()
         _isProcessing.value = true
+        _aiState.value = AIState.LoadingModel
         _privacySessionEnded.value = false
         lastModelActivityTime = System.currentTimeMillis()
 
@@ -442,6 +447,8 @@ class ChatViewModel(
                     getSystemPromptText()
                 }
 
+                _aiState.value = AIState.PreparingContext
+
                 // -- Build optimized context --
                 val allMessages = _conversation.value.messages
                     .dropLast(2) // Exclude current user message and placeholder
@@ -471,6 +478,7 @@ class ChatViewModel(
                 // -- Determine search behavior --
                 val enableSearch = determineSearchBehavior(query, searchConfig)
 
+                _aiState.value = AIState.Thinking
                 val reasoningParser = ReasoningStreamParser(enabled = inferenceConfig.thinkingEnabled)
                 updateLastMessage { it.copy(reasoningContent = "", isThinking = inferenceConfig.thinkingEnabled) }
 
@@ -493,6 +501,7 @@ class ChatViewModel(
 
                     override fun onToken(token: String) {
                         if (requestGeneration.get() != requestId) return
+                        _aiState.value = AIState.Generating(answerBuffer.length)
                         val events = reasoningParser.feed(token)
                         for (event in events) {
                             when (event) {
@@ -534,6 +543,7 @@ class ChatViewModel(
                         val finalAnswer = stripReasoningMarkers(rawFinal)
                         _currentAnswer.value = finalAnswer
                         _citations.value = citations
+                        _aiState.value = AIState.Completed
                         updateLastMessage {
                             it.copy(
                                 content = finalAnswer,
@@ -548,6 +558,7 @@ class ChatViewModel(
                     override fun onError(message: String) {
                         if (requestGeneration.get() != requestId) return
                         _error.value = message
+                        _aiState.value = AIState.Error(message)
                         updateLastMessage {
                             it.copy(
                                 content = it.content.ifBlank { "Error: $message" },
@@ -653,6 +664,7 @@ class ChatViewModel(
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
+                _aiState.value = AIState.Error(e.message ?: "Unknown error")
                 updateLastMessage {
                     it.copy(
                         content = it.content.ifBlank { "Error: ${e.message}" },

@@ -1,6 +1,6 @@
 package com.localaisearch.ui.components
 
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +19,12 @@ fun PixelSurface(
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        contentPadding = PaddingValues(20.dp)
-    ) { content() }
+        )
+    ) {
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.padding(20.dp)
+        ) {
+            content()
+        }
+    }
 }

@@ -945,7 +945,7 @@ class ChatViewModel(
             Regex("(?s)<think>.*?</think>"),
             Regex("(?s)<\|think\|>.*?<\|/think\|>"),
             Regex("(?s)<\|start_thinking\|>.*?<\|end_thinking\|>"),
-            Regex("(?s)\[THINK\].*?\[/THINK\]")
+            Regex("(?s)\\[THINK\\].*?\\[/THINK\\]")
         )
         return patterns.fold(raw) { text, regex -> text.replace(regex, "") }.trim()
     }

@@ -1,0 +1,198 @@
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 35e5b7a..953a1d3 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -23,7 +23,19 @@ android {
+         externalNativeBuild {
+             cmake {
+                 cppFlags("-std=c++17", "-fexceptions", "-frtti")
+-                arguments("-DANDROID_STL=c++_shared")
++                arguments(
++                    "-DANDROID_STL=c++_shared",
++                    // The Vulkan backend's shader generator runs on the HOST at build
++                    // time and depends on the host-installed SPIRV-Headers/glslc
++                    // packages (ggml-vulkan/CMakeLists.txt: find_package(SPIRV-Headers
++                    // CONFIG REQUIRED)). The Android NDK toolchain file defaults
++                    // CMAKE_FIND_ROOT_PATH_MODE_PACKAGE to ONLY, which restricts every
++                    // find_package() call to the NDK sysroot only -- so even though CI
++                    // apt-installs spirv-headers on the runner, CMake can never see it
++                    // and configuration fails with "Could not find ... SPIRV-Headers".
++                    // BOTH lets find_package() also search the normal host prefix path.
++                    "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH"
++                )
+             }
+         }
+         ndk {
+diff --git a/app/src/main/java/com/localaisearch/ui/components/SearchInputBar.kt b/app/src/main/java/com/localaisearch/ui/components/SearchInputBar.kt
+index c4a91eb..8c61747 100644
+--- a/app/src/main/java/com/localaisearch/ui/components/SearchInputBar.kt
++++ b/app/src/main/java/com/localaisearch/ui/components/SearchInputBar.kt
+@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Add
+ import androidx.compose.material.icons.rounded.Close
+ import androidx.compose.material.icons.rounded.AutoAwesome
+ import androidx.compose.material.icons.rounded.Code
++import androidx.compose.material.icons.rounded.Public
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.FilterChip
+@@ -62,7 +63,8 @@ fun SearchInputBar(
+     imageUnavailableReason: String? = null,
+     onImageUnavailableClick: () -> Unit = {},
+     reasoningMode: ReasoningMode = ReasoningMode.THINKING,
+-    onReasoningModeChange: (ReasoningMode) -> Unit = {}
++    onReasoningModeChange: (ReasoningMode) -> Unit = {},
++    onInternetSearchToggle: () -> Unit = {}
+ ) {
+     val colorScheme = MaterialTheme.colorScheme
+     val hapticView = LocalView.current
+@@ -129,6 +131,30 @@ fun SearchInputBar(
+                 }
+             }
+ 
++            IconButton(
++                onClick = {
++                    if (enabled) {
++                        AppHaptics.tap(hapticView)
++                        onInternetSearchToggle()
++                    }
++                },
++                enabled = enabled,
++                modifier = Modifier.size(40.dp)
++            ) {
++                Icon(
++                    imageVector = Icons.Rounded.Public,
++                    contentDescription = stringResource(
++                        if (internetSearchEnabled) R.string.disable_web_search else R.string.enable_web_search
++                    ),
++                    tint = if (internetSearchEnabled && enabled) {
++                        colorScheme.primary
++                    } else {
++                        colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 0.55f else 0.32f)
++                    },
++                    modifier = Modifier.size(20.dp)
++                )
++            }
++
+             Spacer(modifier = Modifier.width(4.dp))
+ 
+             BasicTextField(
+diff --git a/app/src/main/java/com/localaisearch/ui/screens/HomeScreen.kt b/app/src/main/java/com/localaisearch/ui/screens/HomeScreen.kt
+index 9236ff0..9823792 100644
+--- a/app/src/main/java/com/localaisearch/ui/screens/HomeScreen.kt
++++ b/app/src/main/java/com/localaisearch/ui/screens/HomeScreen.kt
+@@ -110,6 +110,7 @@ import com.localaisearch.ui.components.ChatBubble
+ import com.localaisearch.ui.components.ExpressiveCard
+ import com.localaisearch.ui.components.MorphingSendButton
+ import com.localaisearch.ui.components.PrivacyBadge
++import com.localaisearch.ui.components.ReasoningMode
+ import com.localaisearch.ui.components.SearchInputBar
+ import com.localaisearch.ui.components.SendButtonState
+ import com.localaisearch.ui.components.SourceCard
+@@ -433,6 +434,9 @@ fun HomeScreen(
+                             onSelectModel = onNavigateToModels,
+                             isPrivacyMode = isPrivacyMode,
+                             internetSearchEnabled = internetSearchEnabled,
++                            onToggleSearch = { viewModel.toggleInternetSearch() },
++                            reasoningMode = reasoningMode,
++                            onReasoningModeChange = viewModel::setReasoningMode,
+                             inputText = inputText,
+                             onInputChange = { inputText = it },
+                             onSend = {
+@@ -470,6 +474,8 @@ fun HomeScreen(
+                             sendButtonState = sendButtonState,
+                             internetSearchEnabled = internetSearchEnabled,
+                             onToggleSearch = { viewModel.toggleInternetSearch() },
++                            reasoningMode = reasoningMode,
++                            onReasoningModeChange = viewModel::setReasoningMode,
+                             onCancel = { viewModel.cancel() },
+                             error = error,
+                             isPrivacyMode = isPrivacyMode,
+@@ -583,6 +589,9 @@ private fun EmptyStateScreen(
+     onSelectModel: () -> Unit,
+     isPrivacyMode: Boolean,
+     internetSearchEnabled: Boolean,
++    onToggleSearch: () -> Unit,
++    reasoningMode: ReasoningMode,
++    onReasoningModeChange: (ReasoningMode) -> Unit,
+     inputText: String,
+     onInputChange: (String) -> Unit,
+     onSend: () -> Unit,
+@@ -652,7 +661,8 @@ private fun EmptyStateScreen(
+                 onAttachClick = onAttachClick,
+                 onImageUnavailableClick = onImageUnavailableClick,
+                 reasoningMode = reasoningMode,
+-                onReasoningModeChange = viewModel::setReasoningMode
++                onReasoningModeChange = onReasoningModeChange,
++                onInternetSearchToggle = onToggleSearch
+             )
+         }
+ 
+@@ -677,6 +687,8 @@ private fun ChatScreen(
+     sendButtonState: SendButtonState,
+     internetSearchEnabled: Boolean,
+     onToggleSearch: () -> Unit,
++    reasoningMode: ReasoningMode,
++    onReasoningModeChange: (ReasoningMode) -> Unit,
+     onCancel: () -> Unit,
+     error: String?,
+     isPrivacyMode: Boolean,
+@@ -819,7 +831,8 @@ private fun ChatScreen(
+                 onAttachClick = onAttachClick,
+                 onImageUnavailableClick = onImageUnavailableClick,
+                 reasoningMode = reasoningMode,
+-                onReasoningModeChange = viewModel::setReasoningMode
++                onReasoningModeChange = onReasoningModeChange,
++                onInternetSearchToggle = onToggleSearch
+             )
+         }
+         }
+diff --git a/app/src/main/java/com/localaisearch/ui/viewmodel/ChatViewModel.kt b/app/src/main/java/com/localaisearch/ui/viewmodel/ChatViewModel.kt
+index 20d170c..6f0ba2c 100644
+--- a/app/src/main/java/com/localaisearch/ui/viewmodel/ChatViewModel.kt
++++ b/app/src/main/java/com/localaisearch/ui/viewmodel/ChatViewModel.kt
+@@ -155,14 +155,27 @@ class ChatViewModel(
+                 _loadedModelName.value = active?.name ?: llmEngine.loadedModelName.orEmpty()
+             }
+         }
++        // Continuously observe these two settings (not a one-shot read): both the
++        // internet-search toggle and the reasoning mode can also be changed from the
++        // Settings screens (SettingsHubScreen/SettingsNetworkScreen/SettingsAIScreen).
++        // Since this ViewModel is scoped to the Home nav-graph entry and survives
++        // navigating away to Settings and back, a one-shot `.first()` read here would
++        // leave the composer's globe icon / Thinking chip showing stale state after
++        // such a round trip until the process was killed and restarted.
+         viewModelScope.launch {
+-            _internetSearchEnabled.value = settingsRepo.internetSearchEnabled.first()
+-            _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
+-            _reasoningMode.value = when (settingsRepo.reasoningMode.first().lowercase()) {
+-                "off" -> ReasoningMode.OFF
+-                else -> ReasoningMode.THINKING
++            settingsRepo.internetSearchEnabled.collect { _internetSearchEnabled.value = it }
++        }
++        viewModelScope.launch {
++            settingsRepo.reasoningMode.collect { raw ->
++                _reasoningMode.value = when (raw.lowercase()) {
++                    "off" -> ReasoningMode.OFF
++                    else -> ReasoningMode.THINKING
++                }
+             }
+         }
++        viewModelScope.launch {
++            _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
++        }
+         // Model loading is performed by the model screen's ViewModel, but the engine is shared.
+         // Poll only this tiny state so Home reflects load/unload without recreating the engine.
+         viewModelScope.launch {
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 59c7231..5107c11 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -560,7 +560,7 @@
+     <string name="settings_cpu_fallback">当前设备使用 CPU 安全回退</string>
+     <string name="settings_advanced">高级设置</string>
+ 
+-    <string name="settings_tor_system_vpn_note">Tor currently uses an app-only SOCKS tunnel. Android's system VPN indicator appears only when a real VpnService tunnel is active; Localis does not fake that state.</string>
++    <string name="settings_tor_system_vpn_note">Tor currently uses an app-only SOCKS tunnel. Android\'s system VPN indicator appears only when a real VpnService tunnel is active; Localis does not fake that state.</string>
+     <string name="settings_tor_app_proxy_label">App-only Tor proxy</string>
+     <string name="settings_fast_inference">Fast local inference</string>
+     <string name="chat_thinking_mode">Thinking</string>

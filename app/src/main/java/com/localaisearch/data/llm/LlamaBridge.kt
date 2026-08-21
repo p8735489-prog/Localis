@@ -31,7 +31,7 @@ object LlamaBridge {
     ): Boolean
 
     /** Format chat messages using the model's GGUF chat-template metadata. */
-    external fun nativeFormatChat(handle: Long, roles: Array<String>, contents: Array<String>): String
+    external fun nativeFormatChat(handle: Long, roles: Array<String>, contents: Array<String>, enableThinking: Boolean = true): String
 
     external fun nativeStopGeneration(): Boolean
     external fun nativeTokenize(handle: Long, text: String, tokens: IntArray): Long

@@ -490,4 +490,10 @@
     <string name="settings_tor_system_vpn_note">Tor verwendet derzeit einen App-eigenen SOCKS-Tunnel. Das Android-VPN-Symbol erscheint nur bei einem echten VpnService-Tunnel.</string>
     <string name="settings_tor_app_proxy_label">Tor-Proxy nur für die App</string>
     <string name="settings_fast_inference">Schnelle lokale Inferenz</string>
+    <string name="chat_thinking_mode">Denken</string>
+    <string name="chat_thinking_off">Denken aus</string>
+    <string name="chat_thinking_active">Denken</string>
+    <string name="chat_thinking_done">Denkprozess</string>
+    <string name="chat_thinking_dots">Denke…</string>
+    <string name="settings_thinking_enabled">Denken aktivieren</string>
 </resources>

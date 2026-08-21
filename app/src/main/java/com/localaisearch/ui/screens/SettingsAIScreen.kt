@@ -205,6 +205,12 @@ fun SettingsAIScreen(
                 SliderRow(stringResource(R.string.settings_presence_penalty), inferenceConfig.presencePenalty, -2f..2f, 40, if (inferenceConfig.presencePenalty == 0f) stringResource(R.string.settings_penalty_unspecified) else "%.2f".format(inferenceConfig.presencePenalty)) { viewModel.updatePresencePenalty(it) }
                 Text(stringResource(R.string.settings_topic_diversity), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
             }
+            item {
+                SwitchRow(
+                    stringResource(R.string.settings_thinking_enabled),
+                    inferenceConfig.thinkingEnabled
+                ) { viewModel.updateThinkingEnabled(it) }
+            }
             item { SettingsSectionTitle(stringResource(R.string.settings_thinking_depth)) }
             item {
                 SliderRow(

@@ -563,4 +563,10 @@
     <string name="settings_tor_system_vpn_note">Tor currently uses an app-only SOCKS tunnel. Android's system VPN indicator appears only when a real VpnService tunnel is active; Localis does not fake that state.</string>
     <string name="settings_tor_app_proxy_label">App-only Tor proxy</string>
     <string name="settings_fast_inference">Fast local inference</string>
+    <string name="chat_thinking_mode">Thinking</string>
+    <string name="chat_thinking_off">Thinking off</string>
+    <string name="chat_thinking_active">Thinking</string>
+    <string name="chat_thinking_done">Thought process</string>
+    <string name="chat_thinking_dots">Thinking…</string>
+    <string name="settings_thinking_enabled">Enable thinking</string>
 </resources>

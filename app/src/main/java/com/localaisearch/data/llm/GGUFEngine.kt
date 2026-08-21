@@ -285,7 +285,7 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                 }
                 val roles = messages.map { it.first }.toTypedArray()
                 val contents = messages.map { it.second }.toTypedArray()
-                val formatted = LlamaBridge.nativeFormatChat(handle, roles, contents)
+                val formatted = LlamaBridge.nativeFormatChat(handle, roles, contents, config.thinkingEnabled)
                 if (formatted.isBlank()) {
                     val reason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
                     throw IllegalStateException(

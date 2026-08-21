@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,12 +19,21 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +60,9 @@ fun SearchInputBar(
     sendButtonState: SendButtonState = SendButtonState.IDLE,
     pendingImageAvailable: Boolean = false,
     imageUnavailableReason: String? = null,
-    onImageUnavailableClick: () -> Unit = {}
+    onImageUnavailableClick: () -> Unit = {},
+    reasoningMode: ReasoningMode = ReasoningMode.THINKING,
+    onReasoningModeChange: (ReasoningMode) -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val hapticView = LocalView.current
@@ -83,6 +95,38 @@ fun SearchInputBar(
                     tint = colorScheme.onSurfaceVariant.copy(alpha = if (enabled && imageInputAvailable) 0.85f else 0.32f),
                     modifier = Modifier.size(20.dp)
                 )
+            }
+
+            Spacer(modifier = Modifier.width(2.dp))
+
+            var reasoningMenuExpanded by remember { mutableStateOf(false) }
+            Box {
+                FilterChip(
+                    selected = reasoningMode != ReasoningMode.OFF,
+                    onClick = { if (enabled) reasoningMenuExpanded = true },
+                    label = {
+                        Text(
+                            text = when (reasoningMode) {
+                                ReasoningMode.OFF -> stringResource(R.string.chat_thinking_off)
+                                ReasoningMode.THINKING -> stringResource(R.string.chat_thinking_mode)
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    leadingIcon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.heightIn(min = 34.dp)
+                )
+                DropdownMenu(expanded = reasoningMenuExpanded, onDismissRequest = { reasoningMenuExpanded = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.chat_thinking_off)) },
+                        onClick = { onReasoningModeChange(ReasoningMode.OFF); reasoningMenuExpanded = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.chat_thinking_mode)) },
+                        onClick = { onReasoningModeChange(ReasoningMode.THINKING); reasoningMenuExpanded = false }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(4.dp))

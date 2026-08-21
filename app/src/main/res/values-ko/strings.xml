@@ -435,4 +435,10 @@
     <string name="settings_tor_system_vpn_note">Tor는 현재 앱 전용 SOCKS 터널을 사용합니다. Android 시스템 VPN 아이콘은 실제 VpnService 터널이 활성화된 경우에만 표시됩니다.</string>
     <string name="settings_tor_app_proxy_label">앱 전용 Tor 프록시</string>
     <string name="settings_fast_inference">빠른 로컬 추론</string>
+    <string name="chat_thinking_mode">사고</string>
+    <string name="chat_thinking_off">사고 끄기</string>
+    <string name="chat_thinking_active">사고 중</string>
+    <string name="chat_thinking_done">사고 과정</string>
+    <string name="chat_thinking_dots">사고 중…</string>
+    <string name="settings_thinking_enabled">사고 사용</string>
 </resources>

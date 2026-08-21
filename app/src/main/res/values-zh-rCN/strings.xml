@@ -556,4 +556,10 @@
     <string name="settings_tor_system_vpn_note">Tor 当前使用应用级 SOCKS 通道。只有真正的 Android VpnService 隧道运行时，系统 VPN 图标才会出现；Localis 不会伪造该状态。</string>
     <string name="settings_tor_app_proxy_label">应用级 Tor 代理</string>
     <string name="settings_fast_inference">快速本地推理</string>
+    <string name="chat_thinking_mode">思考</string>
+    <string name="chat_thinking_off">关闭思考</string>
+    <string name="chat_thinking_active">正在思考</string>
+    <string name="chat_thinking_done">思考过程</string>
+    <string name="chat_thinking_dots">思考中…</string>
+    <string name="settings_thinking_enabled">开启思考</string>
 </resources>

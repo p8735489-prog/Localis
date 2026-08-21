@@ -435,4 +435,10 @@
     <string name="settings_tor_system_vpn_note">Tor сейчас использует SOCKS-туннель только для приложения. Значок системного VPN Android появляется только при настоящем туннеле VpnService.</string>
     <string name="settings_tor_app_proxy_label">Tor-прокси только для приложения</string>
     <string name="settings_fast_inference">Быстрый локальный вывод</string>
+    <string name="chat_thinking_mode">Рассуждение</string>
+    <string name="chat_thinking_off">Рассуждение выкл.</string>
+    <string name="chat_thinking_active">Рассуждает</string>
+    <string name="chat_thinking_done">Процесс рассуждения</string>
+    <string name="chat_thinking_dots">Думаю…</string>
+    <string name="settings_thinking_enabled">Включить рассуждение</string>
 </resources>

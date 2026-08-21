@@ -30,6 +30,7 @@ data class InferenceConfig(
     val gpuLayers: Int = 99,
     val threads: Int = 0,
     val thinkingDepth: Int = 1,
+    val thinkingEnabled: Boolean = true,
     val backend: HardwareBackend = HardwareBackend.CPU,
     val seed: Int = -1
 )
@@ -68,6 +69,7 @@ data class AdvancedInferenceConfig(
     val gpuLayers: Int = 99,
     val threads: Int = 0,
     val thinkingDepth: Int = 1,
+    val thinkingEnabled: Boolean = true,
     val seed: Int = -1,
     // Advanced fields
     val batchSize: Int = -1,
@@ -102,6 +104,7 @@ data class AdvancedInferenceConfig(
             gpuLayers = gpuLayers,
             threads = threads,
             thinkingDepth = thinkingDepth,
+            thinkingEnabled = thinkingEnabled,
             backend = backend,
             seed = seed
         )
@@ -158,6 +161,7 @@ fun PerformanceProfile.toAdvancedInferenceConfig(): AdvancedInferenceConfig {
         gpuLayers = gpuLayers,
         threads = cpuThreads,
         thinkingDepth = 2,
+        thinkingEnabled = true,
         seed = -1,
         batchSize = batchSize,
         useMmap = useMmap,

@@ -156,6 +156,7 @@ fun HomeScreen(
     val imageInputAvailable by viewModel.imageInputAvailable.collectAsState()
     val pendingImageUri by viewModel.pendingImageUri.collectAsState()
     val defaultSystemPrompt by viewModel.defaultSystemPrompt.collectAsState()
+    val reasoningMode by viewModel.reasoningMode.collectAsState()
     val storedConversations by conversationViewModel.conversations.collectAsState()
     val torStatus by TorManager.statusFlow.collectAsState()
     val torRoutingActive = torStatus == TorManager.Status.ON
@@ -649,7 +650,9 @@ private fun EmptyStateScreen(
                 pendingImageAvailable = pendingImageAvailable,
                 imageUnavailableReason = stringResource(R.string.image_input_unavailable_desc),
                 onAttachClick = onAttachClick,
-                onImageUnavailableClick = onImageUnavailableClick
+                onImageUnavailableClick = onImageUnavailableClick,
+                reasoningMode = reasoningMode,
+                onReasoningModeChange = viewModel::setReasoningMode
             )
         }
 
@@ -710,7 +713,7 @@ private fun ChatScreen(
             // Ordinary local generation uses a quiet typing indicator instead of a
             // large multi-step progress rail. Search-specific status remains in the
             // search result cards, so the chat never jumps vertically while tokens stream.
-            val waitingForFirstToken = isProcessing && messages.lastOrNull()?.let { it.role == com.localaisearch.data.model.MessageRole.ASSISTANT && it.content.isBlank() && it.isStreaming } == true
+            val waitingForFirstToken = isProcessing && messages.lastOrNull()?.let { it.role == com.localaisearch.data.model.MessageRole.ASSISTANT && it.content.isBlank() && it.isStreaming && !it.isThinking } == true
             if (waitingForFirstToken) {
                 item {
                     Row(
@@ -731,7 +734,7 @@ private fun ChatScreen(
                 // This prevents a second loading surface from flashing in/out while
                 // the first tokens are arriving. Once content exists, the same keyed
                 // item becomes the normal assistant bubble without changing identity.
-                if (!message.isStreaming || message.content.isNotBlank()) {
+                if (!message.isStreaming || message.content.isNotBlank() || message.isThinking || message.reasoningContent.isNotBlank()) {
                     ChatBubble(
                         message = message,
                         onRegenerate = { onRegenerate(message) },
@@ -814,7 +817,9 @@ private fun ChatScreen(
                 pendingImageAvailable = pendingImageAvailable,
                 imageUnavailableReason = stringResource(R.string.image_input_unavailable_desc),
                 onAttachClick = onAttachClick,
-                onImageUnavailableClick = onImageUnavailableClick
+                onImageUnavailableClick = onImageUnavailableClick,
+                reasoningMode = reasoningMode,
+                onReasoningModeChange = viewModel::setReasoningMode
             )
         }
         }

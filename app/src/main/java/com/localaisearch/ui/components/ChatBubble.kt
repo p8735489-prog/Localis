@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DropdownMenu
@@ -36,6 +38,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -128,6 +133,45 @@ fun ChatBubble(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
             Box {
+            if (!isUser && (message.reasoningContent.isNotBlank() || message.isThinking)) {
+                var expandedThinking by remember(message.id) { mutableStateOf(message.isThinking) }
+                Surface(
+                    onClick = { expandedThinking = !expandedThinking },
+                    shape = MaterialTheme.shapes.large,
+                    color = colorScheme.surfaceContainerLow,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = colorScheme.primary, modifier = Modifier.width(18.dp))
+                            Text(
+                                text = if (message.isThinking) stringResource(R.string.chat_thinking_active) else stringResource(R.string.chat_thinking_done),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, modifier = Modifier.graphicsLayer { rotationZ = if (expandedThinking) 180f else 0f })
+                        }
+                        AnimatedVisibility(
+                            visible = expandedThinking,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Column(modifier = Modifier.padding(top = 8.dp)) {
+                                Text(
+                                    text = message.reasoningContent.ifBlank { stringResource(R.string.chat_thinking_dots) },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colorScheme.onSurfaceVariant
+                                )
+                                if (message.isThinking) {
+                                    LocalisTypingIndicator(modifier = Modifier.padding(top = 6.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Surface(
                 shape = MaterialTheme.shapes.large,
                 color = if (isUser) colorScheme.primaryContainer else colorScheme.surfaceContainer,

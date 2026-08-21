@@ -490,4 +490,10 @@
     <string name="settings_tor_system_vpn_note">O Tor usa atualmente um túnel SOCKS apenas para o app. O ícone de VPN do Android aparece somente com um túnel VpnService real.</string>
     <string name="settings_tor_app_proxy_label">Proxy Tor apenas no app</string>
     <string name="settings_fast_inference">Inferência local rápida</string>
+    <string name="chat_thinking_mode">Pensamento</string>
+    <string name="chat_thinking_off">Pensamento desligado</string>
+    <string name="chat_thinking_active">Pensando</string>
+    <string name="chat_thinking_done">Processo de pensamento</string>
+    <string name="chat_thinking_dots">Pensando…</string>
+    <string name="settings_thinking_enabled">Ativar pensamento</string>
 </resources>

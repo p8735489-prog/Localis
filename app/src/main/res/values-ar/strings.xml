@@ -435,4 +435,10 @@
     <string name="settings_tor_system_vpn_note">يستخدم Tor حالياً نفق SOCKS داخل التطبيق فقط. يظهر رمز VPN في Android عند تشغيل نفق VpnService حقيقي فقط.</string>
     <string name="settings_tor_app_proxy_label">وكيل Tor للتطبيق فقط</string>
     <string name="settings_fast_inference">استدلال محلي سريع</string>
+    <string name="chat_thinking_mode">تفكير</string>
+    <string name="chat_thinking_off">إيقاف التفكير</string>
+    <string name="chat_thinking_active">جارٍ التفكير</string>
+    <string name="chat_thinking_done">عملية التفكير</string>
+    <string name="chat_thinking_dots">جارٍ التفكير…</string>
+    <string name="settings_thinking_enabled">تفعيل التفكير</string>
 </resources>

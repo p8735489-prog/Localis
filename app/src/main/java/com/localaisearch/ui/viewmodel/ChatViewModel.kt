@@ -21,6 +21,7 @@ import com.localaisearch.data.model.MessageRole
 import com.localaisearch.data.model.SearchRound
 import com.localaisearch.data.model.SearchResult
 import com.localaisearch.data.model.SearchSession
+import com.localaisearch.ui.components.ReasoningMode
 import com.localaisearch.data.model.GGUFMetadataReader
 import com.localaisearch.data.performance.AutoModeConfig
 import com.localaisearch.data.performance.AutoModeConfigDefault
@@ -121,6 +122,9 @@ class ChatViewModel(
     private val _imageInputAvailable = MutableStateFlow(false)
     val imageInputAvailable: StateFlow<Boolean> = _imageInputAvailable.asStateFlow()
 
+    private val _reasoningMode = MutableStateFlow(ReasoningMode.THINKING)
+    val reasoningMode: StateFlow<ReasoningMode> = _reasoningMode.asStateFlow()
+
     private val _defaultSystemPrompt = MutableStateFlow("general")
     val defaultSystemPrompt: StateFlow<String> = _defaultSystemPrompt.asStateFlow()
 
@@ -154,6 +158,10 @@ class ChatViewModel(
         viewModelScope.launch {
             _internetSearchEnabled.value = settingsRepo.internetSearchEnabled.first()
             _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
+            _reasoningMode.value = when (settingsRepo.reasoningMode.first().lowercase()) {
+                "off" -> ReasoningMode.OFF
+                else -> ReasoningMode.THINKING
+            }
         }
         // Model loading is performed by the model screen's ViewModel, but the engine is shared.
         // Poll only this tiny state so Home reflects load/unload without recreating the engine.
@@ -270,7 +278,8 @@ class ChatViewModel(
             val formatted = LlamaBridge.nativeFormatChat(
                 local.currentHandleForMultimodal(),
                 history.map { it.first }.toTypedArray(),
-                history.map { it.second }.toTypedArray()
+                history.map { it.second }.toTypedArray(),
+                config.thinkingEnabled
             )
             require(formatted.isNotBlank()) { "专用视觉模型没有可用的聊天模板" }
             val out = StringBuilder()
@@ -338,6 +347,36 @@ class ChatViewModel(
         }?.sortedByDescending { it.length() }?.firstOrNull()?.absolutePath
     }
 
+    /**
+     * Coding is inferred from the user's actual request; it is not a separate
+     * user-facing reasoning preset. This keeps the input bar simple while still
+     * allowing requests such as "写代码" or "fix this Kotlin bug" to receive the
+     * coding-oriented system prompt.
+     */
+    private fun isCodingRequest(query: String): Boolean {
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) return false
+        val direct = listOf(
+            "写代码", "写个代码", "写一段代码", "帮我写代码", "帮我写个程序",
+            "编写代码", "编写程序", "实现代码", "给我代码", "代码实现",
+            "修复代码", "修复bug", "修复这个bug", "调试代码", "改代码",
+            "写程序", "编程", "coding", "write code", "code this", "implement",
+            "debug this", "fix this bug", "programming task"
+        )
+        if (direct.any(q::contains)) return true
+        val language = listOf("kotlin", "java", "python", "javascript", "typescript", "c++", "c#", "rust", "go", "swift", "xml", "sql", "bash", "shell")
+        val action = listOf("写", "编写", "实现", "修改", "修复", "调试", "生成", "创建", "转换", "implement", "fix", "debug", "create", "modify")
+        return language.any(q::contains) && action.any(q::contains)
+    }
+
+    fun setReasoningMode(mode: ReasoningMode) {
+        _reasoningMode.value = mode
+        viewModelScope.launch {
+            settingsRepo.setReasoningMode(mode.id)
+            settingsRepo.setThinkingEnabled(mode != ReasoningMode.OFF)
+        }
+    }
+
     fun sendQuery(query: String, addUserMessage: Boolean = true) {
         val hasPendingImage = _pendingImageUri.value != null
         if ((query.isBlank() && !hasPendingImage) || _isProcessing.value) return
@@ -376,11 +415,19 @@ class ChatViewModel(
 
         currentJob = viewModelScope.launch {
             try {
-                val inferenceConfig = settingsRepo.inferenceConfig.first()
+                val storedConfig = settingsRepo.inferenceConfig.first()
+                val mode = _reasoningMode.value
+                val inferenceConfig = storedConfig.copy(thinkingEnabled = mode != ReasoningMode.OFF)
                 val searchConfig = settingsRepo.searchConfig.first()
                 searchRepo.updateConfig(searchConfig)
 
                 agentEngine = AgentEngine(llmEngine, searchConfig)
+                val codingRequest = isCodingRequest(query)
+                val activeSystemPrompt = if (codingRequest) {
+                    getSystemPromptText() + "\n\nThe user is asking for a programming/code task. Analyze the request carefully, then provide correct, executable code with concise explanations. Preserve code in fenced code blocks. Do not enter coding mode unless the user's request actually asks for code, implementation, debugging, or a programming task."
+                } else {
+                    getSystemPromptText()
+                }
 
                 // -- Build optimized context --
                 val allMessages = _conversation.value.messages
@@ -411,6 +458,9 @@ class ChatViewModel(
                 // -- Determine search behavior --
                 val enableSearch = determineSearchBehavior(query, searchConfig)
 
+                val reasoningParser = ReasoningStreamParser(enabled = inferenceConfig.thinkingEnabled)
+                updateLastMessage { it.copy(reasoningContent = "", isThinking = inferenceConfig.thinkingEnabled) }
+
                 val callback = object : AgentCallback {
                     override fun onStateChanged(status: AgentStatus) {
                         if (requestGeneration.get() != requestId) return
@@ -430,7 +480,18 @@ class ChatViewModel(
 
                     override fun onToken(token: String) {
                         if (requestGeneration.get() != requestId) return
-                        synchronized(answerBuffer) { answerBuffer.append(token) }
+                        val events = reasoningParser.feed(token)
+                        for (event in events) {
+                            when (event) {
+                                is ReasoningStreamParser.Event.Thinking -> {
+                                    updateLastMessage { it.copy(reasoningContent = it.reasoningContent + event.text, isThinking = true) }
+                                }
+                                is ReasoningStreamParser.Event.Answer -> {
+                                    synchronized(answerBuffer) { answerBuffer.append(event.text) }
+                                    updateLastMessage { it.copy(content = it.content + event.text, isThinking = false) }
+                                }
+                            }
+                        }
                         val now = System.currentTimeMillis()
                         if (now - lastAnswerUiUpdate >= 50L && answerFlushJob?.isActive != true) {
                             answerFlushJob = viewModelScope.launch {
@@ -438,7 +499,6 @@ class ChatViewModel(
                                 if (requestGeneration.get() != requestId) return@launch
                                 val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
                                 _currentAnswer.value = snapshot
-                                updateLastMessage { it.copy(content = snapshot) }
                                 lastAnswerUiUpdate = System.currentTimeMillis()
                             }
                         }
@@ -451,13 +511,21 @@ class ChatViewModel(
                     ) {
                         if (requestGeneration.get() != requestId) return
                         answerFlushJob?.cancel()
-                        val finalAnswer = if (answer.isNotBlank()) answer else synchronized(answerBuffer) { answerBuffer.toString() }
+                        reasoningParser.finish().forEach { event ->
+                            when (event) {
+                                is ReasoningStreamParser.Event.Thinking -> updateLastMessage { it.copy(reasoningContent = it.reasoningContent + event.text) }
+                                is ReasoningStreamParser.Event.Answer -> synchronized(answerBuffer) { answerBuffer.append(event.text) }
+                            }
+                        }
+                        val rawFinal = if (answer.isNotBlank()) answer else synchronized(answerBuffer) { answerBuffer.toString() }
+                        val finalAnswer = stripReasoningMarkers(rawFinal)
                         _currentAnswer.value = finalAnswer
                         _citations.value = citations
                         updateLastMessage {
                             it.copy(
                                 content = finalAnswer,
                                 citations = citations,
+                                isThinking = false,
                                 isStreaming = false,
                                 searchSession = session
                             )
@@ -504,7 +572,7 @@ class ChatViewModel(
                             config = inferenceConfig,
                             enableSearch = false,
                             conversationHistory = history,
-                            systemPrompt = getSystemPromptText()
+                            systemPrompt = activeSystemPrompt
                         )?.collect { }
                         _pendingImageUri.value = null
                     } else {
@@ -521,16 +589,31 @@ class ChatViewModel(
                     val formattedPrompt = LlamaBridge.nativeFormatChat(
                         localEngine.currentHandleForMultimodal(),
                         multimodalMessages.map { it.first }.toTypedArray(),
-                        multimodalMessages.map { it.second }.toTypedArray()
+                        multimodalMessages.map { it.second }.toTypedArray(),
+                        inferenceConfig.thinkingEnabled
                     )
                     if (formattedPrompt.isBlank()) {
                         throw IllegalStateException("当前 GGUF 模型没有可用的视觉聊天模板")
                     }
+                    val visionReasoningParser = ReasoningStreamParser(enabled = inferenceConfig.thinkingEnabled)
                     localEngine.generateMultimodalStream(formattedPrompt, imageBytes, inferenceConfig).collect { token ->
-                        synchronized(answerBuffer) { answerBuffer.append(token) }
-                        val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
-                        _currentAnswer.value = snapshot
-                        updateLastMessage { it.copy(content = snapshot) }
+                        visionReasoningParser.feed(token).forEach { event ->
+                            when (event) {
+                                is ReasoningStreamParser.Event.Thinking -> updateLastMessage { it.copy(reasoningContent = it.reasoningContent + event.text, isThinking = true) }
+                                is ReasoningStreamParser.Event.Answer -> {
+                                    synchronized(answerBuffer) { answerBuffer.append(event.text) }
+                                    val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
+                                    _currentAnswer.value = snapshot
+                                    updateLastMessage { it.copy(content = snapshot, isThinking = false) }
+                                }
+                            }
+                        }
+                    }
+                    visionReasoningParser.finish().forEach { event ->
+                        when (event) {
+                            is ReasoningStreamParser.Event.Thinking -> updateLastMessage { it.copy(reasoningContent = it.reasoningContent + event.text) }
+                            is ReasoningStreamParser.Event.Answer -> synchronized(answerBuffer) { answerBuffer.append(event.text) }
+                        }
                     }
                     val finalMultimodalAnswer = synchronized(answerBuffer) { answerBuffer.toString() }
                     updateLastMessage { it.copy(content = finalMultimodalAnswer, isStreaming = false) }
@@ -542,7 +625,7 @@ class ChatViewModel(
                         config = inferenceConfig,
                         enableSearch = enableSearch,
                         conversationHistory = history,
-                        systemPrompt = getSystemPromptText()
+                        systemPrompt = activeSystemPrompt
                     )?.collect { token ->
                         // Tokens are handled by callback
                     }
@@ -842,6 +925,57 @@ class ChatViewModel(
             transform(messages.last())
         )
     }
+
+    private fun stripReasoningMarkers(raw: String): String {
+        if (raw.isBlank()) return raw
+        val patterns = listOf(
+            Regex("(?s)<think>.*?</think>"),
+            Regex("(?s)<\|think\|>.*?<\|/think\|>"),
+            Regex("(?s)<\|start_thinking\|>.*?<\|end_thinking\|>"),
+            Regex("(?s)\[THINK\].*?\[/THINK\]")
+        )
+        return patterns.fold(raw) { text, regex -> text.replace(regex, "") }.trim()
+    }
+
+    /** Splits model output into a private reasoning stream and the visible answer stream. */
+    private class ReasoningStreamParser(private val enabled: Boolean) {
+        sealed interface Event { data class Thinking(val text: String): Event; data class Answer(val text: String): Event }
+        private var thinking = enabled
+        private var pending = ""
+        private val starts = listOf("<think>", "<|think|>", "<|start_thinking|>", "[THINK]")
+        private val ends = listOf("</think>", "<|/think|>", "<|end_thinking|>", "[/THINK]")
+        fun feed(chunk: String): List<Event> {
+            if (!enabled) return if (chunk.isEmpty()) emptyList() else listOf(Event.Answer(chunk))
+            pending += chunk
+            val out = mutableListOf<Event>()
+            while (pending.isNotEmpty()) {
+                val markers = if (thinking) ends else starts
+                val hit = markers.mapNotNull { m -> pending.indexOf(m).takeIf { it >= 0 }?.let { it to m } }.minByOrNull { it.first }
+                if (hit != null) {
+                    if (hit.first > 0) out += if (thinking) Event.Thinking(pending.substring(0, hit.first)) else Event.Answer(pending.substring(0, hit.first))
+                    pending = pending.substring(hit.first + hit.second.length)
+                    thinking = !thinking
+                    continue
+                }
+                val maxPrefix = markers.maxOfOrNull { m ->
+                    (1..minOf(m.length - 1, pending.length)).maxOfOrNull { n -> if (pending.endsWith(m.substring(0, n))) n else 0 } ?: 0
+                } ?: 0
+                val safeLength = pending.length - maxPrefix
+                if (safeLength <= 0) break
+                val safe = pending.substring(0, safeLength)
+                pending = pending.substring(safeLength)
+                if (safe.isNotEmpty()) out += if (thinking) Event.Thinking(safe) else Event.Answer(safe)
+            }
+            return out
+        }
+        fun finish(): List<Event> {
+            if (pending.isEmpty()) return emptyList()
+            val out = listOf(if (thinking) Event.Thinking(pending) else Event.Answer(pending))
+            pending = ""
+            return out
+        }
+    }
+
 
     override fun onCleared() {
         super.onCleared()

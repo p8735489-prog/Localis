@@ -687,7 +687,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateStream(
 
 JNIEXPORT jstring JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeFormatChat(
-        JNIEnv* env, jobject, jlong handle, jobjectArray jRoles, jobjectArray jContents) {
+        JNIEnv* env, jobject, jlong handle, jobjectArray jRoles, jobjectArray jContents, jboolean jEnableThinking) {
     std::shared_ptr<ModelContext> mc;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -719,6 +719,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeFormatChat(
 
         common_chat_templates_inputs inputs;
         inputs.add_generation_prompt = true;
+        inputs.enable_thinking = (jEnableThinking == JNI_TRUE);
         inputs.messages.reserve((size_t) count);
 
         for (jsize i = 0; i < count; ++i) {

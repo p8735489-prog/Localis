@@ -244,6 +244,12 @@ class SettingsViewModel(
         saveInferenceConfig()
     }
 
+    fun updateThinkingEnabled(enabled: Boolean) {
+        _inferenceConfig.value = _inferenceConfig.value.copy(thinkingEnabled = enabled)
+        saveInferenceConfig()
+        viewModelScope.launch { settingsRepo.setReasoningMode(if (enabled) "thinking" else "off") }
+    }
+
     fun updateThinkingDepth(value: Int) {
         _inferenceConfig.value = _inferenceConfig.value.copy(thinkingDepth = value.coerceIn(1, 4))
         saveInferenceConfig()

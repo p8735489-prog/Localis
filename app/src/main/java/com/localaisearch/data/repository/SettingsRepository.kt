@@ -49,6 +49,8 @@ class SettingsRepository(private val context: Context) {
         val LLM_GPU_LAYERS = intPreferencesKey("llm_gpu_layers")
         val LLM_THREADS = intPreferencesKey("llm_threads")
         val LLM_THINKING_DEPTH = intPreferencesKey("llm_thinking_depth")
+        val LLM_THINKING_ENABLED = booleanPreferencesKey("llm_thinking_enabled")
+        val LLM_REASONING_MODE = stringPreferencesKey("llm_reasoning_mode")
         val LLM_BACKEND = stringPreferencesKey("llm_backend")
         val LLM_FREQUENCY_PENALTY = stringPreferencesKey("llm_frequency_penalty")
         val LLM_PRESENCE_PENALTY = stringPreferencesKey("llm_presence_penalty")
@@ -117,6 +119,7 @@ class SettingsRepository(private val context: Context) {
             gpuLayers = prefs[Keys.LLM_GPU_LAYERS] ?: 99,
             threads = prefs[Keys.LLM_THREADS] ?: 0,
             thinkingDepth = prefs[Keys.LLM_THINKING_DEPTH] ?: 1,
+            thinkingEnabled = prefs[Keys.LLM_THINKING_ENABLED] ?: true,
             backend = runCatching { com.localaisearch.data.model.HardwareBackend.valueOf(prefs[Keys.LLM_BACKEND] ?: "GPU") }.getOrDefault(com.localaisearch.data.model.HardwareBackend.GPU),
             frequencyPenalty = prefs[Keys.LLM_FREQUENCY_PENALTY]?.toFloatOrNull() ?: 0f,
             presencePenalty = prefs[Keys.LLM_PRESENCE_PENALTY]?.toFloatOrNull() ?: 0f
@@ -186,7 +189,8 @@ class SettingsRepository(private val context: Context) {
             prefs[Keys.LLM_USE_GPU] = config.useGpu
             prefs[Keys.LLM_GPU_LAYERS] = config.gpuLayers
             prefs[Keys.LLM_THREADS] = config.threads
-            prefs[Keys.LLM_THINKING_DEPTH] = config.thinkingDepth.coerceIn(1, 4)
+                prefs[Keys.LLM_THINKING_DEPTH] = config.thinkingDepth.coerceIn(1, 4)
+            prefs[Keys.LLM_THINKING_ENABLED] = config.thinkingEnabled
             prefs[Keys.LLM_BACKEND] = config.backend.name
             prefs[Keys.LLM_FREQUENCY_PENALTY] = config.frequencyPenalty.toString()
             prefs[Keys.LLM_PRESENCE_PENALTY] = config.presencePenalty.toString()
@@ -335,6 +339,17 @@ class SettingsRepository(private val context: Context) {
     }
     val chatAutoScroll: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.CHAT_AUTO_SCROLL] ?: true }
     val chatMarkdown: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.CHAT_MARKDOWN] ?: true }
+    val thinkingEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.LLM_THINKING_ENABLED] ?: true }
+    val reasoningMode: Flow<String> = context.settingsDataStore.data.map { it[Keys.LLM_REASONING_MODE] ?: "thinking" }
+
+    suspend fun setThinkingEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { it[Keys.LLM_THINKING_ENABLED] = enabled }
+    }
+
+    suspend fun setReasoningMode(mode: String) {
+        context.settingsDataStore.edit { it[Keys.LLM_REASONING_MODE] = mode }
+    }
+
     val chatCodeHighlight: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.CHAT_CODE_HIGHLIGHT] ?: true }
     val chatEnterSend: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.CHAT_ENTER_SEND] ?: true }
     val chatAutoCopy: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.CHAT_AUTO_COPY] ?: false }

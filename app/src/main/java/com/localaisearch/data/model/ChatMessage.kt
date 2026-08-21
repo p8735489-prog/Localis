@@ -20,6 +20,9 @@ data class ChatMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
     val role: MessageRole,
     val content: String,
+    /** Internal reasoning text, kept separate from the final answer UI. */
+    val reasoningContent: String = "",
+    val isThinking: Boolean = false,
     val citations: List<Citation> = emptyList(),
     val agentStatus: AgentStatus? = null,
     val timestamp: Long = System.currentTimeMillis(),

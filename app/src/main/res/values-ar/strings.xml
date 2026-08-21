@@ -19,7 +19,7 @@
     <string name="done">تم</string>
     <string name="local_ai_private">الذكاء الاصطناعي المحلي - خاص بالكامل، على الجهاز</string>
     <string name="local_ai_search_enabled">الذكاء الاصطناعي المحلي + بحث الإنترنت مفعل</string>
-    <string name="ask_anything">اسأل ما تريد</string>
+    <string name="ask_anything">اسأل Localis</string>
     <string name="new_conversation">محادثة جديدة</string>
     <string name="internet_search_enabled">بحث الإنترنت مفعل</string>
     <string name="clear">مسح</string>
@@ -396,4 +396,32 @@
     <string name="settings_tor_custom_config">إعدادات Tor مخصصة</string>
     <string name="settings_tor_custom_config_hint">مثال: CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">خيار torrc واحد في كل سطر. يمنع التطبيق الخيارات التي قد تتداخل مع خدمة SOCKS المدمجة.</string>
+    <string name="settings_vision_fallback_title">نموذج رؤية مخصص</string>
+    <string name="settings_vision_fallback_desc">إذا كان نموذج المحادثة لا يفهم الصور، يُستخدم نموذج رؤية محلي مخصص مؤقتًا ثم تتم استعادة نموذج المحادثة.</string>
+    <string name="settings_vision_fallback_auto">تلقائي / غير محدد</string>
+    <string name="settings_vision_fallback_selected">يُستخدم فقط عندما لا يملك نموذج المحادثة الحالي عارض رؤية.</string>
+    <string name="settings_vision_no_local_models">لا يوجد نموذج رؤية محلي متوافق مثبت.</string>
+    <string-array name="home_greetings">
+        <item>أنا هنا</item>
+        <item>أنا مستعد</item>
+        <item>في خدمتك دائمًا</item>
+        <item>أنتظر رسالتك الأولى</item>
+        <item>اترك الأمر لي</item>
+        <item>لنبدأ</item>
+        <item>حسنًا، لنبدأ</item>
+        <item>أنا هنا معك</item>
+        <item>عمّ تريد أن نتحدث؟ الأمر يعود إليك!</item>
+        <item>مستعد متى شئت</item>
+        <item>خذ وقتك</item>
+        <item>لنبدأ من هنا</item>
+        <item>الآن هو الوقت المناسب</item>
+        <item>كل شيء جاهز</item>
+        <item>أنا بانتظارك</item>
+        <item>ستجد هنا دائمًا إجابة</item>
+        <item>لنبدأ</item>
+    </string-array>
+    <string name="settings_load_loading">جارٍ تحميل النموذج…</string>
+    <string name="settings_load_loaded">تم تحميل النموذج</string>
+    <string name="settings_load_select">اختر نموذج ذكاء اصطناعي محليًا وحمّله</string>
+    <string name="settings_load_unloaded">غير محمّل</string>
 </resources>

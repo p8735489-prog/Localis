@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -17,6 +18,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.ListItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,11 +41,11 @@ import androidx.compose.ui.unit.dp
  * next. All Settings*Screen files should use this instead of inlining their
  * own PaddingValues.
  */
-val SettingsContentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+val SettingsContentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
 
 @Composable
 fun SettingsSectionTitle(title: String) {
-    Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.labelLarge,
@@ -64,29 +66,22 @@ fun SliderRow(
     valueText: String,
     onValueChange: (Float) -> Unit
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = valueText,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(label, style = MaterialTheme.typography.bodyLarge)
+                Text(valueText, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            }
+            Slider(value = value, onValueChange = onValueChange, valueRange = range, steps = steps)
         }
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = range,
-            steps = steps
-        )
     }
 }
 
@@ -96,11 +91,17 @@ fun SwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    ListItem(
-        headlineContent = { Text(label, style = MaterialTheme.typography.bodyLarge) },
-        trailingContent = { Switch(checked = checked, onCheckedChange = onCheckedChange) },
-        modifier = Modifier.fillMaxWidth()
-    )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        ListItem(
+            headlineContent = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+            trailingContent = { Switch(checked = checked, onCheckedChange = onCheckedChange) },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
 
 @Composable

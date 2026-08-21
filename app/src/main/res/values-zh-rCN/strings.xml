@@ -517,4 +517,32 @@
     <string name="settings_tor_custom_config">自定义 Tor 配置</string>
     <string name="settings_tor_custom_config_hint">例如：CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">每行一个 torrc 选项。应用会阻止可能破坏内置 SOCKS 服务的关键项。</string>
+    <string name="settings_vision_fallback_title">专用视觉识别模型</string>
+    <string name="settings_vision_fallback_desc">当前对话模型无法识别图片时，临时调用专用本地视觉模型识别，再恢复对话模型继续回答。</string>
+    <string name="settings_vision_fallback_auto">自动 / 未选择</string>
+    <string name="settings_vision_fallback_selected">仅当当前对话模型没有视觉投影器时使用。</string>
+    <string name="settings_vision_no_local_models">尚未安装兼容的本地视觉模型。</string>
+    <string-array name="home_greetings">
+        <item>我在这里</item>
+        <item>我准备好了</item>
+        <item>随时为你效劳</item>
+        <item>等你发来第一句话</item>
+        <item>交给我吧</item>
+        <item>我们开始</item>
+        <item>好了，开始吧</item>
+        <item>有我在呢</item>
+        <item>想聊点什么?看你的了!</item>
+        <item>随时可以开始</item>
+        <item>慢慢来，不着急</item>
+        <item>就从这里开始吧</item>
+        <item>现在，刚刚好</item>
+        <item>一切准备就绪</item>
+        <item>随时等你</item>
+        <item>这里一直有回应</item>
+        <item>让我们开始吧</item>
+    </string-array>
+    <string name="settings_load_loading">正在加载模型…</string>
+    <string name="settings_load_loaded">模型已加载</string>
+    <string name="settings_load_select">选择并加载本地 AI 模型</string>
+    <string name="settings_load_unloaded">未加载</string>
 </resources>

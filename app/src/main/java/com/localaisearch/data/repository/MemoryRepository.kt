@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.math.ln
+import java.util.concurrent.atomic.AtomicLong
 
 private val Context.memoriesDataStore: DataStore<Preferences> by preferencesDataStore(name = "memories")
 
@@ -47,6 +48,7 @@ data class MemoryEntry(
 class MemoryRepository(private val context: Context) {
     private val dataStore = context.memoriesDataStore
     private val json = Json { prettyPrint = false; ignoreUnknownKeys = true; encodeDefaults = true }
+    private val lastAccessWrite = AtomicLong(0L)
 
     companion object {
         private val MEMORIES_JSON = stringPreferencesKey("memories_json")
@@ -160,11 +162,16 @@ class MemoryRepository(private val context: Context) {
             .take(maxResults)
             .map { it.first }
             .toList()
-        if (ranked.isNotEmpty()) {
+        // Access statistics are useful for ranking, but rewriting the whole JSON blob
+        // on every chat message creates unnecessary DataStore contention. Throttle the
+        // write to once per 30 seconds; retrieval itself remains fully local and fast.
+        if (ranked.isNotEmpty() && now - lastAccessWrite.get() >= 30_000L && lastAccessWrite.compareAndSet(lastAccessWrite.get(), now)) {
             val ids = ranked.take(8).map { it.id }.toSet()
-            dataStore.edit { prefs ->
-                val current = loadMemories(prefs)
-                prefs[MEMORIES_JSON] = json.encodeToString(current.map { if (it.id in ids) it.copy(lastAccessedAt = now, accessCount = it.accessCount + 1) else it })
+            runCatching {
+                dataStore.edit { prefs ->
+                    val current = loadMemories(prefs)
+                    prefs[MEMORIES_JSON] = json.encodeToString(current.map { if (it.id in ids) it.copy(lastAccessedAt = now, accessCount = it.accessCount + 1) else it })
+                }
             }
         }
         return ranked

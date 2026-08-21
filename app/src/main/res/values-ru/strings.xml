@@ -19,7 +19,7 @@
     <string name="done">Готово</string>
     <string name="local_ai_private">Локальный ИИ - полностью приватный, на устройстве</string>
     <string name="local_ai_search_enabled">Локальный ИИ + интернет-поиск включен</string>
-    <string name="ask_anything">Спросите что угодно</string>
+    <string name="ask_anything">Спросить Localis</string>
     <string name="new_conversation">Новый диалог</string>
     <string name="internet_search_enabled">Интернет-поиск включен</string>
     <string name="clear">Очистить</string>
@@ -396,4 +396,32 @@
     <string name="settings_tor_custom_config">Пользовательская конфигурация Tor</string>
     <string name="settings_tor_custom_config_hint">Например: CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">Один параметр torrc в каждой строке. Параметры, способные нарушить встроенный SOCKS-сервис, блокируются.</string>
+    <string name="settings_vision_fallback_title">Выделенная модель зрения</string>
+    <string name="settings_vision_fallback_desc">Если чат-модель не умеет видеть изображения, временно используется локальная модель зрения, затем чат-модель восстанавливается.</string>
+    <string name="settings_vision_fallback_auto">Автоматически / не выбрано</string>
+    <string name="settings_vision_fallback_selected">Используется только если текущей модели не хватает vision-проектора.</string>
+    <string name="settings_vision_no_local_models">Совместимая локальная vision-модель не установлена.</string>
+    <string-array name="home_greetings">
+        <item>Я здесь</item>
+        <item>Я готов</item>
+        <item>Всегда к вашим услугам</item>
+        <item>Жду вашего первого сообщения</item>
+        <item>Предоставьте это мне</item>
+        <item>Начнём</item>
+        <item>Хорошо, начинаем</item>
+        <item>Я рядом</item>
+        <item>О чём хотите поговорить? Решать вам!</item>
+        <item>Готов начать в любое время</item>
+        <item>Не спешите</item>
+        <item>Начнём отсюда</item>
+        <item>Сейчас самое время</item>
+        <item>Всё готово</item>
+        <item>Когда будете готовы</item>
+        <item>Здесь всегда будет ответ</item>
+        <item>Начнём</item>
+    </string-array>
+    <string name="settings_load_loading">Загрузка модели…</string>
+    <string name="settings_load_loaded">Модель загружена</string>
+    <string name="settings_load_select">Выберите и загрузите локальную ИИ-модель</string>
+    <string name="settings_load_unloaded">Не загружена</string>
 </resources>

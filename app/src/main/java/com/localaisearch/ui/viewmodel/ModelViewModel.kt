@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.model.GGUFModel
 import com.localaisearch.data.model.InferenceConfig
 import com.localaisearch.data.repository.ModelRepository
+import com.localaisearch.data.repository.AppModelRepository
 import com.localaisearch.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,11 +23,7 @@ class ModelViewModel(
 ) : AndroidViewModel(application) {
 
     private val settingsRepo = SettingsRepository(application)
-    private val _llmEngine = com.localaisearch.data.llm.LLMProviderFactory.createProvider(
-        com.localaisearch.data.llm.LLMProviderType.LOCAL_GGUF,
-        application
-    )
-    val modelRepo = ModelRepository(application, _llmEngine)
+    val modelRepo = AppModelRepository.get(application)
 
     private val _importStatus = MutableStateFlow<ImportStatus>(ImportStatus.Idle)
     val importStatus: StateFlow<ImportStatus> = _importStatus.asStateFlow()
@@ -73,11 +70,12 @@ class ModelViewModel(
         viewModelScope.launch {
             _loadStatus.value = LoadStatus.Loading(model)
             val config = settingsRepo.inferenceConfig.first()
-            val result = modelRepo.loadModel(model, config)
+            val result = runCatching { modelRepo.loadModel(model, config) }
+                .getOrElse { Result.failure(it) }
             result.onSuccess {
                 _loadStatus.value = LoadStatus.Loaded(model)
             }.onFailure { e ->
-                _loadStatus.value = LoadStatus.Error(e.message ?: "Load failed")
+                _loadStatus.value = LoadStatus.Error(e.message ?: "Load failed safely; no model was activated")
             }
         }
     }
@@ -99,11 +97,12 @@ class ModelViewModel(
         viewModelScope.launch {
             _loadStatus.value = LoadStatus.Loading(model)
             val config = settingsRepo.inferenceConfig.first()
-            val result = modelRepo.switchModel(model, config)
+            val result = runCatching { modelRepo.switchModel(model, config) }
+                .getOrElse { Result.failure(it) }
             result.onSuccess {
                 _loadStatus.value = LoadStatus.Loaded(model)
             }.onFailure { e ->
-                _loadStatus.value = LoadStatus.Error(e.message ?: "Switch failed")
+                _loadStatus.value = LoadStatus.Error(e.message ?: "Switch failed safely; the previous model remains active when possible")
             }
         }
     }

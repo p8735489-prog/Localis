@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,7 +47,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -166,32 +169,20 @@ fun MemoryCenterScreen(
                 .padding(innerPadding)
         ) {
             // Search bar
-            TextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(stringResource(R.string.search_memories)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Search,
-                        contentDescription = null,
-                        tint = colorScheme.onSurfaceVariant
-                    )
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = androidx.compose.material3.TextFieldDefaults.colors(
-                    focusedContainerColor = colorScheme.surfaceContainerHigh,
-                    unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
-                )
-            )
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { viewModel.updateSearchQuery(it) },
+                onSearch = { },
+                active = false,
+                onActiveChange = { },
+                placeholder = { Text(stringResource(R.string.search_memories), maxLines = 1) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                colors = SearchBarDefaults.colors(containerColor = colorScheme.surfaceContainerLow)
+            ) {}
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
@@ -214,14 +205,15 @@ fun MemoryCenterScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     topics.forEach { topic ->
                         val isSelected = selectedTopic == topic
                         Surface(
                             onClick = { viewModel.setSelectedTopic(topic) },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) colorScheme.primaryContainer else colorScheme.surfaceContainer,
                             modifier = Modifier.padding(vertical = 2.dp)
                         ) {

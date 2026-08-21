@@ -448,9 +448,9 @@ private fun ModelCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = colorScheme.surfaceContainer
+            containerColor = colorScheme.surfaceContainerLow
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -594,7 +594,7 @@ private fun DownloadedModelCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainerLow
         )
@@ -602,7 +602,7 @@ private fun DownloadedModelCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {

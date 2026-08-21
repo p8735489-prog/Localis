@@ -27,6 +27,7 @@ import com.localaisearch.data.performance.ContextSummarizer
 import com.localaisearch.data.repository.ConversationRepository
 import com.localaisearch.data.repository.MemoryRepository
 import com.localaisearch.data.repository.ModelRepository
+import com.localaisearch.data.repository.AppModelRepository
 import com.localaisearch.data.repository.PrivacyManager
 import com.localaisearch.data.repository.SearchRepository
 import com.localaisearch.data.repository.SettingsRepository
@@ -60,7 +61,7 @@ class ChatViewModel(
     private val settingsRepo = SettingsRepository(application)
     private val llmEngine: LLMEngine = LLMProviderFactory.createEngine(application)
     private val searchRepo = SearchRepository()
-    val modelRepo = ModelRepository(application, llmEngine)
+    val modelRepo = AppModelRepository.get(application)
 
     // -- Integrated Repositories & Managers --
     private val conversationRepo = ConversationRepository(application)
@@ -172,20 +173,25 @@ class ChatViewModel(
      * - Auto-save: persist conversation after completion (non-privacy)
      */
     private fun findVisionProjectorPath(): String? {
-        val active = modelRepo.activeModel.value ?: return null
-        return try {
-            val metadata = GGUFMetadataReader.readMetadata(active.filePath)
+        val loadedPath = (llmEngine as? GGUFEngine)?.loadedModelPath() ?: return null
+        return runCatching {
+            val metadata = GGUFMetadataReader.readMetadata(loadedPath)
             if (!metadata.hasVision) return null
-            val dir = java.io.File(active.filePath).parentFile ?: return null
-            val stem = java.io.File(active.filePath).nameWithoutExtension.lowercase()
+            val dir = java.io.File(loadedPath).parentFile ?: return null
+            val stem = java.io.File(loadedPath).nameWithoutExtension.lowercase()
             dir.listFiles { file ->
                 file.isFile && file.extension.equals("gguf", ignoreCase = true) &&
                     file.name.lowercase().contains("mmproj") &&
-                    (file.name.lowercase().contains(stem) || stem.contains(file.nameWithoutExtension.lowercase().replace("mmproj-", "")))
+                    visionProjectorMatches(file.name, stem)
             }?.sortedByDescending { it.length() }?.firstOrNull()?.absolutePath
-        } catch (_: Exception) {
-            null
-        }
+        }.getOrNull()
+    }
+
+    private fun visionProjectorMatches(fileName: String, modelStem: String): Boolean {
+        val name = fileName.lowercase().removePrefix("mmproj-").removePrefix("mmproj_")
+        val stem = modelStem.lowercase()
+        return name.contains(stem) || stem.contains(name.substringBefore("-f16")) ||
+            stem.contains(name.substringBefore("-f32")) || name.length < 16
     }
 
     private fun detectVisionInputReady(): Boolean = findVisionProjectorPath() != null
@@ -208,6 +214,77 @@ class ChatViewModel(
 
     fun setPendingImage(uri: android.net.Uri) {
         if (_imageInputAvailable.value) _pendingImageUri.value = uri
+    }
+
+    /**
+     * Optional dedicated vision fallback. If the chat GGUF cannot see images, a
+     * separately configured vision GGUF can temporarily take over the native engine,
+     * describe the image, then the original chat model is restored before answering.
+     * This is deliberately opt-in because two GGUF models cannot safely coexist in
+     * the current Android native bridge and loading both would multiply RAM usage.
+     */
+    private suspend fun runDedicatedVisionFallback(
+        imageUri: android.net.Uri,
+        userPrompt: String,
+        config: InferenceConfig,
+        requestId: Long
+    ): String {
+        val local = llmEngine as? GGUFEngine
+            ?: throw IllegalStateException("当前引擎不支持专用视觉识别")
+        val visionPath = settingsRepo.visionFallbackModelPath.first().trim()
+        if (visionPath.isBlank()) {
+            throw IllegalStateException("当前对话模型没有视觉能力，请在设置 → AI 与模型 → 视觉识别中选择专用识别模型")
+        }
+        val primaryPath = local.loadedModelPath()
+            ?: throw IllegalStateException("当前对话模型尚未加载")
+        if (primaryPath == visionPath) {
+            throw IllegalStateException("专用视觉模型不能与当前对话模型相同，请选择另一模型")
+        }
+        val primaryConfig = local.loadedModelConfig() ?: config
+        if (!java.io.File(visionPath).isFile) {
+            throw IllegalStateException("设置中的专用视觉模型文件不存在，请重新选择模型")
+        }
+        val projector = findProjectorForModel(visionPath)
+            ?: throw IllegalStateException("专用视觉模型缺少匹配的 mmproj，请先下载视觉投影器")
+
+        local.unloadModel().getOrThrow()
+        try {
+            local.loadModel(visionPath, config.copy(contextLength = config.contextLength.coerceAtMost(4096), useGpu = false, gpuLayers = 0)).getOrThrow()
+            local.loadVisionProjector(projector, config).getOrThrow()
+            val bytes = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                getApplication<Application>().contentResolver.openInputStream(imageUri)?.use { it.readBytes() }
+            } ?: throw IllegalStateException("无法读取图片")
+            require(bytes.isNotEmpty()) { "图片为空" }
+            val history = listOf("user" to "<__media__>\n${userPrompt.ifBlank { "请详细描述这张图片，包括主要对象、文字、场景和关键细节。" }}")
+            val formatted = LlamaBridge.nativeFormatChat(
+                local.currentHandleForMultimodal(),
+                history.map { it.first }.toTypedArray(),
+                history.map { it.second }.toTypedArray()
+            )
+            require(formatted.isNotBlank()) { "专用视觉模型没有可用的聊天模板" }
+            val out = StringBuilder()
+            local.generateMultimodalStream(formatted, bytes, config.copy(maxTokens = minOf(config.maxTokens, 768))).collect { token ->
+                if (requestGeneration.get() == requestId) out.append(token)
+            }
+            out.toString().trim().ifBlank { throw IllegalStateException("专用视觉模型没有返回识别结果") }
+        } finally {
+            runCatching { local.unloadModel() }
+            // Restore the original conversation model before returning. If restoration
+            // fails, the caller gets a clear error instead of leaving the app in a
+            // half-loaded state.
+            local.loadModel(primaryPath, primaryConfig).getOrThrow()
+        }
+    }
+
+    private fun findProjectorForModel(modelPath: String): String? {
+        val file = java.io.File(modelPath)
+        val dir = file.parentFile ?: return null
+        val stem = file.nameWithoutExtension.lowercase()
+        return dir.listFiles { candidate ->
+            candidate.isFile && candidate.extension.equals("gguf", true) &&
+                candidate.name.lowercase().contains("mmproj") &&
+                visionProjectorMatches(candidate.name, stem)
+        }?.sortedByDescending { it.length() }?.firstOrNull()?.absolutePath
     }
 
     fun sendQuery(query: String, addUserMessage: Boolean = true) {
@@ -360,7 +437,26 @@ class ChatViewModel(
                         throw IllegalStateException("当前引擎不支持本地视觉推理")
                     }
                     val projectorPath = findVisionProjectorPath()
-                        ?: throw IllegalStateException("未找到与当前语言模型匹配的 mmproj 视觉投影器，请先下载视觉模型组件")
+                    if (projectorPath == null) {
+                        val visionAnswer = runDedicatedVisionFallback(
+                            imageUri = pendingImage,
+                            userPrompt = query,
+                            config = inferenceConfig,
+                            requestId = requestId
+                        )
+                        if (requestGeneration.get() != requestId) return@launch
+                        // Feed the dedicated recognizer's text result back into the
+                        // currently restored language model. The user still sees one
+                        // coherent assistant response rather than a second model bubble.
+                        agentEngine?.execute(
+                            query = if (query.isBlank()) "请根据以下图片识别结果回答用户：\n$visionAnswer" else "$query\n\n[图片识别结果]\n$visionAnswer",
+                            config = inferenceConfig,
+                            enableSearch = false,
+                            conversationHistory = history,
+                            systemPrompt = getSystemPromptText()
+                        )?.collect { }
+                        _pendingImageUri.value = null
+                    } else {
                     localEngine.loadVisionProjector(projectorPath, inferenceConfig).getOrThrow()
 
                     val imageBytes = withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -390,6 +486,7 @@ class ChatViewModel(
                     val finalMultimodalAnswer = synchronized(answerBuffer) { answerBuffer.toString() }
                     updateLastMessage { it.copy(content = finalMultimodalAnswer, isStreaming = false) }
                     _pendingImageUri.value = null
+                    }
                 } else {
                     agentEngine?.execute(
                         query = query,
@@ -402,9 +499,12 @@ class ChatViewModel(
                     }
                 }
 
-                // -- Post-completion: auto-save and memory extraction --
+                // -- Post-completion: persistence/memory is isolated from inference.
+                // A broken memory record or a slow DataStore write must never turn a
+                // successful native inference into an apparent model crash.
                 lastModelActivityTime = System.currentTimeMillis()
-                autoSaveAndExtractMemories(query)
+                runCatching { autoSaveAndExtractMemories(query) }
+                    .onFailure { android.util.Log.w("ChatViewModel", "Post-response memory/save skipped", it) }
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
@@ -429,14 +529,21 @@ class ChatViewModel(
      * Returns empty string if privacy mode is on or memory is disabled.
      */
     private suspend fun buildMemoryContext(query: String): String {
-        if (!privacyManager.canReadMemory()) return ""
-
-        val relevantMemories = memoryRepo.getRelevantMemories(query, maxResults = 5)
-        if (relevantMemories.isEmpty()) return ""
-
-        return relevantMemories.joinToString("\n") { memory ->
-            "- ${memory.content}"
-        }.let { "[Relevant Memories]\n$it" }
+        if (!privacyManager.canReadMemory() || query.isBlank()) return ""
+        return runCatching {
+            // Memory retrieval is strictly best-effort. A malformed/very large local
+            // memory store must never be allowed to take down an otherwise healthy AI run.
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                memoryRepo.getRelevantMemories(query.take(2000), maxResults = 5)
+            }
+        }.getOrElse {
+            android.util.Log.w("ChatViewModel", "Memory retrieval skipped", it)
+            emptyList()
+        }.take(5).joinToString("\n") { memory ->
+            "- ${memory.content.take(2000)}"
+        }.let { memories ->
+            if (memories.isBlank()) "" else "[Relevant Memories]\n$memories"
+        }
     }
 
     /**
@@ -511,18 +618,21 @@ class ChatViewModel(
         _lastSaveTime = now
         _lastSavedContentHash = contentHash
 
-        // Auto-save conversation
-        conversationRepo.saveConversation(currentConv)
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { conversationRepo.saveConversation(currentConv) }
+                .onFailure { android.util.Log.w("ChatViewModel", "Conversation auto-save failed", it) }
 
-        // Extract and save memories if memory system is enabled
-        if (privacyManager.canWriteMemory()) {
-            val extracted = memoryRepo.extractMemoriesFromConversation(currentConv)
-            extracted.forEach { memory ->
-                memoryRepo.addMemory(
-                    content = memory.content,
-                    topic = memory.topic,
-                    sourceConversationId = currentConv.id
-                )
+            if (privacyManager.canWriteMemory()) {
+                runCatching {
+                    val extracted = memoryRepo.extractMemoriesFromConversation(currentConv).take(8)
+                    extracted.forEach { memory ->
+                        memoryRepo.addMemory(
+                            content = memory.content.take(4000),
+                            topic = memory.topic,
+                            sourceConversationId = currentConv.id
+                        )
+                    }
+                }.onFailure { android.util.Log.w("ChatViewModel", "Memory extraction skipped", it) }
             }
         }
     }

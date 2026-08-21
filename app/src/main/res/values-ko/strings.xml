@@ -19,7 +19,7 @@
     <string name="done">완료</string>
     <string name="local_ai_private">로컬 AI - 완전히 비공개, 기기 내 실행</string>
     <string name="local_ai_search_enabled">로컬 AI + 인터넷 검색 활성화됨</string>
-    <string name="ask_anything">무엇이든 물어보세요</string>
+    <string name="ask_anything">Localis에게 묻기</string>
     <string name="new_conversation">새 대화</string>
     <string name="internet_search_enabled">인터넷 검색 활성화됨</string>
     <string name="clear">지우기</string>
@@ -396,4 +396,32 @@
     <string name="settings_tor_custom_config">사용자 지정 Tor 설정</string>
     <string name="settings_tor_custom_config_hint">예: CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">한 줄에 하나의 torrc 옵션을 입력합니다. 내장 SOCKS 서비스를 방해할 수 있는 핵심 항목은 차단됩니다.</string>
+    <string name="settings_vision_fallback_title">전용 비전 모델</string>
+    <string name="settings_vision_fallback_desc">채팅 모델이 이미지를 인식하지 못하면 전용 로컬 비전 모델로 인식한 뒤 채팅 모델로 돌아갑니다.</string>
+    <string name="settings_vision_fallback_auto">자동 / 선택 안 함</string>
+    <string name="settings_vision_fallback_selected">현재 모델에 비전 프로젝터가 없을 때만 사용합니다.</string>
+    <string name="settings_vision_no_local_models">호환되는 로컬 비전 모델이 없습니다.</string>
+    <string-array name="home_greetings">
+        <item>여기 있어요</item>
+        <item>준비됐어요</item>
+        <item>언제든 도와드릴게요</item>
+        <item>첫마디를 기다리고 있어요</item>
+        <item>맡겨 주세요</item>
+        <item>시작해요</item>
+        <item>좋아요, 시작해요</item>
+        <item>제가 여기 있어요</item>
+        <item>무엇을 이야기할까요? 당신이 정해요!</item>
+        <item>언제든 시작할 수 있어요</item>
+        <item>천천히 해도 괜찮아요</item>
+        <item>여기서 시작해요</item>
+        <item>지금이 딱 좋아요</item>
+        <item>모든 준비가 끝났어요</item>
+        <item>언제든 기다릴게요</item>
+        <item>여기에는 언제나 답이 있어요</item>
+        <item>시작해 볼까요</item>
+    </string-array>
+    <string name="settings_load_loading">모델 로드 중…</string>
+    <string name="settings_load_loaded">모델이 로드됨</string>
+    <string name="settings_load_select">로컬 AI 모델을 선택하고 로드하세요</string>
+    <string name="settings_load_unloaded">로드되지 않음</string>
 </resources>

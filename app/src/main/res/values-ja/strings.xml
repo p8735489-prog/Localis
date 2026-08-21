@@ -19,7 +19,7 @@
     <string name="done">完了</string>
     <string name="local_ai_private">ローカルAI - 完全にプライベート、デバイス内で実行</string>
     <string name="local_ai_search_enabled">ローカルAI + インターネット検索が有効</string>
-    <string name="ask_anything">何でも聞いてください</string>
+    <string name="ask_anything">Localisに聞く</string>
     <string name="new_conversation">新しい会話</string>
     <string name="internet_search_enabled">インターネット検索が有効</string>
     <string name="clear">クリア</string>
@@ -396,4 +396,32 @@
     <string name="settings_tor_custom_config">Torカスタム設定</string>
     <string name="settings_tor_custom_config_hint">例：CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">1行に1つのtorrcオプションを指定します。内蔵SOCKSサービスを壊す可能性のある重要項目はブロックされます。</string>
+    <string name="settings_vision_fallback_title">専用ビジョンモデル</string>
+    <string name="settings_vision_fallback_desc">チャットモデルが画像を認識できない場合、専用のローカルビジョンモデルで認識してからチャットモデルに戻ります。</string>
+    <string name="settings_vision_fallback_auto">自動 / 未選択</string>
+    <string name="settings_vision_fallback_selected">現在のモデルにビジョンプロジェクターがない場合のみ使用します。</string>
+    <string name="settings_vision_no_local_models">対応するローカルビジョンモデルがありません。</string>
+    <string-array name="home_greetings">
+        <item>ここにいます</item>
+        <item>準備できています</item>
+        <item>いつでもどうぞ</item>
+        <item>最初の一言を待っています</item>
+        <item>任せてください</item>
+        <item>始めましょう</item>
+        <item>さあ、始めましょう</item>
+        <item>ここにいますよ</item>
+        <item>何について話しますか？あなた次第です！</item>
+        <item>いつでも始められます</item>
+        <item>ゆっくりで大丈夫</item>
+        <item>ここから始めましょう</item>
+        <item>今がちょうどいい</item>
+        <item>すべて準備完了です</item>
+        <item>いつでもどうぞ</item>
+        <item>ここにはいつも応答があります</item>
+        <item>始めましょう</item>
+    </string-array>
+    <string name="settings_load_loading">モデルを読み込み中…</string>
+    <string name="settings_load_loaded">モデルを読み込みました</string>
+    <string name="settings_load_select">ローカルAIモデルを選択して読み込む</string>
+    <string name="settings_load_unloaded">未読み込み</string>
 </resources>

@@ -92,6 +92,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -99,7 +100,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localaisearch.R
 import com.localaisearch.data.model.AgentState
 import com.localaisearch.data.repository.TorManager
-import com.localaisearch.ui.components.LocalisSparkle
 import com.localaisearch.ui.components.AgentProgressBar
 import com.localaisearch.ui.components.ChatBubble
 import com.localaisearch.ui.components.ExpressiveCard
@@ -555,27 +555,17 @@ private fun EmptyStateScreen(
     ) {
         Spacer(modifier = Modifier.weight(1.15f))
 
-        // Ambient light field: no grey backing card. The glow owns the empty state.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            LocalisSparkle(modifier = Modifier.size(52.dp))
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Static welcome copy: no particle/orb animation, matching the calm Gemini-like empty state.
-        val greetings = listOf(
-            "我在这里", "我准备好了", "随时为你效劳", "等你发来第一句话",
-            "交给我吧", "我们开始", "好了，开始吧", "有我在呢",
-            "想聊点什么?看你的了!", "随时可以开始", "慢慢来，不着急",
-            "就从这里开始吧", "现在，刚刚好", "一切准备就绪", "随时等你",
-            "这里一直有回应", "让我们开始吧"
+        // The empty state uses the real Localis app icon. No particles, orb, glow,
+        // or looping animation: the icon and greeting form one compact visual unit.
+        Image(
+            painter = painterResource(R.drawable.localis_avatar),
+            contentDescription = stringResource(R.string.app_name),
+            modifier = Modifier.size(58.dp)
         )
-        val greeting = remember { greetings.random() }
+
+        // Keep the icon and greeting visually attached; there is intentionally no spacer.
+        val greetings = stringArrayResource(R.array.home_greetings).toList()
+        val greeting = remember(greetings) { greetings.randomOrNull().orEmpty() }
         Text(
             text = greeting,
             style = MaterialTheme.typography.headlineLarge,
@@ -583,19 +573,7 @@ private fun EmptyStateScreen(
             color = colorScheme.onSurface
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = when {
-                isPrivacyMode -> stringResource(R.string.private_mode_active_no_data)
-                internetSearchEnabled -> stringResource(R.string.local_ai_realtime_search)
-                else -> stringResource(R.string.ai_on_device)
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(46.dp))
 
         // Large floating Composer
         Row(
@@ -699,7 +677,7 @@ private fun ChatScreen(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        LocalisSparkle(modifier = Modifier.size(32.dp))
+                        Image(painter = painterResource(R.drawable.localis_avatar), contentDescription = null, modifier = Modifier.size(32.dp))
                     }
                 }
                 item {

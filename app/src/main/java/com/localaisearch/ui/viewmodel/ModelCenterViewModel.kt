@@ -10,6 +10,7 @@ import com.localaisearch.data.repository.HFModelFile
 import com.localaisearch.data.repository.HFModelInfo
 import com.localaisearch.data.repository.HuggingFaceRepository
 import com.localaisearch.data.repository.ModelRepository
+import com.localaisearch.data.repository.AppModelRepository
 import com.localaisearch.data.repository.ModelRepositoryFactory
 import com.localaisearch.data.repository.TsinghuaMirrorRepository
 import com.localaisearch.data.repository.SettingsRepository
@@ -63,11 +64,7 @@ class ModelCenterViewModel(
     private val _modelRepo: ModelRepository
 
     init {
-        val llmEngine = com.localaisearch.data.llm.LLMProviderFactory.createProvider(
-            com.localaisearch.data.llm.LLMProviderType.LOCAL_GGUF,
-            application
-        )
-        _modelRepo = ModelRepository(application, llmEngine)
+        _modelRepo = AppModelRepository.get(application)
 
         _downloadManager = DownloadManager(
             context = application,
@@ -306,12 +303,12 @@ class ModelCenterViewModel(
         viewModelScope.launch {
             _modelLoadState.value = ModelCenterLoadState.Loading(model.id)
             val config = settingsRepository.inferenceConfig.first()
-            val result = _modelRepo.loadModel(model, config)
+            val result = runCatching { _modelRepo.loadModel(model, config) }.getOrElse { Result.failure(it) }
             result.onSuccess {
                 _modelLoadState.value = ModelCenterLoadState.Loaded(model.id)
                 _downloadedModels.value = _modelRepo.models.value
             }.onFailure { e ->
-                _modelLoadState.value = ModelCenterLoadState.Error(e.message ?: "Model load failed")
+                _modelLoadState.value = ModelCenterLoadState.Error(e.message ?: "Model load failed safely; previous model remains active when possible")
             }
         }
     }

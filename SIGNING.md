@@ -1,118 +1,30 @@
-# Signing Guide for Localis
+# Localis Release Signing
 
-Localis uses Android release signing to produce signed APKs. This document explains how to configure signing safely without committing keys to Git.
+Localis release APKs are signed by GitHub Actions with the project's release keystore supplied through GitHub Actions Secrets.
 
-## 1. Generate a new signing keystore (if you do not have one)
+Required repository secrets:
 
-```bash
-keytool -genkey -v -keystore localis-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias localis
-```
+- `SIGNING_KEYSTORE_B64` — Base64 of the release `.jks` file
+- `SIGNING_STORE_PASSWORD` — keystore password
+- `SIGNING_KEY_ALIAS` — alias inside the keystore
+- `SIGNING_KEY_PASSWORD` — key password
 
-You will be asked for:
-- Keystore password
-- Key alias password
-- Your name, organization, city, state, country
+The keystore itself must never be committed to the repository or included in an APK/source ZIP.
 
-Keep this `.jks` file safe. **Never commit it to Git.**
+For a tagged build such as `v2.1.0`, the workflow:
 
-## 2. Configure local signing (for manual builds)
+1. restores the keystore to a temporary file;
+2. validates the alias/password;
+3. builds `assembleRelease`;
+4. verifies the resulting APK with `apksigner --print-certs`;
+5. publishes the signed APK directly as a GitHub Release asset;
+6. removes the temporary keystore.
 
-Create a `local.properties` file in the project root:
-
-```properties
-signing.keystore.file=/absolute/path/to/localis-release.jks
-signing.keystore.password=YOUR_KEYSTORE_PASSWORD
-signing.key.alias=localis
-signing.key.password=YOUR_KEY_PASSWORD
-```
-
-`local.properties` is already in `.gitignore` and will not be tracked.
-
-Alternatively, set environment variables before building:
+For local builds, set these environment variables before running `./gradlew assembleRelease`:
 
 ```bash
 export SIGNING_KEYSTORE_PATH=/absolute/path/to/localis-release.jks
 export SIGNING_STORE_PASSWORD=YOUR_KEYSTORE_PASSWORD
-export SIGNING_KEY_ALIAS=localis
+export SIGNING_KEY_ALIAS=YOUR_KEY_ALIAS
 export SIGNING_KEY_PASSWORD=YOUR_KEY_PASSWORD
-./gradlew assembleRelease
 ```
-
-## 3. Configure GitHub Actions signing (for CI builds)
-
-Go to your GitHub repository **Settings > Secrets and variables > Actions**, then add:
-
-| Secret name | Value |
-|---|---|
-| `SIGNING_KEYSTORE_B64` | Base64-encoded content of your `.jks` file |
-| `SIGNING_STORE_PASSWORD` | Your keystore password |
-| `SIGNING_KEY_ALIAS` | Your key alias (e.g., `localis`) |
-| `SIGNING_KEY_PASSWORD` | Your key password |
-
-### How to create the Base64 secret
-
-```bash
-base64 -w 0 localis-release.jks
-```
-
-Copy the output and paste it into the `SIGNING_KEYSTORE_B64` secret.
-
-### How the CI workflow works
-
-The GitHub Actions workflow will:
-1. Decode the Base64 keystore into a temporary file (`/tmp/signing.keystore`)
-2. Set the `SIGNING_KEYSTORE_PATH` environment variable
-3. Build the signed APK
-4. Delete the temporary keystore immediately after build
-
-**The keystore is never written to the repository or release artifacts.**
-
-## 4. If your previous signing key was exposed
-
-If `localis-release.jks` (or any keystore) was ever committed to a public GitHub repository, it is compromised:
-
-1. **Generate a new keystore** (see step 1)
-2. **Upload the new keystore Base64** to GitHub Secrets
-3. **Revoke the old keystore** if it was used for Google Play — contact Google Play Console support to request a key reset
-4. **Never reuse the old keystore**
-
-## 5. Security checklist
-
-- [ ] `.jks` and `.keystore` files are in `.gitignore`
-- [ ] `local.properties` is in `.gitignore`
-- [ ] No hardcoded passwords in `build.gradle.kts` or workflow files
-- [ ] GitHub Actions reads signing secrets from `secrets.*` only
-- [ ] Keystore file is stored in a secure location with limited access
-- [ ] Keystore passwords are strong and unique
-- [ ] If the keystore was exposed, a new one has been generated
-
-
-## 6. Automatic GitHub Release
-
-The repository includes `.github/workflows/android-release.yml`.
-
-After adding the four GitHub Actions secrets below, pushing a tag such as `v2.1.0` will automatically:
-
-1. install the Android build tools;
-2. restore the signing keystore from `SIGNING_KEYSTORE_B64`;
-3. build `assembleRelease`;
-4. verify the APK signature with `apksigner`;
-5. create a GitHub Release;
-6. attach `Localis-2.1.0-release.apk`.
-
-Required repository secrets:
-
-- `SIGNING_KEYSTORE_B64`
-- `SIGNING_STORE_PASSWORD`
-- `SIGNING_KEY_ALIAS`
-- `SIGNING_KEY_PASSWORD`
-
-Do not commit the `.jks` file to the repository.
-
-To create the Base64 value locally:
-
-```bash
-base64 -w 0 localis-release.jks
-```
-
-Then paste that output into the `SIGNING_KEYSTORE_B64` Actions secret.

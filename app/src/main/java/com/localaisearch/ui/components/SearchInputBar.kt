@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.localaisearch.R
 import com.localaisearch.ui.animation.SpringSpecs
@@ -91,13 +92,14 @@ fun SearchInputBar(
                 onValueChange = onValueChange,
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 32.dp, max = 56.dp),
+                    .heightIn(min = 32.dp, max = 48.dp),
                 enabled = enabled,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = colorScheme.onSurface),
                 cursorBrush = SolidColor(colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { if (enabled) { AppHaptics.confirm(hapticView); onSend() } }),
-                maxLines = 4,
+                singleLine = true,
+                maxLines = 1,
                 decorationBox = { innerTextField ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -108,7 +110,10 @@ fun SearchInputBar(
                                 text = if (enabled) stringResource(R.string.ask_anything) else (disabledReason ?: stringResource(R.string.model_not_loaded_input)),
                                 color = colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                                 style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                         innerTextField()

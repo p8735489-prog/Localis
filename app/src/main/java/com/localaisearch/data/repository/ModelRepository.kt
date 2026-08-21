@@ -1,6 +1,7 @@
 package com.localaisearch.data.repository
 
 import android.content.Context
+import android.app.ActivityManager
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.localaisearch.data.llm.GGUFEngine
@@ -182,6 +183,33 @@ class ModelRepository(
         }
     }
 
+    /** Build a conservative mobile-safe inference config before entering native llama.cpp. */
+    private fun safeConfigForModel(file: File, requested: InferenceConfig): InferenceConfig {
+        val metadata = runCatching { com.localaisearch.data.model.GGUFMetadataReader.readMetadata(file.absolutePath) }.getOrNull()
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        val info = ActivityManager.MemoryInfo()
+        am?.getMemoryInfo(info)
+        val available = info.availMem
+        val trainContext = metadata?.contextLength?.takeIf { it > 0 } ?: Int.MAX_VALUE
+        val fileBytes = file.length()
+        val memoryBasedContext = if (available > 0L && fileBytes > 0L) {
+            val reserve = (available - (fileBytes * 1.30f).toLong() - 256L * 1024L * 1024L).coerceAtLeast(256L * 1024L * 1024L)
+            (reserve / (96L * 1024L)).toInt().coerceAtLeast(512)
+        } else 8192
+        val contextLength = requested.contextLength
+            .coerceIn(512, 32768)
+            .coerceAtMost(trainContext.coerceAtMost(32768))
+            .coerceAtMost(memoryBasedContext.coerceIn(512, 32768))
+        // This APK is built with GGML_CPU and no Vulkan/OpenCL backend. Never let
+        // a stale preference request GPU layers against a CPU-only native binary.
+        return requested.copy(
+            contextLength = contextLength,
+            threads = requested.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtMost(8).coerceAtLeast(1)),
+            useGpu = false,
+            gpuLayers = 0
+        )
+    }
+
     /**
      * Load a model into the engine and set it as active.
      */
@@ -195,13 +223,18 @@ class ModelRepository(
 
                 val previousModel = _activeModel.value
                 val previousConfig = activeConfig
+                if (previousModel?.id == model.id && engine.isLoaded) {
+                    _activeModel.value = model.copy(isLoaded = true)
+                    return@withLock Result.success(Unit)
+                }
+                val safeConfig = safeConfigForModel(file, config)
                 // GGUFEngine replaces an already-loaded native model before loading the
                 // requested one. Preserve a rollback target so a failed replacement does
                 // not leave the UI claiming that a dead model is still active.
-                val result = engine.loadModel(model.filePath, config)
+                val result = engine.loadModel(model.filePath, safeConfig)
                 if (result.isSuccess) {
                     _activeModel.value = model.copy(isLoaded = true)
-                    activeConfig = config
+                    activeConfig = safeConfig
                     refreshModels()
                     return@withLock result
                 }
@@ -250,13 +283,18 @@ class ModelRepository(
                     }
                     val previousModel = _activeModel.value
                     val previousConfig = activeConfig
+                    if (previousModel?.id == model.id && engine.isLoaded) {
+                        _activeModel.value = model.copy(isLoaded = true)
+                        return@withLock Result.success(Unit)
+                    }
+                    val safeConfig = safeConfigForModel(file, config)
                     engine.unloadModel()
                     _activeModel.value = null
                     activeConfig = null
-                    val result = engine.loadModel(model.filePath, config)
+                    val result = engine.loadModel(model.filePath, safeConfig)
                     if (result.isSuccess) {
                         _activeModel.value = model.copy(isLoaded = true)
-                        activeConfig = config
+                        activeConfig = safeConfig
                         refreshModels()
                         return@withLock result
                     }

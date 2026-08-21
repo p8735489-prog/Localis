@@ -19,7 +19,7 @@
     <string name="done">完成</string>
     <string name="local_ai_private">本地AI - 完全私密，本機執行</string>
     <string name="local_ai_search_enabled">本地AI + 網路搜尋已啟用</string>
-    <string name="ask_anything">隨便問</string>
+    <string name="ask_anything">問問 Localis</string>
     <string name="new_conversation">新對話</string>
     <string name="internet_search_enabled">網路搜尋已啟用</string>
     <string name="clear">清除</string>
@@ -457,4 +457,32 @@
     <string name="settings_tor_custom_config">自訂 Tor 設定</string>
     <string name="settings_tor_custom_config_hint">例如：CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">每行一個 torrc 選項。應用會阻止可能破壞內建 SOCKS 服務的關鍵項。</string>
+    <string name="settings_vision_fallback_title">專用視覺辨識模型</string>
+    <string name="settings_vision_fallback_desc">目前對話模型無法辨識圖片時，暫時使用專用本地視覺模型，再恢復對話模型回答。</string>
+    <string name="settings_vision_fallback_auto">自動 / 未選擇</string>
+    <string name="settings_vision_fallback_selected">僅在目前對話模型沒有視覺投影器時使用。</string>
+    <string name="settings_vision_no_local_models">尚未安裝相容的本地視覺模型。</string>
+    <string-array name="home_greetings">
+        <item>我在這裡</item>
+        <item>我準備好了</item>
+        <item>隨時為你效勞</item>
+        <item>等你發來第一句話</item>
+        <item>交給我吧</item>
+        <item>我們開始</item>
+        <item>好了，開始吧</item>
+        <item>有我在呢</item>
+        <item>想聊點什麼?看你的了!</item>
+        <item>隨時可以開始</item>
+        <item>慢慢來，不著急</item>
+        <item>就從這裡開始吧</item>
+        <item>現在，剛剛好</item>
+        <item>一切準備就緒</item>
+        <item>隨時等你</item>
+        <item>這裡一直有回應</item>
+        <item>讓我們開始吧</item>
+    </string-array>
+    <string name="settings_load_loading">正在載入模型…</string>
+    <string name="settings_load_loaded">模型已載入</string>
+    <string name="settings_load_select">選擇並載入本地 AI 模型</string>
+    <string name="settings_load_unloaded">未載入</string>
 </resources>

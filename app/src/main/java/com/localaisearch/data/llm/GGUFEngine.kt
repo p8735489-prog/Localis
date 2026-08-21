@@ -80,6 +80,15 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
             if (modelHandle > 0L) currentModelPath?.substringAfterLast('/') else null
         }
 
+    /** Absolute path of the model currently owned by the shared native engine. */
+    fun loadedModelPath(): String? = synchronized(lock) {
+        if (modelHandle > 0L) currentModelPath else null
+    }
+
+    fun loadedModelConfig(): InferenceConfig? = synchronized(lock) {
+        currentConfig
+    }
+
     private var currentModelPath: String? = null
     private var currentVisionProjectorPath: String? = null
 
@@ -119,11 +128,12 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                         GlobalErrorHandler.emitModel(message)
                         return@withContext Result.failure(IllegalArgumentException(message))
                     }
-                    val requestedContext = config.contextLength.coerceIn(512, 32768)
+                    val am = appContext?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                    val safeThreads = config.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtMost(8).coerceAtLeast(1))
+                    var requestedContext = config.contextLength.coerceIn(512, 32768)
                     if (config.contextLength != requestedContext) {
                         Log.w(TAG, "Clamping unsafe context length ${config.contextLength} to $requestedContext")
                     }
-                    val am = appContext?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                     val memInfo = ActivityManager.MemoryInfo()
                     am?.getMemoryInfo(memInfo)
                     val available = memInfo.availMem
@@ -133,6 +143,12 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     // native OOM can terminate the Android process and cannot be
                     // caught reliably by Kotlin.
                     val fileBytes = modelFile.length()
+                    if (available > 0L && fileBytes > 0L) {
+                        val contextBudget = (available - (fileBytes * 1.30f).toLong() - 256L * 1024L * 1024L)
+                            .coerceAtLeast(256L * 1024L * 1024L)
+                        val memoryContextCap = (contextBudget / (96L * 1024L)).toInt().coerceIn(512, 32768)
+                        requestedContext = minOf(requestedContext, memoryContextCap)
+                    }
                     val kvReserve = requestedContext.toLong() * 96L * 1024L
                     val requiredFloor = maxOf(
                         (fileBytes * 1.35f).toLong(),
@@ -147,9 +163,9 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     val handle = LlamaBridge.nativeLoadModel(
                         filePath,
                         requestedContext,
-                        config.threads,
-                        config.useGpu,
-                        config.gpuLayers
+                        safeThreads,
+                        false,
+                        0
                     )
                     if (handle <= 0L) {
                         val nativeReason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
@@ -161,7 +177,7 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     }
                     modelHandle = handle
                     currentModelPath = filePath
-                    currentConfig = config
+                    currentConfig = config.copy(contextLength = requestedContext, threads = safeThreads, useGpu = false, gpuLayers = 0)
                     Log.i(TAG, "Model loaded: ${filePath.substringAfterLast('/')}")
                     Result.success(Unit)
                 } catch (e: OutOfMemoryError) {
@@ -319,7 +335,7 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     return@synchronized Result.success(Unit)
                 }
                 val ok = runCatching {
-                    LlamaBridge.nativeLoadVisionProjector(modelHandle, projector.absolutePath, config.threads, config.useGpu)
+                    LlamaBridge.nativeLoadVisionProjector(modelHandle, projector.absolutePath, config.threads.coerceIn(1, 8), false)
                 }.getOrElse { false }
                 if (ok) {
                     currentVisionProjectorPath = projector.absolutePath

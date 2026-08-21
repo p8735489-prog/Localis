@@ -96,22 +96,20 @@ fun SettingsHubScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 8.dp, 20.dp, padding.calculateBottomPadding() + 28.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.settings_search)) },
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = { },
+                    active = false,
+                    onActiveChange = { },
+                    placeholder = { Text(stringResource(R.string.settings_search), maxLines = 1) },
                     leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.extraLarge,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
-                )
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SearchBarDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+                ) {}
             }
             visibleGroups.forEach { group ->
                 item(key = group.title) { SettingsGroupBlock(group) }
@@ -141,7 +139,7 @@ private fun SettingsGroupBlock(group: SettingsGroup) {
         )
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
+            shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             tonalElevation = 0.dp
         ) {

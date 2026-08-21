@@ -37,11 +37,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,8 +58,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
 import com.localaisearch.R
 import com.localaisearch.data.model.HardwareBackend
+import com.localaisearch.data.model.GGUFMetadataReader
+import com.localaisearch.data.repository.AppModelRepository
 import com.localaisearch.ui.viewmodel.LoadStatus
 import com.localaisearch.ui.viewmodel.ModelViewModel
 import com.localaisearch.ui.viewmodel.SettingsViewModel
@@ -72,6 +82,15 @@ fun SettingsAIScreen(
 ) {
     val inferenceConfig by viewModel.inferenceConfig.collectAsState()
     val loadStatus by modelViewModel.loadStatus.collectAsState()
+    val fallbackPath by viewModel.visionFallbackModelPath.collectAsState()
+    val application = LocalContext.current.applicationContext as Application
+    val localModels by AppModelRepository.get(application).models.collectAsState()
+    var visionMenuExpanded by remember { mutableStateOf(false) }
+    val visionModels = remember(localModels) {
+        localModels.filter { model ->
+            runCatching { GGUFMetadataReader.readMetadata(model.filePath).hasVision }.getOrDefault(false)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -105,6 +124,65 @@ fun SettingsAIScreen(
                             Text(stringResource(R.string.settings_vision_models_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
+                    }
+                }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.settings_vision_fallback_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        stringResource(R.string.settings_vision_fallback_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Box {
+                        Surface(
+                            onClick = { visionMenuExpanded = true },
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            tonalElevation = 0.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Image, null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (fallbackPath.isBlank()) stringResource(R.string.settings_vision_fallback_auto)
+                                        else fallbackPath.substringAfterLast('/'),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = if (visionModels.isEmpty()) stringResource(R.string.settings_vision_no_local_models)
+                                        else stringResource(R.string.settings_vision_fallback_selected),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Icon(Icons.Rounded.KeyboardArrowDown, null)
+                            }
+                        }
+                        DropdownMenu(expanded = visionMenuExpanded, onDismissRequest = { visionMenuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.settings_vision_fallback_auto)) },
+                                onClick = { viewModel.setVisionFallbackModelPath(""); visionMenuExpanded = false }
+                            )
+                            visionModels.forEach { model ->
+                                DropdownMenuItem(
+                                    text = { Text(model.name, maxLines = 1) },
+                                    onClick = { viewModel.setVisionFallbackModelPath(model.filePath); visionMenuExpanded = false }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.settings_vision_manage)) },
+                                onClick = { visionMenuExpanded = false; onNavigateToVisionModels() }
+                            )
+                        }
                     }
                 }
             }
@@ -224,16 +302,16 @@ private fun LoadModelCard(
 
     val title = stringResource(R.string.load_model)
     val subtitle = when (loadStatus) {
-        is LoadStatus.Loading -> "正在加载模型…"
-        is LoadStatus.Loaded -> "模型已加载"
+        is LoadStatus.Loading -> stringResource(R.string.settings_load_loading)
+        is LoadStatus.Loaded -> stringResource(R.string.settings_load_loaded)
         is LoadStatus.Error -> "模型加载失败"
-        else -> "选择并加载本地 AI 模型"
+        else -> stringResource(R.string.settings_load_select)
     }
     val statusText = when (loadStatus) {
         is LoadStatus.Loading -> loadStatus.model.name
         is LoadStatus.Loaded -> loadStatus.model.name
-        is LoadStatus.Error -> "未加载"
-        else -> "未加载"
+        is LoadStatus.Error -> stringResource(R.string.settings_load_unloaded)
+        else -> stringResource(R.string.settings_load_unloaded)
     }
 
     Card(

@@ -524,4 +524,32 @@
     <string name="settings_tor_custom_config">自定义 Tor 配置</string>
     <string name="settings_tor_custom_config_hint">例如：CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">每行一个 torrc 选项。应用会阻止可能破坏内置 SOCKS 服务的关键项。</string>
+    <string name="settings_vision_fallback_title">Dedicated vision fallback</string>
+    <string name="settings_vision_fallback_desc">If the chat model cannot see images, temporarily use a dedicated local vision model, then restore the chat model.</string>
+    <string name="settings_vision_fallback_auto">Automatic / not selected</string>
+    <string name="settings_vision_fallback_selected">Used only when the current chat model has no vision projector.</string>
+    <string name="settings_vision_no_local_models">No compatible local vision model is installed.</string>
+    <string-array name="home_greetings">
+        <item>I’m here</item>
+        <item>I’m ready</item>
+        <item>At your service</item>
+        <item>Waiting for your first message</item>
+        <item>Hand it to me</item>
+        <item>Let’s begin</item>
+        <item>Alright, let’s start</item>
+        <item>I’m here with you</item>
+        <item>What do you want to talk about? It’s up to you!</item>
+        <item>Ready whenever you are</item>
+        <item>Take your time</item>
+        <item>Let’s start here</item>
+        <item>Right now is just right</item>
+        <item>Everything is ready</item>
+        <item>Whenever you’re ready</item>
+        <item>There will always be an answer here</item>
+        <item>Let’s get started</item>
+    </string-array>
+    <string name="settings_load_loading">Loading model…</string>
+    <string name="settings_load_loaded">Model loaded</string>
+    <string name="settings_load_select">Select and load a local AI model</string>
+    <string name="settings_load_unloaded">Not loaded</string>
 </resources>

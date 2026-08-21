@@ -78,6 +78,8 @@ class SettingsViewModel(
     val torStatus: StateFlow<TorManager.Status> = TorManager.statusFlow
     val proxyConfig: StateFlow<com.localaisearch.data.repository.ProxyConfig> = _proxyConfig.asStateFlow()
     val privacyMode: StateFlow<Boolean> = _privacyMode.asStateFlow()
+    private val _visionFallbackModelPath = MutableStateFlow("")
+    val visionFallbackModelPath: StateFlow<String> = _visionFallbackModelPath.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -93,6 +95,7 @@ class SettingsViewModel(
             _onboardingCompleted.value = settingsRepo.onboardingCompleted.first()
             _modelSource.value = settingsRepo.modelSource.first()
             _privacyMode.value = settingsRepo.privacyModeEnabled.first()
+            _visionFallbackModelPath.value = settingsRepo.visionFallbackModelPath.first()
             _proxyConfig.value = settingsRepo.proxyConfig.first()
             _torEnabled.value = settingsRepo.torEnabled.first()
             _torBridges.value = settingsRepo.torBridges.first()
@@ -115,6 +118,12 @@ class SettingsViewModel(
             }
             _settingsLoaded.value = true
         }
+    }
+
+
+    fun setVisionFallbackModelPath(path: String) {
+        _visionFallbackModelPath.value = path
+        viewModelScope.launch { settingsRepo.setVisionFallbackModelPath(path) }
     }
 
     // -- Search config updates --

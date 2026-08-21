@@ -19,7 +19,7 @@
     <string name="done">Done</string>
     <string name="local_ai_private">Local AI - fully private, on-device</string>
     <string name="local_ai_search_enabled">Local AI + Internet search enabled</string>
-    <string name="ask_anything">Ask anything</string>
+    <string name="ask_anything">Localis fragen</string>
     <string name="new_conversation">New conversation</string>
     <string name="internet_search_enabled">Internet search enabled</string>
     <string name="clear">Clear</string>
@@ -451,4 +451,32 @@
     <string name="settings_tor_custom_config">Benutzerdefinierte Tor-Konfiguration</string>
     <string name="settings_tor_custom_config_hint">Beispiel: CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">Eine torrc-Option pro Zeile. Kritische Optionen, die den integrierten SOCKS-Dienst stören könnten, werden blockiert.</string>
+    <string name="settings_vision_fallback_title">Dediziertes Vision-Modell</string>
+    <string name="settings_vision_fallback_desc">Wenn das Chatmodell keine Bilder versteht, wird vorübergehend ein lokales Vision-Modell verwendet und danach das Chatmodell wiederhergestellt.</string>
+    <string name="settings_vision_fallback_auto">Automatisch / nicht ausgewählt</string>
+    <string name="settings_vision_fallback_selected">Nur wenn das aktuelle Chatmodell keinen Vision-Projektor besitzt.</string>
+    <string name="settings_vision_no_local_models">Kein kompatibles lokales Vision-Modell installiert.</string>
+    <string-array name="home_greetings">
+        <item>Ich bin hier</item>
+        <item>Ich bin bereit</item>
+        <item>Jederzeit zu deinen Diensten</item>
+        <item>Ich warte auf deine erste Nachricht</item>
+        <item>Überlass es mir</item>
+        <item>Fangen wir an</item>
+        <item>Okay, los geht’s</item>
+        <item>Ich bin bei dir</item>
+        <item>Worüber möchtest du sprechen? Du entscheidest!</item>
+        <item>Bereit, wann immer du willst</item>
+        <item>Lass dir Zeit</item>
+        <item>Beginnen wir hier</item>
+        <item>Jetzt ist genau der richtige Moment</item>
+        <item>Alles ist bereit</item>
+        <item>Jederzeit bereit</item>
+        <item>Hier gibt es immer eine Antwort</item>
+        <item>Los geht’s</item>
+    </string-array>
+    <string name="settings_load_loading">Modell wird geladen…</string>
+    <string name="settings_load_loaded">Modell geladen</string>
+    <string name="settings_load_select">Lokales KI-Modell auswählen und laden</string>
+    <string name="settings_load_unloaded">Nicht geladen</string>
 </resources>

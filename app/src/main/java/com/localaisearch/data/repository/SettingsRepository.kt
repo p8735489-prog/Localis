@@ -76,6 +76,7 @@ class SettingsRepository(private val context: Context) {
         val PERF_BACKGROUND = booleanPreferencesKey("perf_background")
         val PERF_TEMP_PROTECTION = booleanPreferencesKey("perf_temp_protection")
         val DEFAULT_SYSTEM_PROMPT = stringPreferencesKey("default_system_prompt")
+        val VISION_FALLBACK_MODEL_PATH = stringPreferencesKey("vision_fallback_model_path")
 
         // Network proxy
         val PROXY_ENABLED = booleanPreferencesKey("proxy_enabled")
@@ -242,6 +243,14 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs ->
             prefs[Keys.INTERNET_SEARCH_ENABLED] = enabled
         }
+    }
+
+    val visionFallbackModelPath: Flow<String> = context.settingsDataStore.data.map { prefs ->
+        prefs[Keys.VISION_FALLBACK_MODEL_PATH] ?: ""
+    }
+
+    suspend fun setVisionFallbackModelPath(path: String) {
+        context.settingsDataStore.edit { prefs -> prefs[Keys.VISION_FALLBACK_MODEL_PATH] = path.take(2048) }
     }
 
     suspend fun setDefaultSystemPrompt(promptId: String) {

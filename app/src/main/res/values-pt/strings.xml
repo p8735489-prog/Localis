@@ -19,7 +19,7 @@
     <string name="done">Done</string>
     <string name="local_ai_private">Local AI - fully private, on-device</string>
     <string name="local_ai_search_enabled">Local AI + Internet search enabled</string>
-    <string name="ask_anything">Ask anything</string>
+    <string name="ask_anything">Perguntar ao Localis</string>
     <string name="new_conversation">New conversation</string>
     <string name="internet_search_enabled">Internet search enabled</string>
     <string name="clear">Clear</string>
@@ -451,4 +451,32 @@
     <string name="settings_tor_custom_config">Configuração personalizada do Tor</string>
     <string name="settings_tor_custom_config_hint">Exemplo: CircuitPadding 1</string>
     <string name="settings_tor_custom_config_desc">Uma opção torrc por linha. Opções que podem interferir no serviço SOCKS integrado são bloqueadas.</string>
+    <string name="settings_vision_fallback_title">Modelo de visão dedicado</string>
+    <string name="settings_vision_fallback_desc">Se o modelo de chat não entender imagens, um modelo de visão local será usado temporariamente e depois o modelo de chat será restaurado.</string>
+    <string name="settings_vision_fallback_auto">Automático / não selecionado</string>
+    <string name="settings_vision_fallback_selected">Usado apenas quando o modelo atual não possui projetor de visão.</string>
+    <string name="settings_vision_no_local_models">Nenhum modelo de visão local compatível instalado.</string>
+    <string-array name="home_greetings">
+        <item>Estou aqui</item>
+        <item>Estou pronto</item>
+        <item>Sempre à sua disposição</item>
+        <item>Estou esperando sua primeira mensagem</item>
+        <item>Deixe comigo</item>
+        <item>Vamos começar</item>
+        <item>Tudo bem, vamos começar</item>
+        <item>Estou aqui com você</item>
+        <item>Sobre o que quer conversar? Você decide!</item>
+        <item>Pronto quando quiser</item>
+        <item>Sem pressa</item>
+        <item>Vamos começar por aqui</item>
+        <item>Agora é o momento certo</item>
+        <item>Tudo pronto</item>
+        <item>Quando estiver pronto</item>
+        <item>Sempre haverá uma resposta aqui</item>
+        <item>Vamos começar</item>
+    </string-array>
+    <string name="settings_load_loading">Carregando modelo…</string>
+    <string name="settings_load_loaded">Modelo carregado</string>
+    <string name="settings_load_select">Selecione e carregue um modelo de IA local</string>
+    <string name="settings_load_unloaded">Não carregado</string>
 </resources>

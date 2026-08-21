@@ -151,8 +151,10 @@ jobs:
           set -euo pipefail
           APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)
           test -n "$APK"
-          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner" verify --verbose "$APK"
+          echo "Verifying release APK: $APK"
+          "$ANDROID_HOME/build-tools/${BUILD_TOOLS}/apksigner" verify --verbose --print-certs "$APK"
           cp "$APK" Localis-release.apk
+          test -s Localis-release.apk
 
       - name: Remove temporary keystore
         if: always()

@@ -560,7 +560,7 @@
     <string name="settings_cpu_fallback">当前设备使用 CPU 安全回退</string>
     <string name="settings_advanced">高级设置</string>
 
-    <string name="settings_tor_system_vpn_note">Tor currently uses an app-only SOCKS tunnel. Android's system VPN indicator appears only when a real VpnService tunnel is active; Localis does not fake that state.</string>
+    <string name="settings_tor_system_vpn_note">Tor currently uses an app-only SOCKS tunnel. Android\'s system VPN indicator appears only when a real VpnService tunnel is active; Localis does not fake that state.</string>
     <string name="settings_tor_app_proxy_label">App-only Tor proxy</string>
     <string name="settings_fast_inference">Fast local inference</string>
     <string name="chat_thinking_mode">Thinking</string>

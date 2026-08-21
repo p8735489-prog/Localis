@@ -110,6 +110,7 @@ import com.localaisearch.ui.components.ChatBubble
 import com.localaisearch.ui.components.ExpressiveCard
 import com.localaisearch.ui.components.MorphingSendButton
 import com.localaisearch.ui.components.PrivacyBadge
+import com.localaisearch.ui.components.ReasoningMode
 import com.localaisearch.ui.components.SearchInputBar
 import com.localaisearch.ui.components.SendButtonState
 import com.localaisearch.ui.components.SourceCard
@@ -433,6 +434,9 @@ fun HomeScreen(
                             onSelectModel = onNavigateToModels,
                             isPrivacyMode = isPrivacyMode,
                             internetSearchEnabled = internetSearchEnabled,
+                            onToggleSearch = { viewModel.toggleInternetSearch() },
+                            reasoningMode = reasoningMode,
+                            onReasoningModeChange = viewModel::setReasoningMode,
                             inputText = inputText,
                             onInputChange = { inputText = it },
                             onSend = {
@@ -470,6 +474,8 @@ fun HomeScreen(
                             sendButtonState = sendButtonState,
                             internetSearchEnabled = internetSearchEnabled,
                             onToggleSearch = { viewModel.toggleInternetSearch() },
+                            reasoningMode = reasoningMode,
+                            onReasoningModeChange = viewModel::setReasoningMode,
                             onCancel = { viewModel.cancel() },
                             error = error,
                             isPrivacyMode = isPrivacyMode,
@@ -583,6 +589,9 @@ private fun EmptyStateScreen(
     onSelectModel: () -> Unit,
     isPrivacyMode: Boolean,
     internetSearchEnabled: Boolean,
+    onToggleSearch: () -> Unit,
+    reasoningMode: ReasoningMode,
+    onReasoningModeChange: (ReasoningMode) -> Unit,
     inputText: String,
     onInputChange: (String) -> Unit,
     onSend: () -> Unit,
@@ -652,7 +661,8 @@ private fun EmptyStateScreen(
                 onAttachClick = onAttachClick,
                 onImageUnavailableClick = onImageUnavailableClick,
                 reasoningMode = reasoningMode,
-                onReasoningModeChange = viewModel::setReasoningMode
+                onReasoningModeChange = onReasoningModeChange,
+                onInternetSearchToggle = onToggleSearch
             )
         }
 
@@ -677,6 +687,8 @@ private fun ChatScreen(
     sendButtonState: SendButtonState,
     internetSearchEnabled: Boolean,
     onToggleSearch: () -> Unit,
+    reasoningMode: ReasoningMode,
+    onReasoningModeChange: (ReasoningMode) -> Unit,
     onCancel: () -> Unit,
     error: String?,
     isPrivacyMode: Boolean,
@@ -819,7 +831,8 @@ private fun ChatScreen(
                 onAttachClick = onAttachClick,
                 onImageUnavailableClick = onImageUnavailableClick,
                 reasoningMode = reasoningMode,
-                onReasoningModeChange = viewModel::setReasoningMode
+                onReasoningModeChange = onReasoningModeChange,
+                onInternetSearchToggle = onToggleSearch
             )
         }
         }

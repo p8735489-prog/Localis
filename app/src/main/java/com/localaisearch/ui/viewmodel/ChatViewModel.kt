@@ -155,13 +155,26 @@ class ChatViewModel(
                 _loadedModelName.value = active?.name ?: llmEngine.loadedModelName.orEmpty()
             }
         }
+        // Continuously observe these two settings (not a one-shot read): both the
+        // internet-search toggle and the reasoning mode can also be changed from the
+        // Settings screens (SettingsHubScreen/SettingsNetworkScreen/SettingsAIScreen).
+        // Since this ViewModel is scoped to the Home nav-graph entry and survives
+        // navigating away to Settings and back, a one-shot `.first()` read here would
+        // leave the composer's globe icon / Thinking chip showing stale state after
+        // such a round trip until the process was killed and restarted.
         viewModelScope.launch {
-            _internetSearchEnabled.value = settingsRepo.internetSearchEnabled.first()
-            _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
-            _reasoningMode.value = when (settingsRepo.reasoningMode.first().lowercase()) {
-                "off" -> ReasoningMode.OFF
-                else -> ReasoningMode.THINKING
+            settingsRepo.internetSearchEnabled.collect { _internetSearchEnabled.value = it }
+        }
+        viewModelScope.launch {
+            settingsRepo.reasoningMode.collect { raw ->
+                _reasoningMode.value = when (raw.lowercase()) {
+                    "off" -> ReasoningMode.OFF
+                    else -> ReasoningMode.THINKING
+                }
             }
+        }
+        viewModelScope.launch {
+            _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
         }
         // Model loading is performed by the model screen's ViewModel, but the engine is shared.
         // Poll only this tiny state so Home reflects load/unload without recreating the engine.

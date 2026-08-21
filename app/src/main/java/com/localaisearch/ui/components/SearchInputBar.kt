@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.FilterChip
@@ -62,7 +63,8 @@ fun SearchInputBar(
     imageUnavailableReason: String? = null,
     onImageUnavailableClick: () -> Unit = {},
     reasoningMode: ReasoningMode = ReasoningMode.THINKING,
-    onReasoningModeChange: (ReasoningMode) -> Unit = {}
+    onReasoningModeChange: (ReasoningMode) -> Unit = {},
+    onInternetSearchToggle: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val hapticView = LocalView.current
@@ -127,6 +129,30 @@ fun SearchInputBar(
                         onClick = { onReasoningModeChange(ReasoningMode.THINKING); reasoningMenuExpanded = false }
                     )
                 }
+            }
+
+            IconButton(
+                onClick = {
+                    if (enabled) {
+                        AppHaptics.tap(hapticView)
+                        onInternetSearchToggle()
+                    }
+                },
+                enabled = enabled,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Public,
+                    contentDescription = stringResource(
+                        if (internetSearchEnabled) R.string.disable_web_search else R.string.enable_web_search
+                    ),
+                    tint = if (internetSearchEnabled && enabled) {
+                        colorScheme.primary
+                    } else {
+                        colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 0.55f else 0.32f)
+                    },
+                    modifier = Modifier.size(20.dp)
+                )
             }
 
             Spacer(modifier = Modifier.width(4.dp))

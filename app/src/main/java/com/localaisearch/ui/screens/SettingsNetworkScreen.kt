@@ -57,14 +57,7 @@ fun SettingsNetworkScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.network_and_search)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.network_and_search), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(

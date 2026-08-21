@@ -30,9 +30,7 @@ fun SettingsChatScreen(onNavigateBack: () -> Unit, viewModel: SettingsViewModel 
     val code by viewModel.chatCodeHighlight.collectAsState(true)
     val enterSend by viewModel.chatEnterSend.collectAsState(true)
     val autoCopy by viewModel.chatAutoCopy.collectAsState(false)
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_chat)) }, navigationIcon = {
-        IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
-    }) }) { padding ->
+    Scaffold(topBar = { SettingsTopBar(title = stringResource(R.string.settings_chat), onBack = onNavigateBack) }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = SettingsContentPadding, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             item { SettingsSectionTitle(stringResource(R.string.settings_message_display)) }
             item { SwitchRow(stringResource(R.string.settings_auto_scroll), autoScroll) { viewModel.updateChatAutoScroll(it) } }

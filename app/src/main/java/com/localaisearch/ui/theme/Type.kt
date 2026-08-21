@@ -55,8 +55,8 @@ fun appTypography(fontMode: String): Typography {
     headlineLarge = TextStyle(
         fontFamily = family,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
-        lineHeight = 40.sp
+        fontSize = 30.sp,
+        lineHeight = 38.sp
     ),
     headlineMedium = TextStyle(
         fontFamily = family,

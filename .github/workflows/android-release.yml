@@ -51,6 +51,13 @@ jobs:
             "cmake;${CMAKE_VERSION}" \
             "ndk;${NDK_VERSION}"
 
+      - name: Install Vulkan build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libvulkan-dev glslc spirv-headers
+
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 

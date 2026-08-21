@@ -39,14 +39,7 @@ fun SettingsPrivacyScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_privacy_security)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.settings_privacy_security), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(

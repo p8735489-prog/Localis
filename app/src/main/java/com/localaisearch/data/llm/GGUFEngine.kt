@@ -119,7 +119,14 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                         return@withContext Result.failure(IllegalArgumentException(message))
                     }
                     val am = appContext?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-                    val safeThreads = config.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtMost(8).coerceAtLeast(1))
+                    val cpuCount = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+                    // threads=0 means auto: use the full logical CPU budget, capped at 8
+                    // for mobile thermals. Do not collapse auto to a single thread.
+                    val safeThreads = if (config.threads <= 0) {
+                        cpuCount.coerceIn(2, 8)
+                    } else {
+                        config.threads.coerceIn(1, cpuCount.coerceAtMost(8))
+                    }
                     var requestedContext = config.contextLength.coerceIn(512, 32768)
                     val memInfo = ActivityManager.MemoryInfo()
                     am?.getMemoryInfo(memInfo)
@@ -138,7 +145,9 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                         return@withContext Result.failure(IllegalStateException(message))
                     }
                     if (modelHandle > 0L) unloadModelInternal()
-                    val handle = LlamaBridge.nativeLoadModel(filePath, requestedContext, safeThreads, false, 0)
+                    val gpuRequested = config.useGpu && isGpuAvailable()
+                    val gpuLayers = if (gpuRequested) config.gpuLayers.coerceIn(1, 99) else 0
+                    val handle = LlamaBridge.nativeLoadModel(filePath, requestedContext, safeThreads, gpuRequested, gpuLayers)
                     if (handle <= 0L) {
                         val nativeReason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
                         val message = nativeReason.ifBlank { "GGUF model could not be loaded by the bundled llama.cpp engine. Check architecture, file integrity and available RAM." }
@@ -147,7 +156,13 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     }
                     modelHandle = handle
                     currentModelPath = filePath
-                    currentConfig = config.copy(contextLength = requestedContext, threads = safeThreads, useGpu = false, gpuLayers = 0)
+                    currentConfig = config.copy(
+                        contextLength = requestedContext,
+                        threads = safeThreads,
+                        useGpu = gpuRequested,
+                        gpuLayers = gpuLayers,
+                        backend = if (gpuRequested) com.localaisearch.data.model.HardwareBackend.GPU else com.localaisearch.data.model.HardwareBackend.CPU
+                    )
                     Result.success(Unit)
                 } catch (e: OutOfMemoryError) {
                     unloadModelInternal()
@@ -296,7 +311,12 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     return@synchronized Result.success(Unit)
                 }
                 val ok = runCatching {
-                    LlamaBridge.nativeLoadVisionProjector(modelHandle, projector.absolutePath, config.threads.coerceIn(1, 8), false)
+                    val active = currentConfig
+                    LlamaBridge.nativeLoadVisionProjector(
+                        modelHandle, projector.absolutePath,
+                        (active?.threads ?: config.threads).coerceIn(1, 8),
+                        active?.useGpu == true
+                    )
                 }.getOrElse { false }
                 if (ok) {
                     currentVisionProjectorPath = projector.absolutePath

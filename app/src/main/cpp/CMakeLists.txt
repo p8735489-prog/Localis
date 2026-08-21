@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.22.1)
 project(localaisearch_native LANGUAGES C CXX ASM)
 
 # Build the complete upstream GGML backend instead of a hand-picked subset.
+# Vulkan is enabled for Android builds; the runtime still falls back to CPU when
+# the device has no usable Vulkan device.
 # The previous bridge omitted several GGML translation units/backends; that could
 # make libllama_bridge.so fail to link and left Kotlin reporting "native library
 # is unavailable" even though the llama.cpp sources were bundled in the project.
@@ -14,7 +16,7 @@ set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
 set(GGML_BLAS OFF CACHE BOOL "" FORCE)
 set(GGML_CUDA OFF CACHE BOOL "" FORCE)
 set(GGML_HIP OFF CACHE BOOL "" FORCE)
-set(GGML_VULKAN OFF CACHE BOOL "" FORCE)
+set(GGML_VULKAN ON CACHE BOOL "" FORCE)
 set(GGML_OPENCL OFF CACHE BOOL "" FORCE)
 set(GGML_METAL OFF CACHE BOOL "" FORCE)
 set(GGML_WEBGPU OFF CACHE BOOL "" FORCE)
@@ -28,8 +30,8 @@ if(ANDROID)
     add_link_options(-Wl,--no-undefined)
 endif()
 
-# Android builds use the CPU backend by default. The llama.cpp model loader and
-# every model implementation are compiled from the bundled source tree, so GGUF
+# Android builds prefer Vulkan acceleration when available. The llama.cpp model
+# loader and every model implementation are compiled from the bundled source tree, so GGUF
 # support follows the complete llama.cpp architecture/quantization support of
 # this source snapshot rather than a hard-coded model allow-list.
 add_subdirectory(ggml)

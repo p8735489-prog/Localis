@@ -41,14 +41,7 @@ fun SettingsAboutScreen(onNavigateBack: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.about)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.about), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(

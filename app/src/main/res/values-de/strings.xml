@@ -479,4 +479,15 @@
     <string name="settings_load_loaded">Modell geladen</string>
     <string name="settings_load_select">Lokales KI-Modell auswählen und laden</string>
     <string name="settings_load_unloaded">Nicht geladen</string>
+
+    <string name="settings_quick_start">Schnelleinstellungen</string>
+    <string name="settings_quick_start_desc">Wähle zuerst die Beschleunigung und aktiviere bei Bedarf Datenschutz, Suche oder Tor.</string>
+    <string name="settings_quick_gpu">GPU-Beschleunigung</string>
+    <string name="settings_acceleration_ready">Empfohlene Beschleunigung aktiv</string>
+    <string name="settings_cpu_fallback">Dieses Gerät verwendet sicher CPU</string>
+    <string name="settings_advanced">Erweiterte Einstellungen</string>
+
+    <string name="settings_tor_system_vpn_note">Tor verwendet derzeit einen App-eigenen SOCKS-Tunnel. Das Android-VPN-Symbol erscheint nur bei einem echten VpnService-Tunnel.</string>
+    <string name="settings_tor_app_proxy_label">Tor-Proxy nur für die App</string>
+    <string name="settings_fast_inference">Schnelle lokale Inferenz</string>
 </resources>

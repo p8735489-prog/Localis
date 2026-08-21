@@ -424,4 +424,15 @@
     <string name="settings_load_loaded">모델이 로드됨</string>
     <string name="settings_load_select">로컬 AI 모델을 선택하고 로드하세요</string>
     <string name="settings_load_unloaded">로드되지 않음</string>
+
+    <string name="settings_quick_start">빠른 설정</string>
+    <string name="settings_quick_start_desc">빠르게 시작하려면 가속을 먼저 선택하고 필요할 때 개인정보 보호, 검색 또는 Tor를 켜세요.</string>
+    <string name="settings_quick_gpu">GPU 가속</string>
+    <string name="settings_acceleration_ready">권장 가속 사용 중</string>
+    <string name="settings_cpu_fallback">이 기기에서는 CPU로 안전하게 전환</string>
+    <string name="settings_advanced">고급 설정</string>
+
+    <string name="settings_tor_system_vpn_note">Tor는 현재 앱 전용 SOCKS 터널을 사용합니다. Android 시스템 VPN 아이콘은 실제 VpnService 터널이 활성화된 경우에만 표시됩니다.</string>
+    <string name="settings_tor_app_proxy_label">앱 전용 Tor 프록시</string>
+    <string name="settings_fast_inference">빠른 로컬 추론</string>
 </resources>

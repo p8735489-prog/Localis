@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.model.InferenceConfig
 import com.localaisearch.data.model.InferenceConfigDefault
 import com.localaisearch.data.model.HardwareBackend
+import com.localaisearch.data.llm.LlamaBridge
+import kotlin.math.max
+import kotlin.math.min
 import com.localaisearch.data.search.SearchConfig
 import com.localaisearch.data.search.SearchConfigDefault
 import com.localaisearch.data.search.SearchProviderType
@@ -196,7 +199,28 @@ class SettingsViewModel(
     }
 
     fun updateUseGpu(enabled: Boolean) {
-        _inferenceConfig.value = _inferenceConfig.value.copy(useGpu = enabled)
+        if (enabled) {
+            enableRecommendedAcceleration()
+        } else {
+            _inferenceConfig.value = _inferenceConfig.value.copy(useGpu = false, backend = HardwareBackend.CPU, gpuLayers = 0)
+            saveInferenceConfig()
+        }
+    }
+
+    /** Fast-start preset: use the compiled GPU backend when the native library really supports it. */
+    fun enableRecommendedAcceleration() {
+        val gpuAvailable = runCatching { LlamaBridge.initialize() && LlamaBridge.nativeSupportsGpu() }.getOrDefault(false)
+        val cores = Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
+        val threads = min(8, max(2, cores - 1))
+        _inferenceConfig.value = _inferenceConfig.value.copy(
+            useGpu = gpuAvailable,
+            backend = if (gpuAvailable) HardwareBackend.GPU else HardwareBackend.CPU,
+            gpuLayers = if (gpuAvailable) 99 else 0,
+            threads = threads,
+            contextLength = 4096,
+            maxTokens = 1024,
+            thinkingDepth = 1
+        )
         saveInferenceConfig()
     }
 
@@ -226,7 +250,8 @@ class SettingsViewModel(
     }
 
     fun updateBackend(value: HardwareBackend) {
-        _inferenceConfig.value = _inferenceConfig.value.copy(backend = value, useGpu = value == HardwareBackend.GPU)
+        val gpu = value == HardwareBackend.GPU && runCatching { LlamaBridge.initialize() && LlamaBridge.nativeSupportsGpu() }.getOrDefault(false)
+        _inferenceConfig.value = _inferenceConfig.value.copy(backend = if (gpu) HardwareBackend.GPU else HardwareBackend.CPU, useGpu = gpu, gpuLayers = if (gpu) 99 else 0)
         saveInferenceConfig()
     }
 

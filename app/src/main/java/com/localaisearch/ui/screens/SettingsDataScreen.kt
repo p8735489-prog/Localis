@@ -67,14 +67,7 @@ fun SettingsDataScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_data)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.settings_data), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(

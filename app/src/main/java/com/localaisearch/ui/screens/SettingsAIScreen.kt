@@ -95,14 +95,7 @@ fun SettingsAIScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_ai_models)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.settings_ai_models), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(

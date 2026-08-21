@@ -424,4 +424,15 @@
     <string name="settings_load_loaded">تم تحميل النموذج</string>
     <string name="settings_load_select">اختر نموذج ذكاء اصطناعي محليًا وحمّله</string>
     <string name="settings_load_unloaded">غير محمّل</string>
+
+    <string name="settings_quick_start">الإعدادات السريعة</string>
+    <string name="settings_quick_start_desc">اختر التسريع أولاً، ثم فعّل الخصوصية أو البحث أو Tor عند الحاجة.</string>
+    <string name="settings_quick_gpu">تسريع GPU</string>
+    <string name="settings_acceleration_ready">التسريع الموصى به مفعّل</string>
+    <string name="settings_cpu_fallback">يستخدم هذا الجهاز المعالج كخيار آمن احتياطي</string>
+    <string name="settings_advanced">الإعدادات المتقدمة</string>
+
+    <string name="settings_tor_system_vpn_note">يستخدم Tor حالياً نفق SOCKS داخل التطبيق فقط. يظهر رمز VPN في Android عند تشغيل نفق VpnService حقيقي فقط.</string>
+    <string name="settings_tor_app_proxy_label">وكيل Tor للتطبيق فقط</string>
+    <string name="settings_fast_inference">استدلال محلي سريع</string>
 </resources>

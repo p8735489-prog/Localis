@@ -552,4 +552,15 @@
     <string name="settings_load_loaded">Model loaded</string>
     <string name="settings_load_select">Select and load a local AI model</string>
     <string name="settings_load_unloaded">Not loaded</string>
+
+    <string name="settings_quick_start">快速设置</string>
+    <string name="settings_quick_start_desc">快速开始，先选加速，再按需要打开隐私、搜索或 Tor。</string>
+    <string name="settings_quick_gpu">GPU 加速</string>
+    <string name="settings_acceleration_ready">已启用推荐加速</string>
+    <string name="settings_cpu_fallback">当前设备使用 CPU 安全回退</string>
+    <string name="settings_advanced">高级设置</string>
+
+    <string name="settings_tor_system_vpn_note">Tor currently uses an app-only SOCKS tunnel. Android's system VPN indicator appears only when a real VpnService tunnel is active; Localis does not fake that state.</string>
+    <string name="settings_tor_app_proxy_label">App-only Tor proxy</string>
+    <string name="settings_fast_inference">Fast local inference</string>
 </resources>

@@ -160,9 +160,9 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
     }
 
     llama_model_params model_params = llama_model_default_params();
-    // This build intentionally ships the CPU GGML backend. Do not pass GPU
-    // layers to a CPU-only binary: doing so can make a valid GGUF fail during
-    // initialization and look like a native-library/model compatibility bug.
+    // GPU offload is only requested when the compiled llama.cpp backend reports
+    // support (currently Vulkan on Android). Unsupported devices automatically
+    // stay on CPU; stale GPU preferences can never force an invalid backend.
     model_params.n_gpu_layers = (useGpu && llama_supports_gpu_offload())
             ? std::max(0, gpuLayers) : 0;
 

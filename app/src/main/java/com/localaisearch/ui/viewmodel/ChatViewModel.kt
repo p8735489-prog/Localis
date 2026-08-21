@@ -8,7 +8,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.localaisearch.data.agent.AgentCallback
 import com.localaisearch.data.agent.AgentEngine
-import com.localaisearch.data.llm.LLMProviderFactory
 import com.localaisearch.data.llm.GGUFEngine
 import com.localaisearch.data.llm.LlamaBridge
 import com.localaisearch.data.llm.LLMEngine
@@ -62,9 +61,11 @@ class ChatViewModel(
 ) : AndroidViewModel(application) {
 
     private val settingsRepo = SettingsRepository(application)
-    private val llmEngine: LLMEngine = LLMProviderFactory.createEngine(application)
     private val searchRepo = SearchRepository()
     val modelRepo = AppModelRepository.get(application)
+    // Chat and model-center must use the exact same process-scoped engine. Creating a
+    // second JNI engine here was a major source of stale model state and native races.
+    private val llmEngine: LLMEngine = modelRepo.engine
 
     // -- Integrated Repositories & Managers --
     private val conversationRepo = ConversationRepository(application)
@@ -142,6 +143,14 @@ class ChatViewModel(
     val contextSummary: StateFlow<String?> = _contextSummary.asStateFlow()
 
     init {
+        // Observe the shared repository rather than polling an independent engine.
+        // This makes the home header update immediately after returning from Model Center.
+        viewModelScope.launch {
+            modelRepo.activeModel.collect { active ->
+                _modelLoaded.value = active != null && llmEngine.isLoaded
+                _loadedModelName.value = active?.name ?: llmEngine.loadedModelName.orEmpty()
+            }
+        }
         viewModelScope.launch {
             _internetSearchEnabled.value = settingsRepo.internetSearchEnabled.first()
             _defaultSystemPrompt.value = settingsRepo.defaultSystemPrompt.first()
@@ -161,7 +170,7 @@ class ChatViewModel(
                     lastName = name
                 }
                 _imageInputAvailable.value = if (loaded) detectVisionInputReady() else false
-                kotlinx.coroutines.delay(1000)
+                kotlinx.coroutines.delay(350)
             }
         }
     }

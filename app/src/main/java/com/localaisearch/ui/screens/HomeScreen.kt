@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -37,6 +38,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Message
 import androidx.compose.material.icons.automirrored.rounded.Send
@@ -64,7 +66,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -77,6 +78,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.Image
@@ -91,16 +93,19 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.localaisearch.R
 import com.localaisearch.data.model.AgentState
 import com.localaisearch.data.repository.TorManager
-import com.localaisearch.ui.components.AgentProgressBar
+import com.localaisearch.ui.components.LocalisTypingIndicator
 import com.localaisearch.ui.components.ChatBubble
 import com.localaisearch.ui.components.ExpressiveCard
 import com.localaisearch.ui.components.MorphingSendButton
@@ -177,21 +182,27 @@ fun HomeScreen(
         drawerOpen = false
         if (action != null) {
             scope.launch {
-                delay(440L)
+                delay(360L)
                 action()
             }
         }
     }
 
-    val sendButtonState = when {
-        isProcessing && agentStatus.state == AgentState.SEARCHING -> SendButtonState.SEARCHING
-        isProcessing && agentStatus.state == AgentState.DONE -> SendButtonState.DONE
-        isProcessing -> SendButtonState.SEARCHING
-        else -> SendButtonState.IDLE
-    }
+    // Local model generation never morphs into a progress/search indicator.
+    // The only generation affordance is the assistant's three-dot typing state.
+    val sendButtonState = SendButtonState.IDLE
 
     val orbState = if (isProcessing) agentStatus.state else AgentState.IDLE
     val hasMessages = conversation.messages.isNotEmpty()
+    var greetingNonce by remember { mutableStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) greetingNonce++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     if (showImageModelHint) {
         AlertDialog(
@@ -246,39 +257,42 @@ fun HomeScreen(
         open = drawerOpen,
         onDismiss = { drawerOpen = false },
         drawerContent = {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = stringResource(R.string.drawer_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                Text(
-                    text = stringResource(R.string.app_tagline),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                Spacer(modifier = Modifier.height(8.dp))
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Outlined.Chat, contentDescription = null) },
-                    label = { Text(stringResource(R.string.new_chat)) },
-                    selected = false,
-                    onClick = {
-                        viewModel.newConversation()
-                        drawerOpen = false
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
+                Spacer(modifier = Modifier.height(14.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = colorScheme.surfaceContainerHigh,
+                    tonalElevation = 1.dp,
+                    modifier = Modifier.padding(horizontal = 14.dp).fillMaxWidth()
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Image(painterResource(R.drawable.localis_avatar), null, Modifier.size(46.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(loadedModelName.ifBlank { stringResource(R.string.home_title) }, style = MaterialTheme.typography.bodySmall, color = colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = colorScheme.primaryContainer.copy(alpha = 0.45f),
+                    modifier = Modifier.padding(horizontal = 14.dp).fillMaxWidth(),
+                    onClick = { viewModel.newConversation(); drawerOpen = false }
+                ) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Chat, null, tint = colorScheme.primary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.new_chat), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    }
+                }
                 Text(
                     text = stringResource(R.string.history),
                     style = MaterialTheme.typography.labelLarge,
                     color = colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)
                 )
+
                 if (storedConversations.isEmpty()) {
                     Text(
                         text = stringResource(R.string.no_history),
@@ -347,55 +361,54 @@ fun HomeScreen(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                    color = colorScheme.background.copy(alpha = 0.96f),
+                    tonalElevation = 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BouncyIconButton(
+                            onClick = { drawerOpen = !drawerOpen },
+                            contentDescription = stringResource(R.string.open_menu)
+                        ) {
+                            Icon(Icons.Rounded.Menu, null)
+                        }
                         Row(
-                            modifier = Modifier.clickable { onNavigateToModels() },
+                            modifier = Modifier.weight(1f).clickable { onNavigateToModels() }.padding(horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = loadedModelName.ifBlank { stringResource(R.string.home_title) },
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                             Icon(
                                 imageVector = Icons.Rounded.KeyboardArrowDown,
                                 contentDescription = stringResource(R.string.models),
                                 tint = colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(20.dp).padding(start = 2.dp)
                             )
                         }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { drawerOpen = !drawerOpen }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Menu,
-                                contentDescription = stringResource(R.string.open_menu)
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { viewModel.togglePrivacyMode() }) {
-                            Icon(
-                                imageVector = if (isPrivacyMode) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                                contentDescription = if (isPrivacyMode) stringResource(R.string.privacy_on) else stringResource(R.string.privacy_off),
-                                tint = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
-                            )
+                        BouncyIconButton(
+                            onClick = { viewModel.togglePrivacyMode() },
+                            contentDescription = if (isPrivacyMode) stringResource(R.string.privacy_on) else stringResource(R.string.privacy_off),
+                            tint = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
+                        ) {
+                            Icon(if (isPrivacyMode) Icons.Rounded.Lock else Icons.Rounded.LockOpen, null)
                         }
                         Image(
                             painter = painterResource(R.drawable.localis_avatar),
                             contentDescription = stringResource(R.string.app_name),
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp).padding(2.dp)
                         )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
-                    ),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            },
+                    }
+                }
+            }
         ) { paddingValues ->
             Surface(
                 modifier = Modifier
@@ -413,6 +426,7 @@ fun HomeScreen(
                     if (!hasMsgs) {
                         EmptyStateScreen(
                             orbState = orbState,
+                            greetingNonce = greetingNonce,
                             modelLoaded = modelLoaded,
                             modelName = loadedModelName,
                             onSelectModel = onNavigateToModels,
@@ -475,6 +489,42 @@ fun HomeScreen(
     }
 }
 
+
+@Composable
+private fun BouncyIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    content: @Composable () -> Unit
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.86f else 1f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 700f),
+        label = "headerButtonScale"
+    )
+    Surface(
+        onClick = {
+            scope.launch {
+                pressed = true
+                delay(85)
+                pressed = false
+            }
+            onClick()
+        },
+        shape = CircleShape,
+        color = Color.Transparent,
+        modifier = Modifier.size(44.dp).graphicsLayer { scaleX = scale; scaleY = scale }
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides tint
+            ) { content() }
+        }
+    }
+}
+
 @Composable
 private fun SmoothNavigationDrawer(
     open: Boolean,
@@ -485,10 +535,10 @@ private fun SmoothNavigationDrawer(
     val density = androidx.compose.ui.platform.LocalDensity.current
     val progress by animateFloatAsState(
         targetValue = if (open) 1f else 0f,
-        animationSpec = tween(440, easing = FastOutSlowInEasing),
+        animationSpec = spring(dampingRatio = 0.82f, stiffness = 480f),
         label = "drawerProgress"
     )
-    val drawerWidth = with(density) { 304.dp.toPx() }
+    val drawerWidth = with(density) { 332.dp.toPx() }
 
     Box(Modifier.fillMaxSize()) {
         content()
@@ -505,13 +555,13 @@ private fun SmoothNavigationDrawer(
             Surface(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(304.dp)
+                    .width(332.dp)
                     .zIndex(11f)
                     .graphicsLayer {
                         translationX = -drawerWidth * (1f - progress)
                         shadowElevation = 4.dp.toPx() * progress
                     },
-                shape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
+                shape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 tonalElevation = 1.dp
             ) {
@@ -526,6 +576,7 @@ private fun SmoothNavigationDrawer(
 @Composable
 private fun EmptyStateScreen(
     orbState: AgentState,
+    greetingNonce: Int,
     modelLoaded: Boolean,
     modelName: String,
     onSelectModel: () -> Unit,
@@ -557,21 +608,23 @@ private fun EmptyStateScreen(
 
         // The empty state uses the real Localis app icon. No particles, orb, glow,
         // or looping animation: the icon and greeting form one compact visual unit.
-        Image(
-            painter = painterResource(R.drawable.localis_avatar),
-            contentDescription = stringResource(R.string.app_name),
-            modifier = Modifier.size(58.dp)
-        )
-
-        // Keep the icon and greeting visually attached; there is intentionally no spacer.
-        val greetings = stringArrayResource(R.array.home_greetings).toList()
-        val greeting = remember(greetings) { greetings.randomOrNull().orEmpty() }
-        Text(
-            text = greeting,
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Normal,
-            color = colorScheme.onSurface
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Image(
+                painter = painterResource(R.drawable.localis_avatar),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier.size(48.dp)
+            )
+            val greetings = stringArrayResource(R.array.home_greetings).toList()
+            val greeting = remember(greetings, greetingNonce) { greetings.randomOrNull().orEmpty() }
+            Text(
+                text = greeting,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Normal,
+                color = colorScheme.onSurface,
+                maxLines = 2,
+                softWrap = true
+            )
+        }
 
         Spacer(modifier = Modifier.height(46.dp))
 
@@ -589,8 +642,8 @@ private fun EmptyStateScreen(
                 onSend = onSend,
                 internetSearchEnabled = internetSearchEnabled,
                 modifier = Modifier.weight(1f),
-                enabled = inputEnabled && !torRoutingActive,
-                disabledReason = if (torRoutingActive) stringResource(R.string.tor_input_disabled) else null,
+                enabled = inputEnabled,
+                disabledReason = null,
                 imageInputAvailable = imageInputAvailable,
                 sendButtonState = sendButtonState,
                 pendingImageAvailable = pendingImageAvailable,
@@ -598,22 +651,6 @@ private fun EmptyStateScreen(
                 onAttachClick = onAttachClick,
                 onImageUnavailableClick = onImageUnavailableClick
             )
-        }
-
-        // Progress indicator
-        AnimatedVisibility(
-            visible = isProcessing,
-            enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AgentProgressBar(status = agentStatus)
-            }
         }
 
         Spacer(modifier = Modifier.weight(0.22f))
@@ -670,21 +707,20 @@ private fun ChatScreen(
             contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Small orb at top when processing
-            if (isProcessing) {
+            // Ordinary local generation uses a quiet typing indicator instead of a
+            // large multi-step progress rail. Search-specific status remains in the
+            // search result cards, so the chat never jumps vertically while tokens stream.
+            val waitingForFirstToken = isProcessing && messages.lastOrNull()?.let { it.role == com.localaisearch.data.model.MessageRole.ASSISTANT && it.content.isBlank() && it.isStreaming } == true
+            if (waitingForFirstToken) {
                 item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(painter = painterResource(R.drawable.localis_avatar), contentDescription = null, modifier = Modifier.size(32.dp))
+                        Image(painter = painterResource(R.drawable.localis_avatar), contentDescription = null, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        LocalisTypingIndicator()
                     }
-                }
-                item {
-                    AgentProgressBar(
-                        status = agentStatus,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
                 }
             }
 
@@ -771,8 +807,8 @@ private fun ChatScreen(
                 onSend = onSend,
                 internetSearchEnabled = internetSearchEnabled,
                 modifier = Modifier.weight(1f),
-                enabled = inputEnabled && !torRoutingActive,
-                disabledReason = if (torRoutingActive) stringResource(R.string.tor_input_disabled) else null,
+                enabled = inputEnabled,
+                disabledReason = null,
                 imageInputAvailable = imageInputAvailable,
                 sendButtonState = sendButtonState,
                 pendingImageAvailable = pendingImageAvailable,

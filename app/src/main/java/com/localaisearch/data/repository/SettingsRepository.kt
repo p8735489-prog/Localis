@@ -112,12 +112,12 @@ class SettingsRepository(private val context: Context) {
             topP = prefs[Keys.LLM_TOP_P]?.toFloatOrNull() ?: 0.9f,
             topK = prefs[Keys.LLM_TOP_K] ?: 40,
             contextLength = prefs[Keys.LLM_CONTEXT_LENGTH] ?: 4096,
-            maxTokens = prefs[Keys.LLM_MAX_TOKENS] ?: 2048,
+            maxTokens = prefs[Keys.LLM_MAX_TOKENS] ?: 1024,
             useGpu = prefs[Keys.LLM_USE_GPU] ?: true,
-            gpuLayers = prefs[Keys.LLM_GPU_LAYERS] ?: 0,
-            threads = prefs[Keys.LLM_THREADS] ?: 4,
-            thinkingDepth = prefs[Keys.LLM_THINKING_DEPTH] ?: 2,
-            backend = runCatching { com.localaisearch.data.model.HardwareBackend.valueOf(prefs[Keys.LLM_BACKEND] ?: "CPU") }.getOrDefault(com.localaisearch.data.model.HardwareBackend.CPU),
+            gpuLayers = prefs[Keys.LLM_GPU_LAYERS] ?: 99,
+            threads = prefs[Keys.LLM_THREADS] ?: 0,
+            thinkingDepth = prefs[Keys.LLM_THINKING_DEPTH] ?: 1,
+            backend = runCatching { com.localaisearch.data.model.HardwareBackend.valueOf(prefs[Keys.LLM_BACKEND] ?: "GPU") }.getOrDefault(com.localaisearch.data.model.HardwareBackend.GPU),
             frequencyPenalty = prefs[Keys.LLM_FREQUENCY_PENALTY]?.toFloatOrNull() ?: 0f,
             presencePenalty = prefs[Keys.LLM_PRESENCE_PENALTY]?.toFloatOrNull() ?: 0f
         )

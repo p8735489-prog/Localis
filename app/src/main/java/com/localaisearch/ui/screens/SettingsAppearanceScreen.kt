@@ -2,6 +2,7 @@ package com.localaisearch.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
@@ -14,6 +15,8 @@ import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Colorize
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,10 +38,7 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
     val activity = LocalContext.current as? Activity
 
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleLarge) },
-            navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } }
-        )
+        SettingsTopBar(title = stringResource(R.string.settings_appearance), onBack = onNavigateBack)
     }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
@@ -125,25 +125,55 @@ fun SettingsAppearanceScreen(onNavigateBack: () -> Unit, viewModel: SettingsView
 }
 
 @Composable
-private fun SettingsChoiceCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, options: List<Pair<String,String>>, onSelect: (String)->Unit) {
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-        DropdownRow(label = title, selectedValue = value, options = options, onSelect = onSelect)
-    }
-}
-
-@Composable
-private fun SettingsSwitchCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean)->Unit) {
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Row(Modifier.weight(1f)) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end=12.dp))
-                Column { Text(title, style=MaterialTheme.typography.bodyLarge); Text(subtitle, style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant) }
+private fun SettingsChoiceCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    value: String,
+    options: List<Pair<String, String>>,
+    onSelect: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 0.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column {
+            ListItem(
+                leadingContent = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
+                headlineContent = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                supportingContent = { Text(value, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                trailingContent = { Icon(Icons.Rounded.KeyboardArrowDown, null) },
+                modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+            )
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { (display, id) ->
+                    DropdownMenuItem(text = { Text(display, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(id); expanded = false })
+                }
             }
-            Switch(checked, onCheckedChange)
         }
     }
 }
 
+@Composable
+private fun SettingsSwitchCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 0.dp, modifier = Modifier.fillMaxWidth()) {
+        ListItem(
+            leadingContent = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
+            headlineContent = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            supportingContent = { Text(subtitle, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            trailingContent = { Switch(checked, onCheckedChange) },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
 
 @Composable
 private fun ThemePresetCard(selected: String, onSelect: (String) -> Unit) {

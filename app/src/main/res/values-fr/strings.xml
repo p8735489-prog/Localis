@@ -479,4 +479,15 @@
     <string name="settings_load_loaded">Modèle chargé</string>
     <string name="settings_load_select">Sélectionner et charger un modèle IA local</string>
     <string name="settings_load_unloaded">Non chargé</string>
+
+    <string name="settings_quick_start">Réglages rapides</string>
+    <string name="settings_quick_start_desc">Choisissez d’abord l’accélération, puis activez si besoin la confidentialité, la recherche ou Tor.</string>
+    <string name="settings_quick_gpu">Accélération GPU</string>
+    <string name="settings_acceleration_ready">Accélération recommandée active</string>
+    <string name="settings_cpu_fallback">Ce appareil utilise le processeur en secours</string>
+    <string name="settings_advanced">Réglages avancés</string>
+
+    <string name="settings_tor_system_vpn_note">Tor utilise actuellement un tunnel SOCKS limité à l’application. L’icône VPN Android apparaît uniquement avec un vrai tunnel VpnService.</string>
+    <string name="settings_tor_app_proxy_label">Proxy Tor limité à l’application</string>
+    <string name="settings_fast_inference">Inférence locale rapide</string>
 </resources>

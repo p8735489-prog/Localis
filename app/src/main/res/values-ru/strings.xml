@@ -424,4 +424,15 @@
     <string name="settings_load_loaded">Модель загружена</string>
     <string name="settings_load_select">Выберите и загрузите локальную ИИ-модель</string>
     <string name="settings_load_unloaded">Не загружена</string>
+
+    <string name="settings_quick_start">Быстрые настройки</string>
+    <string name="settings_quick_start_desc">Сначала выберите ускорение, затем при необходимости включите приватность, поиск или Tor.</string>
+    <string name="settings_quick_gpu">Ускорение GPU</string>
+    <string name="settings_acceleration_ready">Рекомендуемое ускорение включено</string>
+    <string name="settings_cpu_fallback">На этом устройстве используется безопасный откат на CPU</string>
+    <string name="settings_advanced">Расширенные настройки</string>
+
+    <string name="settings_tor_system_vpn_note">Tor сейчас использует SOCKS-туннель только для приложения. Значок системного VPN Android появляется только при настоящем туннеле VpnService.</string>
+    <string name="settings_tor_app_proxy_label">Tor-прокси только для приложения</string>
+    <string name="settings_fast_inference">Быстрый локальный вывод</string>
 </resources>

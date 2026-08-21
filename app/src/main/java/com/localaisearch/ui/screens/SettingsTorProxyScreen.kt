@@ -57,14 +57,7 @@ fun SettingsTorProxyScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_tor_proxy)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.settings_tor_proxy), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(
@@ -83,8 +76,9 @@ fun SettingsTorProxyScreen(
                             Icon(Icons.Rounded.Security, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                             Spacer(Modifier.size(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(stringResource(R.string.settings_tor_route_title), style = MaterialTheme.typography.titleLarge)
-                                Text(stringResource(R.string.settings_tor_app_only_note), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.settings_tor_route_title), style = MaterialTheme.typography.titleLarge, maxLines = 1)
+                                Text(stringResource(R.string.settings_tor_app_proxy_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.settings_tor_app_only_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3)
                             }
                             Switch(checked = torConnected, onCheckedChange = viewModel::setTorEnabled)
                         }
@@ -119,7 +113,8 @@ fun SettingsTorProxyScreen(
                             }
                         }
 
-                        Text(stringResource(R.string.settings_tor_scope_detail), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_tor_scope_detail), style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.settings_tor_system_vpn_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

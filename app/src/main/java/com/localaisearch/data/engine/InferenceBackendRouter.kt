@@ -20,9 +20,9 @@ object InferenceBackendRouter {
             backend = InferenceBackend.LLAMA_CPP,
             available = true,
             supportsGguf = true,
-            supportsGpu = false,
+            supportsGpu = true,
             supportsNpu = false,
-            reason = "Compatibility-first GGUF runtime"
+            reason = "GGUF + Vulkan acceleration with automatic CPU fallback"
         ),
         BackendCapability(
             backend = InferenceBackend.MNN,

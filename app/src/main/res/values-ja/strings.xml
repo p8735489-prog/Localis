@@ -424,4 +424,15 @@
     <string name="settings_load_loaded">モデルを読み込みました</string>
     <string name="settings_load_select">ローカルAIモデルを選択して読み込む</string>
     <string name="settings_load_unloaded">未読み込み</string>
+
+    <string name="settings_quick_start">クイック設定</string>
+    <string name="settings_quick_start_desc">すぐに使い始められるよう、まず加速方式を選び、必要に応じてプライバシー・検索・Torを設定します。</string>
+    <string name="settings_quick_gpu">GPUアクセラレーション</string>
+    <string name="settings_acceleration_ready">推奨アクセラレーションを使用中</string>
+    <string name="settings_cpu_fallback">この端末ではCPUにフォールバック</string>
+    <string name="settings_advanced">詳細設定</string>
+
+    <string name="settings_tor_system_vpn_note">Torは現在アプリ専用のSOCKSトンネルを使用します。AndroidのシステムVPNアイコンは実際のVpnServiceトンネルが有効な場合のみ表示されます。</string>
+    <string name="settings_tor_app_proxy_label">アプリ専用Torプロキシ</string>
+    <string name="settings_fast_inference">高速ローカル推論</string>
 </resources>

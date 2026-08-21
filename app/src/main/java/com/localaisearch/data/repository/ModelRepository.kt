@@ -32,7 +32,7 @@ import java.io.FileOutputStream
  */
 class ModelRepository(
     private val context: Context,
-    private val engine: LLMEngine
+    val engine: LLMEngine
 ) {
     private val modelsDir: File by lazy {
         File(context.filesDir, "models").apply { if (!exists()) mkdirs() }
@@ -200,13 +200,17 @@ class ModelRepository(
             .coerceIn(512, 32768)
             .coerceAtMost(trainContext.coerceAtMost(32768))
             .coerceAtMost(memoryBasedContext.coerceIn(512, 32768))
-        // This APK is built with GGML_CPU and no Vulkan/OpenCL backend. Never let
-        // a stale preference request GPU layers against a CPU-only native binary.
+        val maxThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(8).coerceAtLeast(1)
+        val resolvedThreads = if (requested.threads <= 0) maxThreads else requested.threads.coerceIn(1, maxThreads)
+        // GPU is opt-in only when the actual native llama.cpp backend reports it.
+        // A stale preference can never force unsupported offload.
+        val gpuAvailable = requested.useGpu && engine.isGpuAvailable()
         return requested.copy(
             contextLength = contextLength,
-            threads = requested.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtMost(8).coerceAtLeast(1)),
-            useGpu = false,
-            gpuLayers = 0
+            threads = resolvedThreads,
+            useGpu = gpuAvailable,
+            gpuLayers = if (gpuAvailable) requested.gpuLayers.coerceAtLeast(1) else 0,
+            backend = if (gpuAvailable) com.localaisearch.data.model.HardwareBackend.GPU else com.localaisearch.data.model.HardwareBackend.CPU
         )
     }
 
@@ -228,13 +232,24 @@ class ModelRepository(
                     return@withLock Result.success(Unit)
                 }
                 val safeConfig = safeConfigForModel(file, config)
-                // GGUFEngine replaces an already-loaded native model before loading the
-                // requested one. Preserve a rollback target so a failed replacement does
-                // not leave the UI claiming that a dead model is still active.
-                val result = engine.loadModel(model.filePath, safeConfig)
+                // Try the requested accelerated path first. If the device advertises
+                // Vulkan but the particular model cannot be offloaded safely, immediately
+                // retry the same model on CPU before declaring the load failed.
+                val firstResult = engine.loadModel(model.filePath, safeConfig)
+                val result = if (firstResult.isFailure && safeConfig.useGpu) {
+                    val cpuConfig = safeConfig.copy(
+                        useGpu = false,
+                        gpuLayers = 0,
+                        backend = com.localaisearch.data.model.HardwareBackend.CPU
+                    )
+                    engine.loadModel(model.filePath, cpuConfig)
+                } else firstResult
+                val activeConfigToStore = if (result.isSuccess && firstResult.isFailure && safeConfig.useGpu) {
+                    safeConfig.copy(useGpu = false, gpuLayers = 0, backend = com.localaisearch.data.model.HardwareBackend.CPU)
+                } else safeConfig
                 if (result.isSuccess) {
                     _activeModel.value = model.copy(isLoaded = true)
-                    activeConfig = safeConfig
+                    activeConfig = activeConfigToStore
                     refreshModels()
                     return@withLock result
                 }
@@ -291,10 +306,13 @@ class ModelRepository(
                     engine.unloadModel()
                     _activeModel.value = null
                     activeConfig = null
-                    val result = engine.loadModel(model.filePath, safeConfig)
+                    val firstResult = engine.loadModel(model.filePath, safeConfig)
+                    val result = if (firstResult.isFailure && safeConfig.useGpu) {
+                        engine.loadModel(model.filePath, safeConfig.copy(useGpu = false, gpuLayers = 0, backend = com.localaisearch.data.model.HardwareBackend.CPU))
+                    } else firstResult
                     if (result.isSuccess) {
                         _activeModel.value = model.copy(isLoaded = true)
-                        activeConfig = safeConfig
+                        activeConfig = if (firstResult.isFailure && safeConfig.useGpu) safeConfig.copy(useGpu = false, gpuLayers = 0, backend = com.localaisearch.data.model.HardwareBackend.CPU) else safeConfig
                         refreshModels()
                         return@withLock result
                     }

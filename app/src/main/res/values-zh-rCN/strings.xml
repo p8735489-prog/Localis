@@ -545,4 +545,15 @@
     <string name="settings_load_loaded">模型已加载</string>
     <string name="settings_load_select">选择并加载本地 AI 模型</string>
     <string name="settings_load_unloaded">未加载</string>
+
+    <string name="settings_quick_start">快速设置</string>
+    <string name="settings_quick_start_desc">快速开始，先选加速，再按需要打开隐私、搜索或 Tor。</string>
+    <string name="settings_quick_gpu">GPU 加速</string>
+    <string name="settings_acceleration_ready">已启用推荐加速</string>
+    <string name="settings_cpu_fallback">当前设备使用 CPU 安全回退</string>
+    <string name="settings_advanced">高级设置</string>
+
+    <string name="settings_tor_system_vpn_note">Tor 当前使用应用级 SOCKS 通道。只有真正的 Android VpnService 隧道运行时，系统 VPN 图标才会出现；Localis 不会伪造该状态。</string>
+    <string name="settings_tor_app_proxy_label">应用级 Tor 代理</string>
+    <string name="settings_fast_inference">快速本地推理</string>
 </resources>

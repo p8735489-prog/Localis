@@ -479,4 +479,15 @@
     <string name="settings_load_loaded">Modelo carregado</string>
     <string name="settings_load_select">Selecione e carregue um modelo de IA local</string>
     <string name="settings_load_unloaded">Não carregado</string>
+
+    <string name="settings_quick_start">Configuração rápida</string>
+    <string name="settings_quick_start_desc">Escolha primeiro a aceleração e ative privacidade, pesquisa ou Tor quando necessário.</string>
+    <string name="settings_quick_gpu">Aceleração GPU</string>
+    <string name="settings_acceleration_ready">Aceleração recomendada ativa</string>
+    <string name="settings_cpu_fallback">Este dispositivo usa CPU como fallback seguro</string>
+    <string name="settings_advanced">Configurações avançadas</string>
+
+    <string name="settings_tor_system_vpn_note">O Tor usa atualmente um túnel SOCKS apenas para o app. O ícone de VPN do Android aparece somente com um túnel VpnService real.</string>
+    <string name="settings_tor_app_proxy_label">Proxy Tor apenas no app</string>
+    <string name="settings_fast_inference">Inferência local rápida</string>
 </resources>

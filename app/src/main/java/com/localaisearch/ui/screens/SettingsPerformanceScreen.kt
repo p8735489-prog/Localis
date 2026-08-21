@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.MaterialTheme
@@ -46,14 +49,7 @@ fun SettingsPerformanceScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_performance)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
+            SettingsTopBar(title = stringResource(R.string.settings_performance), onBack = onNavigateBack)
         }
     ) { padding ->
         LazyColumn(
@@ -61,6 +57,20 @@ fun SettingsPerformanceScreen(
             contentPadding = SettingsContentPadding,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            item {
+                Surface(
+                    onClick = viewModel::enableRecommendedAcceleration,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .55f)
+                ) {
+                    ListItem(
+                        leadingContent = { Icon(Icons.Rounded.Speed, null, tint = MaterialTheme.colorScheme.primary) },
+                        headlineContent = { Text(stringResource(R.string.settings_fast_inference), maxLines = 1) },
+                        supportingContent = { Text(stringResource(R.string.settings_quick_start_desc), maxLines = 2) },
+                        trailingContent = { Text(stringResource(R.string.settings_performance), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
+                    )
+                }
+            }
             item { SettingsSectionTitle(stringResource(R.string.settings_hardware_acceleration)) }
             item { SwitchRow(stringResource(R.string.settings_gpu_acceleration), inferenceConfig.useGpu) { viewModel.updateUseGpu(it) } }
             if (inferenceConfig.useGpu) {

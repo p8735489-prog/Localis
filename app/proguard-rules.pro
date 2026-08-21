@@ -24,3 +24,11 @@
 # TorService keep rule removed: tor-android AAR is no longer a dependency.
 # TorManager uses reflection and degrades to "unavailable" when the class is absent.
 -dontwarn org.torproject.**
+
+
+# LocalAISearch optimization rules
+# Keep JNI entry points and Android components stable
+-keep class com.localaisearch.** { *; }
+-keepclasseswithmembernames class * { native <methods>; }
+-dontwarn kotlinx.serialization.**
+-dontwarn okhttp3.**

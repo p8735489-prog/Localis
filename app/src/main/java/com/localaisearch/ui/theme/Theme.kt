@@ -70,7 +70,8 @@ private val DarkColors = darkColorScheme(
 )
 
 /**
- * App theme with Material 3 Expressive + Monet dynamic color support.
+ * App theme: Material 3 + Pixel UI + Android Monet dynamic color.
+ * Uses wallpaper-derived tonal palettes on Android 12+ and Pixel-style rounded surfaces.
  *
  * @param darkMode "system", "light", or "dark"
  * @param dynamicColor Whether to use Android 12+ dynamic color (Monet)
@@ -108,10 +109,10 @@ fun LocalAISearchTheme(
         // system across settings, memory and model center prevents the custom
         // 14/20/24dp "card language" that made those pages look unlike Google M3.
         shapes = Shapes(
-            small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(12.dp),
-            large = RoundedCornerShape(16.dp),
-            extraLarge = RoundedCornerShape(28.dp)
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(16.dp),
+            large = RoundedCornerShape(24.dp),
+            extraLarge = RoundedCornerShape(32.dp)
         ),
         content = content
     )

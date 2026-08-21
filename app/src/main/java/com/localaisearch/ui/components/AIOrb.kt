@@ -115,10 +115,13 @@ fun AIOrb(
             val cy = this.size.height / 2f
             val base = minOf(this.size.width, this.size.height) * .28f
 
-            // Rotation speed rises smoothly with load/activity intensity —
-            // never a hard cut to a new tween duration.
-            val spinSpeed = 1f + loadIntensity * 2.2f + activeIntensity * 0.8f
-            val rotation = (phase * spinSpeed) % 360f
+            // IMPORTANT: rotation is derived from one immutable phase clock.
+            // Never multiply phase by a changing state-dependent speed: doing so
+            // changes the absolute position when state changes and creates the
+            // visible "jump, then restart" seam. State may change amplitude/alpha,
+            // but the animation's position always continues from the exact frame
+            // where it was before.
+            val rotation = phase
 
             val pulseScale = 1f + breathe * 0.09f * (1f + activeIntensity * 0.35f)
             val driftAngle = (wobblePhase * 0.6f) * Math.PI / 180.0

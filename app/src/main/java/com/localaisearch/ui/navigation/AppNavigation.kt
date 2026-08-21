@@ -162,34 +162,34 @@ fun AppNavigation() {
                     scaleX = 1f - (abs(dragAnim.value) / 10000f).coerceAtMost(0.018f)
                     scaleY = 1f - (abs(dragAnim.value) / 10000f).coerceAtMost(0.018f)
                 },
-                // Settings screens (hub + every settings_* sub-page) get a
-                // noticeably snappier transition than the rest of the app:
-                // they're navigated in and out of frequently, so the ~400ms
-                // slide used for primary destinations reads as sluggish there.
+                // One shared M3 transition curve across primary and settings pages.
+                // Avoiding a second "fast" settings animation removes the visual
+                // discontinuity when moving between the hub and sub-pages.
                 enterTransition = {
-                    val fast = initialState.destination.route == Routes.SETTINGS_HUB ||
-                        targetState.destination.route?.startsWith("settings") == true
-                    val fadeMs = if (fast) 160 else 360
-                    val slideMs = if (fast) 200 else 420
-                    fadeIn(tween(fadeMs, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f))) +
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(slideMs, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)))
+                    fadeIn(tween(260, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))) +
+                        slideIntoContainer(
+                            AnimatedContentTransitionScope.SlideDirection.Start,
+                            tween(360, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                        )
                 },
                 exitTransition = {
-                    val fast = initialState.destination.route?.startsWith("settings") == true
-                    val slideMs = if (fast) 180 else 380
-                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(slideMs, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)))
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        tween(320, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f))
+                    )
                 },
                 popEnterTransition = {
-                    val fast = targetState.destination.route?.startsWith("settings") == true
-                    val fadeMs = if (fast) 160 else 360
-                    val slideMs = if (fast) 200 else 420
-                    fadeIn(tween(fadeMs, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f))) +
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(slideMs, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)))
+                    fadeIn(tween(260, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))) +
+                        slideIntoContainer(
+                            AnimatedContentTransitionScope.SlideDirection.End,
+                            tween(360, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                        )
                 },
                 popExitTransition = {
-                    val fast = initialState.destination.route?.startsWith("settings") == true
-                    val slideMs = if (fast) 180 else 380
-                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(slideMs, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)))
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        tween(320, easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f))
+                    )
                 }
             ) {
         composable(Routes.HOME) {

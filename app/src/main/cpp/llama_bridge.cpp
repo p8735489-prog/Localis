@@ -29,6 +29,8 @@
 
 static std::atomic<bool> g_stopRequested{false};
 static std::atomic<bool> g_initialized{false};
+static std::mutex g_backendMutex;
+static std::mutex g_modelLoadMutex;
 
 struct ModelContext {
     llama_model* model = nullptr;
@@ -89,6 +91,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeSupportsGpu(JNIEnv*, jobject) 
 
 JNIEXPORT jboolean JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeShutdown(JNIEnv*, jobject) {
+    std::lock_guard<std::mutex> backendLock(g_backendMutex);
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_contexts.empty()) {
         setLastError("Cannot shut down llama.cpp while models are still loaded");
@@ -102,6 +105,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeShutdown(JNIEnv*, jobject) {
 
 JNIEXPORT jboolean JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeInitialize(JNIEnv*, jobject) {
+    std::lock_guard<std::mutex> backendLock(g_backendMutex);
     if (!g_initialized.load()) {
         ggml_time_init();
         llama_backend_init();
@@ -115,6 +119,18 @@ JNIEXPORT jlong JNICALL
 Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
         JNIEnv* env, jobject, jstring jFilePath, jint contextLength,
         jint threads, jboolean useGpu, jint gpuLayers) {
+
+    // Only one language model is supported by the Android engine at a time.
+    // Serialize native loads as well as Kotlin-side repository operations: the
+    // latter can be bypassed by a second ViewModel or a stale UI event.
+    std::unique_lock<std::mutex> loadLock(g_modelLoadMutex);
+    {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if (!g_contexts.empty()) {
+            setLastError("A GGUF model is already loaded. Unload it before loading another model.");
+            return 0;
+        }
+    }
 
     const char* filePath = env->GetStringUTFChars(jFilePath, nullptr);
     if (!filePath || !*filePath) {
@@ -157,10 +173,18 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
         return 0;
     }
 
+    const int32_t trainContext = llama_model_n_ctx_train(model);
+    int32_t effectiveContext = std::max(512, contextLength);
+    if (trainContext > 0) {
+        effectiveContext = std::min(effectiveContext, trainContext);
+    }
+    effectiveContext = std::min(effectiveContext, 32768);
+    const int32_t effectiveThreads = std::clamp(threads, 1, 64);
+
     llama_context_params ctx_params = llama_context_default_params();
-    ctx_params.n_ctx = static_cast<uint32_t>(contextLength);
-    ctx_params.n_threads = threads;
-    ctx_params.n_threads_batch = threads;
+    ctx_params.n_ctx = static_cast<uint32_t>(effectiveContext);
+    ctx_params.n_threads = effectiveThreads;
+    ctx_params.n_threads_batch = effectiveThreads;
 
     llama_context* ctx = llama_init_from_model(model, ctx_params);
     if (!ctx) {
@@ -179,8 +203,8 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeLoadModel(
     mc->memoryUsage = processResidentBytes();
     g_contexts[handle] = mc;
 
-    LOGI("Model loaded successfully. Handle=%ld, n_ctx=%d", handle,
-         llama_n_ctx(ctx));
+    LOGI("Model loaded successfully. Handle=%ld, n_ctx=%d, train_ctx=%d, threads=%d", handle,
+         llama_n_ctx(ctx), trainContext, effectiveThreads);
     env->ReleaseStringUTFChars(jFilePath, filePath);
     return handle;
 }
@@ -372,6 +396,7 @@ Java_com_localaisearch_data_llm_LlamaBridge_nativeGenerateMultimodalStream(
     }
     mtmd_bitmap* bitmap = bitmapResult.bitmap;
     if (std::string(prompt).find(mtmd_default_marker()) == std::string::npos) {
+        mtmd_bitmap_free(bitmap);
         env->ReleaseStringUTFChars(jPrompt, prompt);
         setLastError("The formatted chat template did not preserve llama.cpp's multimodal image marker");
         return JNI_FALSE;

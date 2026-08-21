@@ -3,6 +3,8 @@ package com.localaisearch.ui.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +14,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,8 +40,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Message
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.History
@@ -51,15 +54,12 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -68,7 +68,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,23 +78,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.Image
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localaisearch.R
 import com.localaisearch.data.model.AgentState
 import com.localaisearch.data.repository.TorManager
-import com.localaisearch.ui.components.AIOrb
+import com.localaisearch.ui.components.LocalisSparkle
 import com.localaisearch.ui.components.AgentProgressBar
 import com.localaisearch.ui.components.ChatBubble
 import com.localaisearch.ui.components.ExpressiveCard
@@ -106,6 +109,7 @@ import com.localaisearch.ui.components.SendButtonState
 import com.localaisearch.ui.components.SourceCard
 import com.localaisearch.ui.viewmodel.ChatViewModel
 import com.localaisearch.ui.viewmodel.ConversationViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -144,6 +148,7 @@ fun HomeScreen(
     val modelLoaded by viewModel.modelLoaded.collectAsState()
     val loadedModelName by viewModel.loadedModelName.collectAsState()
     val imageInputAvailable by viewModel.imageInputAvailable.collectAsState()
+    val pendingImageUri by viewModel.pendingImageUri.collectAsState()
     val defaultSystemPrompt by viewModel.defaultSystemPrompt.collectAsState()
     val storedConversations by conversationViewModel.conversations.collectAsState()
     val torStatus by TorManager.statusFlow.collectAsState()
@@ -165,8 +170,17 @@ fun HomeScreen(
     }
     var showMenu by remember { mutableStateOf(false) }
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    var drawerOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val closeDrawerAndThen: ((() -> Unit)?) -> Unit = { action ->
+        drawerOpen = false
+        if (action != null) {
+            scope.launch {
+                delay(440L)
+                action()
+            }
+        }
+    }
 
     val sendButtonState = when {
         isProcessing && agentStatus.state == AgentState.SEARCHING -> SendButtonState.SEARCHING
@@ -227,13 +241,10 @@ fun HomeScreen(
         )
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
+    SmoothNavigationDrawer(
+        open = drawerOpen,
+        onDismiss = { drawerOpen = false },
         drawerContent = {
-            ModalDrawerSheet(
-                windowInsets = WindowInsets.statusBars,
-                modifier = Modifier.width(280.dp)
-            ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = stringResource(R.string.drawer_title),
@@ -257,7 +268,7 @@ fun HomeScreen(
                     selected = false,
                     onClick = {
                         viewModel.newConversation()
-                        scope.launch { drawerState.close() }
+                        drawerOpen = false
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -288,7 +299,7 @@ fun HomeScreen(
                             selected = stored.conversation.id == conversation.id,
                             onClick = {
                                 viewModel.loadConversation(stored.conversation.id)
-                                scope.launch { drawerState.close() }
+                                drawerOpen = false
                             },
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
@@ -299,8 +310,7 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.models)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigateToModels()
+                        closeDrawerAndThen(onNavigateToModels)
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -309,8 +319,7 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.memory_center)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigateToMemory()
+                        closeDrawerAndThen(onNavigateToMemory)
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -319,8 +328,7 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.model_center)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigateToModelCenter()
+                        closeDrawerAndThen(onNavigateToModelCenter)
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -330,40 +338,36 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.settings)) },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigateToSettings()
+                        closeDrawerAndThen(onNavigateToSettings)
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
-        }
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
-                        Column {
+                        Row(
+                            modifier = Modifier.clickable { onNavigateToModels() },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = stringResource(R.string.home_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                text = loadedModelName.ifBlank { stringResource(R.string.home_title) },
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1
                             )
-                            if (isPrivacyMode) {
-                                Text(
-                                    text = stringResource(R.string.privacy_mode),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colorScheme.primary
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = stringResource(R.string.models),
+                                tint = colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch {
-                                if (drawerState.currentValue == DrawerValue.Closed) drawerState.open()
-                                else drawerState.close()
-                            }
-                        }) {
+                        IconButton(onClick = { drawerOpen = !drawerOpen }) {
                             Icon(
                                 imageVector = Icons.Rounded.Menu,
                                 contentDescription = stringResource(R.string.open_menu)
@@ -371,54 +375,18 @@ fun HomeScreen(
                         }
                     },
                     actions = {
-                        // Privacy toggle (small, not crowding)
                         IconButton(onClick = { viewModel.togglePrivacyMode() }) {
                             Icon(
-                                imageVector = if (isPrivacyMode)
-                                    androidx.compose.material.icons.Icons.Rounded.Lock
-                                else
-                                    Icons.Rounded.Lock,
+                                imageVector = if (isPrivacyMode) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
                                 contentDescription = if (isPrivacyMode) stringResource(R.string.privacy_on) else stringResource(R.string.privacy_off),
                                 tint = if (isPrivacyMode) colorScheme.primary else colorScheme.onSurfaceVariant
                             )
                         }
-                        // Pixel-style compact feature menu
-                        Box {
-                            IconButton(onClick = { showMenu = !showMenu }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.MoreVert,
-                                    contentDescription = stringResource(R.string.more_options)
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                shape = RoundedCornerShape(20.dp),
-                                containerColor = colorScheme.surfaceContainerHigh,
-                                tonalElevation = 3.dp
-                            ) {
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Outlined.Tune, null) },
-                                    text = { Text(stringResource(R.string.system_prompt)) },
-                                    onClick = { showMenu = false; showSystemPromptDialog = true }
-                                )
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Outlined.Search, null) },
-                                    text = { Text(stringResource(if (internetSearchEnabled) R.string.disable_web_search else R.string.enable_web_search)) },
-                                    onClick = { showMenu = false; viewModel.toggleInternetSearch() }
-                                )
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Rounded.Lock, null) },
-                                    text = { Text(stringResource(if (isPrivacyMode) R.string.disable_private_mode else R.string.enable_private_mode)) },
-                                    onClick = { showMenu = false; viewModel.togglePrivacyMode() }
-                                )
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Outlined.Settings, null) },
-                                    text = { Text(stringResource(R.string.settings)) },
-                                    onClick = { showMenu = false; onNavigateToSettings() }
-                                )
-                            }
-                        }
+                        Image(
+                            painter = painterResource(R.drawable.localis_avatar),
+                            contentDescription = stringResource(R.string.app_name),
+                            modifier = Modifier.size(40.dp)
+                        )
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -427,7 +395,6 @@ fun HomeScreen(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             },
-            modifier = Modifier.imePadding()
         ) { paddingValues ->
             Surface(
                 modifier = Modifier
@@ -453,7 +420,7 @@ fun HomeScreen(
                             inputText = inputText,
                             onInputChange = { inputText = it },
                             onSend = {
-                                if (inputText.isNotBlank()) {
+                                if (inputText.isNotBlank() || pendingImageUri != null) {
                                     viewModel.sendQuery(inputText)
                                     inputText = ""
                                 }
@@ -464,6 +431,7 @@ fun HomeScreen(
                             agentStatus = agentStatus,
                             torRoutingActive = torRoutingActive,
                             imageInputAvailable = imageInputAvailable,
+                            pendingImageAvailable = pendingImageUri != null,
                             onAttachClick = { imagePicker.launch("image/*") },
                             onImageUnavailableClick = { showImageModelHint = true }
                         )
@@ -478,7 +446,7 @@ fun HomeScreen(
                             inputText = inputText,
                             onInputChange = { inputText = it },
                             onSend = {
-                                if (inputText.isNotBlank()) {
+                                if (inputText.isNotBlank() || pendingImageUri != null) {
                                     viewModel.sendQuery(inputText)
                                     inputText = ""
                                 }
@@ -492,6 +460,7 @@ fun HomeScreen(
                             onNewConversation = { viewModel.newConversation() },
                             inputEnabled = modelLoaded,
                             imageInputAvailable = imageInputAvailable,
+                            pendingImageAvailable = pendingImageUri != null,
                             onAttachClick = { imagePicker.launch("image/*") },
                             onImageUnavailableClick = { showImageModelHint = true },
                             onRegenerate = { viewModel.regenerateMessage(it.id) },
@@ -499,6 +468,54 @@ fun HomeScreen(
                             torRoutingActive = torRoutingActive
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmoothNavigationDrawer(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    drawerContent: @Composable () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val progress by animateFloatAsState(
+        targetValue = if (open) 1f else 0f,
+        animationSpec = tween(440, easing = FastOutSlowInEasing),
+        label = "drawerProgress"
+    )
+    val drawerWidth = with(density) { 304.dp.toPx() }
+
+    Box(Modifier.fillMaxSize()) {
+        content()
+
+        // Keep the sheet composed while closing so the outgoing frame is continuous.
+        if (progress > 0f || open) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .zIndex(10f)
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f * progress))
+                    .clickable(onClick = onDismiss)
+            )
+            Surface(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(304.dp)
+                    .zIndex(11f)
+                    .graphicsLayer {
+                        translationX = -drawerWidth * (1f - progress)
+                        shadowElevation = 4.dp.toPx() * progress
+                    },
+                shape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 1.dp
+            ) {
+                Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                    drawerContent()
                 }
             }
         }
@@ -522,6 +539,7 @@ private fun EmptyStateScreen(
     inputEnabled: Boolean,
     torRoutingActive: Boolean,
     imageInputAvailable: Boolean,
+    pendingImageAvailable: Boolean,
     onAttachClick: () -> Unit,
     onImageUnavailableClick: () -> Unit
 ) {
@@ -540,35 +558,27 @@ private fun EmptyStateScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(250.dp),
+                .height(150.dp),
             contentAlignment = Alignment.Center
         ) {
-            AIOrb(
-                state = orbState,
-                size = 230.dp,
-                animationLevel = "high",
-                modelState = when {
-                    modelLoaded -> com.localaisearch.ui.components.ModelState.LOADED
-                    isProcessing -> com.localaisearch.ui.components.ModelState.LOADING
-                    else -> com.localaisearch.ui.components.ModelState.NO_MODEL
-                },
-                modelName = modelName,
-                onSelectModel = onSelectModel
-            )
-            // No separate CircularProgressIndicator overlay here: it used to
-            // render a flat Material "spinner" disk on top of the orb's own
-            // glow/arc, which read as two unrelated loading animations
-            // layered on each other. The orb's blob + sweep arc already
-            // communicate the loading state on their own, continuously.
+            LocalisSparkle(modifier = Modifier.size(52.dp))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Welcome text
+        // Static welcome copy: no particle/orb animation, matching the calm Gemini-like empty state.
+        val greetings = listOf(
+            "我在这里", "我准备好了", "随时为你效劳", "等你发来第一句话",
+            "交给我吧", "我们开始", "好了，开始吧", "有我在呢",
+            "想聊点什么?看你的了!", "随时可以开始", "慢慢来，不着急",
+            "就从这里开始吧", "现在，刚刚好", "一切准备就绪", "随时等你",
+            "这里一直有回应", "让我们开始吧"
+        )
+        val greeting = remember { greetings.random() }
         Text(
-            text = stringResource(R.string.ask_anything),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
+            text = greeting,
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Normal,
             color = colorScheme.onSurface
         )
 
@@ -588,7 +598,10 @@ private fun EmptyStateScreen(
 
         // Large floating Composer
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding(),
             verticalAlignment = Alignment.Bottom
         ) {
             SearchInputBar(
@@ -596,12 +609,12 @@ private fun EmptyStateScreen(
                 onValueChange = onInputChange,
                 onSend = onSend,
                 internetSearchEnabled = internetSearchEnabled,
-                modifier = Modifier
-                    .weight(1f)
-                    .imePadding(),
+                modifier = Modifier.weight(1f),
                 enabled = inputEnabled && !torRoutingActive,
                 disabledReason = if (torRoutingActive) stringResource(R.string.tor_input_disabled) else null,
                 imageInputAvailable = imageInputAvailable,
+                sendButtonState = sendButtonState,
+                pendingImageAvailable = pendingImageAvailable,
                 imageUnavailableReason = stringResource(R.string.image_input_unavailable_desc),
                 onAttachClick = onAttachClick,
                 onImageUnavailableClick = onImageUnavailableClick
@@ -651,6 +664,7 @@ private fun ChatScreen(
     onNewConversation: () -> Unit,
     inputEnabled: Boolean,
     imageInputAvailable: Boolean,
+    pendingImageAvailable: Boolean,
     onAttachClick: () -> Unit,
     onImageUnavailableClick: () -> Unit,
     onRegenerate: (com.localaisearch.data.model.ChatMessage) -> Unit,
@@ -684,11 +698,7 @@ private fun ChatScreen(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        AIOrb(
-                            state = orbState,
-                            size = 60.dp,
-                            animationLevel = "standard"
-                        )
+                        LocalisSparkle(modifier = Modifier.size(32.dp))
                     }
                 }
                 item {
@@ -701,11 +711,18 @@ private fun ChatScreen(
 
             // Chat messages
             items(messages, key = { it.id }) { message ->
-                ChatBubble(
-                    message = message,
-                    onRegenerate = { onRegenerate(message) },
-                    onOtherAi = { onOtherAi(message) }
-                )
+                // Keep the empty streaming placeholder out of the list. The single
+                // shared progress header above the messages owns the generation UI.
+                // This prevents a second loading surface from flashing in/out while
+                // the first tokens are arriving. Once content exists, the same keyed
+                // item becomes the normal assistant bubble without changing identity.
+                if (!message.isStreaming || message.content.isNotBlank()) {
+                    ChatBubble(
+                        message = message,
+                        onRegenerate = { onRegenerate(message) },
+                        onOtherAi = { onOtherAi(message) }
+                    )
+                }
             }
 
             // Source cards
@@ -778,6 +795,8 @@ private fun ChatScreen(
                 enabled = inputEnabled && !torRoutingActive,
                 disabledReason = if (torRoutingActive) stringResource(R.string.tor_input_disabled) else null,
                 imageInputAvailable = imageInputAvailable,
+                sendButtonState = sendButtonState,
+                pendingImageAvailable = pendingImageAvailable,
                 imageUnavailableReason = stringResource(R.string.image_input_unavailable_desc),
                 onAttachClick = onAttachClick,
                 onImageUnavailableClick = onImageUnavailableClick

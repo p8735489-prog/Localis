@@ -95,6 +95,12 @@ class ModelCenterViewModel(
         refreshDownloadedModels()
     }
 
+    val activeModel: StateFlow<GGUFModel?> = _modelRepo.activeModel
+
+    private val _modelLoadState = MutableStateFlow<ModelCenterLoadState>(ModelCenterLoadState.Idle)
+    val modelLoadState: StateFlow<ModelCenterLoadState> = _modelLoadState.asStateFlow()
+
+
     /**
      * Set the download source (HF or Domestic Mirror).
      */
@@ -295,6 +301,38 @@ class ModelCenterViewModel(
         }
     }
 
+    fun loadModel(model: GGUFModel) {
+        if (_modelLoadState.value is ModelCenterLoadState.Loading) return
+        viewModelScope.launch {
+            _modelLoadState.value = ModelCenterLoadState.Loading(model.id)
+            val config = settingsRepository.inferenceConfig.first()
+            val result = _modelRepo.loadModel(model, config)
+            result.onSuccess {
+                _modelLoadState.value = ModelCenterLoadState.Loaded(model.id)
+                _downloadedModels.value = _modelRepo.models.value
+            }.onFailure { e ->
+                _modelLoadState.value = ModelCenterLoadState.Error(e.message ?: "Model load failed")
+            }
+        }
+    }
+
+    fun unloadModel() {
+        if (_modelLoadState.value is ModelCenterLoadState.Loading) return
+        viewModelScope.launch {
+            val result = _modelRepo.unloadModel()
+            result.onSuccess {
+                _modelLoadState.value = ModelCenterLoadState.Idle
+                _downloadedModels.value = _modelRepo.models.value
+            }.onFailure { e ->
+                _modelLoadState.value = ModelCenterLoadState.Error(e.message ?: "Model unload failed")
+            }
+        }
+    }
+
+    fun clearModelLoadError() {
+        if (_modelLoadState.value is ModelCenterLoadState.Error) _modelLoadState.value = ModelCenterLoadState.Idle
+    }
+
     /**
      * Set Hugging Face token for private repos.
      */
@@ -315,4 +353,11 @@ class ModelCenterViewModel(
         super.onCleared()
         _downloadManager.release()
     }
+}
+
+sealed class ModelCenterLoadState {
+    data object Idle : ModelCenterLoadState()
+    data class Loading(val modelId: String) : ModelCenterLoadState()
+    data class Loaded(val modelId: String) : ModelCenterLoadState()
+    data class Error(val message: String) : ModelCenterLoadState()
 }

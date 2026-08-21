@@ -74,18 +74,32 @@ class ModelRepository(
             file.isFile && file.extension.equals("gguf", ignoreCase = true)
         } ?: emptyArray()
 
+        val activeId = _activeModel.value?.id
         val models = modelFiles.map { file ->
+            val metadata = runCatching { com.localaisearch.data.model.GGUFMetadataReader.readMetadata(file.absolutePath) }.getOrNull()
             GGUFModel(
                 id = file.absolutePath,
                 name = file.nameWithoutExtension,
                 filePath = file.absolutePath,
                 fileSizeBytes = file.length(),
-                isLoaded = false
+                quantization = metadata?.quantizationVersion ?: "unknown",
+                contextLength = metadata?.contextLength ?: 4096,
+                parameterCount = metadata?.parameterCount?.takeIf { it > 0 }?.let { formatParameterCount(it) } ?: "unknown",
+                isLoaded = activeId == file.absolutePath
             )
         }.sortedBy { it.name }
 
         // Publish only after the full directory scan has completed off the main thread.
         _models.value = models
+    }
+
+    private fun formatParameterCount(parameters: Long): String {
+        val billions = parameters / 1_000_000_000.0
+        return when {
+            billions >= 1.0 -> "%.1fB".format(billions)
+            parameters >= 1_000_000L -> "%.1fM".format(parameters / 1_000_000.0)
+            else -> parameters.toString()
+        }
     }
 
     /**
@@ -188,6 +202,7 @@ class ModelRepository(
                 if (result.isSuccess) {
                     _activeModel.value = model.copy(isLoaded = true)
                     activeConfig = config
+                    refreshModels()
                     return@withLock result
                 }
 
@@ -200,6 +215,7 @@ class ModelRepository(
                         activeConfig = previousConfig
                     }
                 }
+                refreshModels()
                 result
             }
         }
@@ -213,6 +229,7 @@ class ModelRepository(
                 engine.unloadModel()
                 _activeModel.value = null
                 activeConfig = null
+                refreshModels()
                 Result.success(Unit)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -240,6 +257,7 @@ class ModelRepository(
                     if (result.isSuccess) {
                         _activeModel.value = model.copy(isLoaded = true)
                         activeConfig = config
+                        refreshModels()
                         return@withLock result
                     }
                     // Failed model switches automatically restore the previous model when
@@ -251,6 +269,7 @@ class ModelRepository(
                             activeConfig = previousConfig
                         }
                     }
+                    refreshModels()
                     result
                 } catch (e: Exception) {
                     Result.failure(e)

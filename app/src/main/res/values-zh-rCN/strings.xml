@@ -19,7 +19,7 @@
     <string name="done">完成</string>
     <string name="local_ai_private">本地AI - 完全私密，本地运行</string>
     <string name="local_ai_search_enabled">本地AI + 联网搜索已启用</string>
-    <string name="ask_anything">随便问</string>
+    <string name="ask_anything">问问 Localis</string>
     <string name="new_conversation">新对话</string>
     <string name="internet_search_enabled">联网搜索已启用</string>
     <string name="clear">清除</string>

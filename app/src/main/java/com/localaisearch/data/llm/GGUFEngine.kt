@@ -6,6 +6,7 @@ import android.app.ActivityManager
 import java.io.File
 import com.localaisearch.data.error.GlobalErrorHandler
 import com.localaisearch.data.model.InferenceConfig
+import com.localaisearch.data.model.GGUFMetadataReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -80,10 +81,14 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
         }
 
     private var currentModelPath: String? = null
+    private var currentVisionProjectorPath: String? = null
 
     override suspend fun loadModel(filePath: String, config: InferenceConfig): Result<Unit> =
         withContext(Dispatchers.IO) {
             synchronized(lock) {
+                if (isGenerating.get()) {
+                    return@withContext Result.failure(IllegalStateException("请先停止当前 AI 生成，再加载或切换模型"))
+                }
                 if (modelHandle > 0L) {
                     unloadModelInternal()
                 }
@@ -103,20 +108,45 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
                     // severe memory pressure. Native OOMs can terminate the whole process
                     // before Kotlin gets a chance to render an error.
                     val modelFile = File(filePath)
+                    if (!modelFile.isFile || modelFile.length() < 8L) {
+                        val message = "The GGUF file is missing, empty, or incomplete."
+                        GlobalErrorHandler.emitModel(message)
+                        return@withContext Result.failure(IllegalArgumentException(message))
+                    }
+                    val metadata = GGUFMetadataReader.readMetadata(filePath)
+                    if (metadata.isProjector) {
+                        val message = "This is a vision projector/mmproj file, not a language-model GGUF. Load the matching language model first."
+                        GlobalErrorHandler.emitModel(message)
+                        return@withContext Result.failure(IllegalArgumentException(message))
+                    }
+                    val requestedContext = config.contextLength.coerceIn(512, 32768)
+                    if (config.contextLength != requestedContext) {
+                        Log.w(TAG, "Clamping unsafe context length ${config.contextLength} to $requestedContext")
+                    }
                     val am = appContext?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                     val memInfo = ActivityManager.MemoryInfo()
                     am?.getMemoryInfo(memInfo)
                     val available = memInfo.availMem
-                    val requiredFloor = (modelFile.length() * 1.15f).toLong()
-                    if (available > 0L && modelFile.length() > 0L && available < requiredFloor) {
-                        val message = "Not enough available memory to load this model safely. Free some memory or choose a smaller quantization."
+                    // A GGUF file's on-disk size is not its peak RSS: mmap pages,
+                    // allocator overhead and the KV cache all add memory pressure.
+                    // Refuse obviously unsafe loads before entering native code; a
+                    // native OOM can terminate the Android process and cannot be
+                    // caught reliably by Kotlin.
+                    val fileBytes = modelFile.length()
+                    val kvReserve = requestedContext.toLong() * 96L * 1024L
+                    val requiredFloor = maxOf(
+                        (fileBytes * 1.35f).toLong(),
+                        fileBytes + kvReserve + 256L * 1024L * 1024L
+                    )
+                    if (available > 0L && available < requiredFloor) {
+                        val message = "Not enough free memory to load this model safely (${formatMemory(available)} free, about ${formatMemory(requiredFloor)} recommended). Try a smaller quantization or lower context length."
                         GlobalErrorHandler.emitModel(message)
                         return@withContext Result.failure(IllegalStateException(message))
                     }
 
                     val handle = LlamaBridge.nativeLoadModel(
                         filePath,
-                        config.contextLength,
+                        requestedContext,
                         config.threads,
                         config.useGpu,
                         config.gpuLayers
@@ -169,6 +199,7 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
             modelHandle = 0L
         }
         currentModelPath = null
+        currentVisionProjectorPath = null
         currentConfig = null
     }
 
@@ -280,10 +311,20 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
         withContext(Dispatchers.IO) {
             synchronized(lock) {
                 if (modelHandle <= 0L) return@synchronized Result.failure(IllegalStateException("No language model is loaded"))
+                val projector = File(mmprojPath)
+                if (!projector.isFile || projector.length() < 8L) {
+                    return@synchronized Result.failure(IllegalArgumentException("视觉投影器文件不存在或已损坏"))
+                }
+                if (currentVisionProjectorPath == projector.absolutePath && hasVisionRuntime()) {
+                    return@synchronized Result.success(Unit)
+                }
                 val ok = runCatching {
-                    LlamaBridge.nativeLoadVisionProjector(modelHandle, mmprojPath, config.threads, config.useGpu)
+                    LlamaBridge.nativeLoadVisionProjector(modelHandle, projector.absolutePath, config.threads, config.useGpu)
                 }.getOrElse { false }
-                if (ok) Result.success(Unit) else {
+                if (ok) {
+                    currentVisionProjectorPath = projector.absolutePath
+                    Result.success(Unit)
+                } else {
                     val reason = runCatching { LlamaBridge.nativeGetLastError() }.getOrNull().orEmpty()
                     Result.failure(IllegalStateException(reason.ifBlank { "Failed to load llama.cpp vision projector" }))
                 }
@@ -380,6 +421,12 @@ class GGUFEngine(private val appContext: Context? = null) : LLMEngine {
 
     override fun isGpuAvailable(): Boolean {
         return nativeAvailable && runCatching { LlamaBridge.nativeSupportsGpu() }.getOrDefault(false)
+    }
+
+    private fun formatMemory(bytes: Long): String {
+        if (bytes <= 0L) return "unknown"
+        val gb = bytes / (1024.0 * 1024.0 * 1024.0)
+        return if (gb >= 1.0) "%.1f GB".format(gb) else "%.0f MB".format(bytes / (1024.0 * 1024.0))
     }
 
     override fun release() {

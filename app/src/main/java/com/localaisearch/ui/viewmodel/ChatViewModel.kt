@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * ViewModel for the chat/search screen.
@@ -70,6 +71,8 @@ class ChatViewModel(
 
     private var agentEngine: AgentEngine? = null
     private var currentJob: Job? = null
+    /** Monotonically increasing request id used to invalidate stale callbacks. */
+    private val requestGeneration = AtomicLong(0L)
     private var lastModelActivityTime: Long = System.currentTimeMillis()
     private var _lastSaveTime: Long = 0L
     private val answerBuffer = StringBuilder()
@@ -208,17 +211,18 @@ class ChatViewModel(
     }
 
     fun sendQuery(query: String, addUserMessage: Boolean = true) {
-        if (query.isBlank() || _isProcessing.value) return
+        val hasPendingImage = _pendingImageUri.value != null
+        if ((query.isBlank() && !hasPendingImage) || _isProcessing.value) return
         if (!llmEngine.isLoaded) {
             _error.value = "No model loaded. Please import and load a GGUF model first."
             return
         }
 
         currentJob?.cancel()
+        val requestId = requestGeneration.incrementAndGet()
         _error.value = null
         synchronized(answerBuffer) { answerBuffer.setLength(0) }
         lastAnswerUiUpdate = 0L
-        answerFlushJob?.cancel()
         answerFlushJob?.cancel()
         synchronized(answerBuffer) { answerBuffer.setLength(0) }
         _currentAnswer.value = ""
@@ -230,7 +234,7 @@ class ChatViewModel(
 
         // Add user message unless this is a regeneration of an existing user turn.
         if (addUserMessage) {
-            val userMessage = ChatMessage(role = MessageRole.USER, content = query)
+            val userMessage = ChatMessage(role = MessageRole.USER, content = query.ifBlank { "图片" })
             _conversation.value = _conversation.value.addMessage(userMessage)
         }
 
@@ -281,24 +285,29 @@ class ChatViewModel(
 
                 val callback = object : AgentCallback {
                     override fun onStateChanged(status: AgentStatus) {
+                        if (requestGeneration.get() != requestId) return
                         _agentStatus.value = status
                         updateLastMessage { it.copy(agentStatus = status) }
                     }
 
                     override fun onSearchRound(round: SearchRound) {
+                        if (requestGeneration.get() != requestId) return
                         _searchResults.value = _searchResults.value + round.results
                     }
 
                     override fun onSearchResults(results: List<SearchResult>) {
+                        if (requestGeneration.get() != requestId) return
                         _searchResults.value = results
                     }
 
                     override fun onToken(token: String) {
+                        if (requestGeneration.get() != requestId) return
                         synchronized(answerBuffer) { answerBuffer.append(token) }
                         val now = System.currentTimeMillis()
                         if (now - lastAnswerUiUpdate >= 50L && answerFlushJob?.isActive != true) {
                             answerFlushJob = viewModelScope.launch {
                                 kotlinx.coroutines.delay(16L)
+                                if (requestGeneration.get() != requestId) return@launch
                                 val snapshot = synchronized(answerBuffer) { answerBuffer.toString() }
                                 _currentAnswer.value = snapshot
                                 updateLastMessage { it.copy(content = snapshot) }
@@ -312,6 +321,7 @@ class ChatViewModel(
                         citations: List<Citation>,
                         session: SearchSession
                     ) {
+                        if (requestGeneration.get() != requestId) return
                         answerFlushJob?.cancel()
                         val finalAnswer = if (answer.isNotBlank()) answer else synchronized(answerBuffer) { answerBuffer.toString() }
                         _currentAnswer.value = finalAnswer
@@ -327,6 +337,7 @@ class ChatViewModel(
                     }
 
                     override fun onError(message: String) {
+                        if (requestGeneration.get() != requestId) return
                         _error.value = message
                         updateLastMessage {
                             it.copy(
@@ -404,9 +415,11 @@ class ChatViewModel(
                     )
                 }
             } finally {
-                _isProcessing.value = false
-                _agentStatus.value = AgentStatusIdle
-                currentJob = null
+                if (requestGeneration.get() == requestId) {
+                    _isProcessing.value = false
+                    _agentStatus.value = AgentStatusIdle
+                    currentJob = null
+                }
             }
         }
     }
@@ -531,6 +544,7 @@ class ChatViewModel(
      * Cancel ongoing processing.
      */
     fun cancel() {
+        requestGeneration.incrementAndGet()
         currentJob?.cancel()
         viewModelScope.launch {
             agentEngine?.cancel()
@@ -588,6 +602,7 @@ class ChatViewModel(
      * In privacy mode, does not save the current conversation.
      */
     fun newConversation() {
+        requestGeneration.incrementAndGet()
         currentJob?.cancel()
         viewModelScope.launch {
             agentEngine?.cancel()
@@ -623,6 +638,7 @@ class ChatViewModel(
         viewModelScope.launch {
             val conv = conversationRepo.getConversation(conversationId)
             if (conv != null) {
+                requestGeneration.incrementAndGet()
                 currentJob?.cancel()
                 agentEngine?.let { 
                     viewModelScope.launch { it.cancel() }

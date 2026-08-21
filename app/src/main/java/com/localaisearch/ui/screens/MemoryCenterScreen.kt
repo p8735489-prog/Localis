@@ -181,7 +181,7 @@ fun MemoryCenterScreen(
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(20.dp),
+                shape = MaterialTheme.shapes.medium,
                 colors = androidx.compose.material3.TextFieldDefaults.colors(
                     focusedContainerColor = colorScheme.surfaceContainerHigh,
                     unfocusedContainerColor = colorScheme.surfaceContainerHigh,
@@ -397,11 +397,11 @@ private fun MemoryItemCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainer
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier

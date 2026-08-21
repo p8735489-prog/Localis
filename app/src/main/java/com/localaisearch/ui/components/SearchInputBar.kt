@@ -46,6 +46,8 @@ fun SearchInputBar(
     enabled: Boolean = true,
     disabledReason: String? = null,
     imageInputAvailable: Boolean = false,
+    sendButtonState: SendButtonState = SendButtonState.IDLE,
+    pendingImageAvailable: Boolean = false,
     imageUnavailableReason: String? = null,
     onImageUnavailableClick: () -> Unit = {}
 ) {
@@ -126,6 +128,14 @@ fun SearchInputBar(
                         }
                     }
                 }
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            MorphingSendButton(
+                state = sendButtonState,
+                onClick = onSend,
+                enabled = enabled && (value.isNotBlank() || pendingImageAvailable)
             )
         }
     }

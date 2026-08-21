@@ -11,6 +11,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 
@@ -102,7 +104,15 @@ fun LocalAISearchTheme(
         // Use the library's canonical Material 3 shape tokens instead of a
         // custom "Pixel" shape system so surfaces, dialogs and controls remain
         // visually consistent with Google Material 3.
-        shapes = Shapes(),
+        // Official Material 3 shape tokens: 8/12/16/28dp. Keeping one token
+        // system across settings, memory and model center prevents the custom
+        // 14/20/24dp "card language" that made those pages look unlike Google M3.
+        shapes = Shapes(
+            small = RoundedCornerShape(8.dp),
+            medium = RoundedCornerShape(12.dp),
+            large = RoundedCornerShape(16.dp),
+            extraLarge = RoundedCornerShape(28.dp)
+        ),
         content = content
     )
 }

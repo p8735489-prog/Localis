@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -118,7 +117,17 @@ fun ChatBubble(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        Box {
+        Column(
+            horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
+            modifier = Modifier.widthIn(max = 340.dp)
+        ) {
+            Text(
+                text = if (isUser) "你" else "Localis",
+                style = MaterialTheme.typography.labelMedium,
+                color = colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+            Box {
             Surface(
                 shape = MaterialTheme.shapes.large,
                 color = if (isUser) colorScheme.primaryContainer else colorScheme.surfaceContainer,
@@ -145,10 +154,6 @@ fun ChatBubble(
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isUser) colorScheme.onPrimaryContainer else colorScheme.onSurface
                     )
-                    if (message.isStreaming) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        CircularProgressIndicator(modifier = Modifier.width(28.dp))
-                    }
                     if (message.hasCitations) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(stringResource(R.string.sources_label), style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
@@ -158,12 +163,6 @@ fun ChatBubble(
                                 Text(text = "[${citation.index}] ", style = MaterialTheme.typography.labelSmall, color = colorScheme.primary, fontWeight = FontWeight.Bold)
                                 Text(text = citation.title, style = MaterialTheme.typography.labelSmall, color = colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.clickable { uriHandler.openUri(citation.url) })
                             }
-                        }
-                    }
-                    message.agentStatus?.let { status ->
-                        if (status.state.isActive) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            AgentProgressBar(status = status)
                         }
                     }
                 }
@@ -221,6 +220,7 @@ fun ChatBubble(
                         )
                     }
                 }
+            }
             }
         }
     }

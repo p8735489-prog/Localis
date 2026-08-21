@@ -95,6 +95,7 @@ import com.localaisearch.data.repository.TorManager
 import com.localaisearch.data.performance.HardwareDetector
 import com.localaisearch.ui.animation.SpringSpecs
 import com.localaisearch.ui.viewmodel.ModelCenterViewModel
+import com.localaisearch.ui.viewmodel.ModelCenterLoadState
 
 /**
  * Model Center screen - discover, search, browse, and download GGUF models
@@ -115,6 +116,8 @@ fun ModelCenterScreen(
     val selectedSource by viewModel.selectedSource.collectAsState()
     val downloadStates by viewModel.downloadStates.collectAsState()
     val downloadedModels by viewModel.downloadedModels.collectAsState()
+    val activeModel by viewModel.activeModel.collectAsState()
+    val modelLoadState by viewModel.modelLoadState.collectAsState()
     val error by viewModel.error.collectAsState()
     val torStatus by TorManager.statusFlow.collectAsState()
     val torActive = torStatus != TorManager.Status.OFF
@@ -169,7 +172,7 @@ fun ModelCenterScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = SearchBarDefaults.colors(
-                    containerColor = colorScheme.surfaceContainerHigh
+                    containerColor = colorScheme.surfaceContainerLow
                 )
             ) {}
 
@@ -198,7 +201,30 @@ fun ModelCenterScreen(
                 }
             }
 
-            // Error display
+            // Model runtime error is separate from network/search errors so a
+            // failed native load never disappears behind a stale API message.
+            (modelLoadState as? ModelCenterLoadState.Error)?.let { loadError ->
+                Surface(
+                    color = colorScheme.errorContainer,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.Warning, contentDescription = null, tint = colorScheme.error)
+                        Spacer(Modifier.width(8.dp))
+                        Text(loadError.message, style = MaterialTheme.typography.bodySmall, color = colorScheme.onErrorContainer, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { viewModel.clearModelLoadError() }) {
+                            Text(stringResource(R.string.dismiss))
+                        }
+                    }
+                }
+            }
+
             error?.let { errorMsg ->
                 Surface(
                     color = colorScheme.errorContainer,
@@ -283,8 +309,11 @@ fun ModelCenterScreen(
                 2 -> DownloadedModelsList(
                     models = downloadedModels,
                     downloadStates = downloadStates,
+                    activeModel = activeModel,
+                    loadState = modelLoadState,
                     onDelete = { viewModel.deleteDownloadedModel(it) },
-                    onLoad = { onModelLoaded() }
+                    onLoad = { viewModel.loadModel(it) },
+                    onUnload = { viewModel.unloadModel() }
                 )
             }
         }
@@ -378,8 +407,11 @@ private fun SearchResultsList(
 private fun DownloadedModelsList(
     models: List<GGUFModel>,
     downloadStates: Map<String, DownloadState>,
+    activeModel: GGUFModel?,
+    loadState: ModelCenterLoadState,
     onDelete: (GGUFModel) -> Unit,
-    onLoad: () -> Unit
+    onLoad: (GGUFModel) -> Unit,
+    onUnload: () -> Unit
 ) {
     if (models.isEmpty()) {
         EmptyState(message = stringResource(R.string.no_downloaded))
@@ -393,8 +425,11 @@ private fun DownloadedModelsList(
         items(models, key = { it.id }) { model ->
             DownloadedModelCard(
                 model = model,
+                activeModel = activeModel,
+                loadState = loadState,
                 onDelete = { onDelete(model) },
-                onLoad = onLoad
+                onLoad = { onLoad(model) },
+                onUnload = onUnload
             )
         }
     }
@@ -413,11 +448,11 @@ private fun ModelCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainer
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -549,16 +584,19 @@ private fun MemoryStatusChip(modelName: String) {
 @Composable
 private fun DownloadedModelCard(
     model: GGUFModel,
+    activeModel: GGUFModel?,
+    loadState: ModelCenterLoadState,
     onDelete: () -> Unit,
-    onLoad: () -> Unit
+    onLoad: () -> Unit,
+    onUnload: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = colorScheme.surfaceContainerHigh
+            containerColor = colorScheme.surfaceContainerLow
         )
     ) {
         Row(
@@ -582,17 +620,26 @@ private fun DownloadedModelCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Size: ${model.displaySize}  Quant: ${model.quantization}",
+                    text = "${model.displaySize} · ${model.quantization} · ${model.parameterCount} · ctx ${model.contextLength}",
                     style = MaterialTheme.typography.bodySmall,
                     color = colorScheme.onSurfaceVariant
                 )
             }
 
-            IconButton(onClick = onDelete) {
+            if (activeModel?.id == model.id) {
+                TextButton(onClick = onUnload, enabled = loadState !is ModelCenterLoadState.Loading) {
+                    Text(stringResource(R.string.unload))
+                }
+            } else {
+                TextButton(onClick = { onLoad() }, enabled = loadState !is ModelCenterLoadState.Loading) {
+                    Text(stringResource(R.string.load_model))
+                }
+            }
+            IconButton(onClick = onDelete, enabled = activeModel?.id != model.id && loadState !is ModelCenterLoadState.Loading) {
                 Icon(
                     imageVector = Icons.Rounded.Delete,
                     contentDescription = stringResource(R.string.delete),
-                    tint = colorScheme.error
+                    tint = if (activeModel?.id == model.id) colorScheme.onSurfaceVariant.copy(alpha = 0.35f) else colorScheme.error
                 )
             }
         }
@@ -714,7 +761,7 @@ private fun FileDownloadCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainer
         )
